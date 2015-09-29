@@ -66,6 +66,10 @@ or specify any of them when launching ant from the command line (as below).
 
 ==========
 
+ant middle -Dservice.name=mw -Dservice.port=9081 -Dservice.host=localhost
+
+
+
 Instructions:
 
 1. Build and launch your service on the server machine:

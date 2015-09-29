@@ -3,14 +3,14 @@
 // CSE 593
 // -------------------------------
 
-package server;
+package middle;
 
 import java.util.*;
 import javax.jws.WebService;
 
 
-@WebService(endpointInterface = "middle.ws.ResourceManager")
-public class ResourceManagerImpl implements middle.ws.ResourceManager {
+@WebService(endpointInterface = "server.ws.ResourceManager")
+public class ResourceManagerImplMW extends server.ResourceManagerImpl {
     
     protected RMHashtable m_itemHT = new RMHashtable();
     

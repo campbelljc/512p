@@ -14,6 +14,11 @@ public class ResourceManagerImplMW extends server.ResourceManagerImpl {
     
     protected RMHashtable m_itemHT = new RMHashtable();
     
+	String[][] rms = new String[3][3];
+	
+	WSClient flightClient = new WSClient(rms[0][0], rms[0][1], rms[0][2]); // name, host, port
+	WSClient carClient = new WSClient(rms[1][0], rms[1][1], rms[1][2]); // name, host, port
+	WSClient roomClient = new WSClient(rms[2][0], rms[2][1], rms[2][2]); // name, host, port
     
     // Basic operations on RMItem //
     
@@ -135,81 +140,26 @@ public class ResourceManagerImplMW extends server.ResourceManagerImpl {
     @Override
     public boolean addFlight(int id, int flightNumber, 
                              int numSeats, int flightPrice) {
-        Trace.info("RM::addFlight(" + id + ", " + flightNumber 
-                + ", $" + flightPrice + ", " + numSeats + ") called.");
-        Flight curObj = (Flight) readData(id, Flight.getKey(flightNumber));
-        if (curObj == null) {
-            // Doesn't exist; add it.
-            Flight newObj = new Flight(flightNumber, numSeats, flightPrice);
-            writeData(id, newObj.getKey(), newObj);
-            Trace.info("RM::addFlight(" + id + ", " + flightNumber 
-                    + ", $" + flightPrice + ", " + numSeats + ") OK.");
-        } else {
-            // Add seats to existing flight and update the price.
-            curObj.setCount(curObj.getCount() + numSeats);
-            if (flightPrice > 0) {
-                curObj.setPrice(flightPrice);
-            }
-            writeData(id, curObj.getKey(), curObj);
-            Trace.info("RM::addFlight(" + id + ", " + flightNumber 
-                    + ", $" + flightPrice + ", " + numSeats + ") OK: "
-                    + "seats = " + curObj.getCount() + ", price = $" + flightPrice);
-        }
-        return(true);
+		// start a client to talk to the Flight RM.
+        return flightClient.proxy.addFlight(id, flightNumber, numSeats, flightPrice);
     }
 
     @Override
     public boolean deleteFlight(int id, int flightNumber) {
-        return deleteItem(id, Flight.getKey(flightNumber));
+        return flightClient.proxy.deleteItem(id, flightNumber, numSeats, flightPrice);
     }
 
     // Returns the number of empty seats on this flight.
     @Override
     public int queryFlight(int id, int flightNumber) {
-        return queryNum(id, Flight.getKey(flightNumber));
+        return flightClient.proxy.queryFlight(id, flightNumber);
     }
 
     // Returns price of this flight.
+	@Override
     public int queryFlightPrice(int id, int flightNumber) {
-        return queryPrice(id, Flight.getKey(flightNumber));
+		return flightClient.proxy.queryFlightPrice(id, flightNumber);
     }
-
-    /*
-    // Returns the number of reservations for this flight. 
-    public int queryFlightReservations(int id, int flightNumber) {
-        Trace.info("RM::queryFlightReservations(" + id 
-                + ", #" + flightNumber + ") called.");
-        RMInteger numReservations = (RMInteger) readData(id, 
-                Flight.getNumReservationsKey(flightNumber));
-        if (numReservations == null) {
-            numReservations = new RMInteger(0);
-       }
-        Trace.info("RM::queryFlightReservations(" + id + 
-                ", #" + flightNumber + ") = " + numReservations);
-        return numReservations.getValue();
-    }
-    */
-    
-    /*
-    // Frees flight reservation record. Flight reservation records help us 
-    // make sure we don't delete a flight if one or more customers are 
-    // holding reservations.
-    public boolean freeFlightReservation(int id, int flightNumber) {
-        Trace.info("RM::freeFlightReservations(" + id + ", " 
-                + flightNumber + ") called.");
-        RMInteger numReservations = (RMInteger) readData(id, 
-                Flight.getNumReservationsKey(flightNumber));
-        if (numReservations != null) {
-            numReservations = new RMInteger(
-                    Math.max(0, numReservations.getValue() - 1));
-        }
-        writeData(id, Flight.getNumReservationsKey(flightNumber), numReservations);
-        Trace.info("RM::freeFlightReservations(" + id + ", " 
-                + flightNumber + ") OK: reservations = " + numReservations);
-        return true;
-    }
-    */
-
 
     // Car operations //
 
@@ -218,45 +168,25 @@ public class ResourceManagerImplMW extends server.ResourceManagerImpl {
     // its current price.
     @Override
     public boolean addCars(int id, String location, int numCars, int carPrice) {
-        Trace.info("RM::addCars(" + id + ", " + location + ", " 
-                + numCars + ", $" + carPrice + ") called.");
-        Car curObj = (Car) readData(id, Car.getKey(location));
-        if (curObj == null) {
-            // Doesn't exist; add it.
-            Car newObj = new Car(location, numCars, carPrice);
-            writeData(id, newObj.getKey(), newObj);
-            Trace.info("RM::addCars(" + id + ", " + location + ", " 
-                    + numCars + ", $" + carPrice + ") OK.");
-        } else {
-            // Add count to existing object and update price.
-            curObj.setCount(curObj.getCount() + numCars);
-            if (carPrice > 0) {
-                curObj.setPrice(carPrice);
-            }
-            writeData(id, curObj.getKey(), curObj);
-            Trace.info("RM::addCars(" + id + ", " + location + ", " 
-                    + numCars + ", $" + carPrice + ") OK: " 
-                    + "cars = " + curObj.getCount() + ", price = $" + carPrice);
-        }
-        return(true);
+		return carClient.proxy.addCars(id, location, numCars, carPrice);
     }
 
     // Delete cars from a location.
     @Override
     public boolean deleteCars(int id, String location) {
-        return deleteItem(id, Car.getKey(location));
+		return carClient.proxy.deleteCars(id, location);
     }
 
     // Returns the number of cars available at a location.
     @Override
     public int queryCars(int id, String location) {
-        return queryNum(id, Car.getKey(location));
+		return carClient.proxy.queryCars(id, location);
     }
 
     // Returns price of cars at this location.
     @Override
     public int queryCarsPrice(int id, String location) {
-        return queryPrice(id, Car.getKey(location));
+		return carClient.proxy.queryCarsPrice(id, location);
     }
     
 
@@ -267,45 +197,25 @@ public class ResourceManagerImplMW extends server.ResourceManagerImpl {
     // its current price.
     @Override
     public boolean addRooms(int id, String location, int numRooms, int roomPrice) {
-        Trace.info("RM::addRooms(" + id + ", " + location + ", " 
-                + numRooms + ", $" + roomPrice + ") called.");
-        Room curObj = (Room) readData(id, Room.getKey(location));
-        if (curObj == null) {
-            // Doesn't exist; add it.
-            Room newObj = new Room(location, numRooms, roomPrice);
-            writeData(id, newObj.getKey(), newObj);
-            Trace.info("RM::addRooms(" + id + ", " + location + ", " 
-                    + numRooms + ", $" + roomPrice + ") OK.");
-        } else {
-            // Add count to existing object and update price.
-            curObj.setCount(curObj.getCount() + numRooms);
-            if (roomPrice > 0) {
-                curObj.setPrice(roomPrice);
-            }
-            writeData(id, curObj.getKey(), curObj);
-            Trace.info("RM::addRooms(" + id + ", " + location + ", " 
-                    + numRooms + ", $" + roomPrice + ") OK: " 
-                    + "rooms = " + curObj.getCount() + ", price = $" + roomPrice);
-        }
-        return(true);
+		return roomClient.proxy.addRooms(id, location, numRooms, roomPrice);
     }
 
     // Delete rooms from a location.
     @Override
     public boolean deleteRooms(int id, String location) {
-        return deleteItem(id, Room.getKey(location));
+		return roomClient.proxy.deleteRooms(id, location);
     }
 
     // Returns the number of rooms available at a location.
     @Override
     public int queryRooms(int id, String location) {
-        return queryNum(id, Room.getKey(location));
+		return roomClient.proxy.queryRooms(id, location);
     }
     
     // Returns room price at this location.
     @Override
     public int queryRoomsPrice(int id, String location) {
-        return queryPrice(id, Room.getKey(location));
+		return roomClient.proxy.queryRoomsPrice(id, location);
     }
 
 

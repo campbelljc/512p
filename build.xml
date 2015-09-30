@@ -150,12 +150,27 @@
         </annotationProcessing>
     </target>
 	
+    <target name="start-tomcatm">
+        <echo message="Starting Tomcat and deploying service ... "/>
+        <java fork="true" classname="middle.ws.Main">
+            <classpath>
+                <path refid="jaxws.classpath"/>
+                <pathelement location="${basedir}/build/classes"/>
+            </classpath>
+            <jvmarg value="-Djava.security.policy=${basedir}/etc/server.policy"/>
+            <arg value="${service.name}"/>
+            <arg value="${service.port}"/>
+            <arg value="${basedir}/webapps"/>
+			<arg value="labx-y.cs.mcgill.ca"/>
+        </java>
+    </target>
+	
     <target name="middle" depends="setup">
         <antcall target="clean"/>
         <antcall target="build-middle"/>
         <antcall target="create-war"/>
         <antcall target="deploy-war"/>
-        <antcall target="start-tomcat"/>
+        <antcall target="start-tomcatm"/>
     </target>
     
 </project>

@@ -174,11 +174,24 @@
                 wsdl="http://${service.host}:${service.port}/${service.name}/service?wsdl">
         </wsimport>
     </target>
+
+    <target name="create-war-middle">
+        <war 
+            warfile="${basedir}/build/war/${service.name}.war" 
+            webxml="etc/web.xml">
+            <webinf dir="${basedir}/etc" includes="sun-jaxws-middle.xml"/>
+            <zipfileset
+                    dir="${basedir}/etc"
+                    includes="*.wsdl, *.xsd"
+                    prefix="WEB-INF/wsdl"/>
+            <classes dir="${basedir}/build/classes"/>
+        </war>
+    </target>
 	
     <target name="middle" depends="setup">
         <antcall target="clean"/>
         <antcall target="build-middle"/>
-        <antcall target="create-war"/>
+        <antcall target="create-war-middle"/>
         <antcall target="deploy-war"/>
         <antcall target="start-tomcatm"/>
     </target>

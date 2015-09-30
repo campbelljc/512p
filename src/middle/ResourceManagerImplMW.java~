@@ -8,18 +8,34 @@ package middle;
 import java.util.*;
 import javax.jws.WebService;
 import server.*;
+import client.*;
+import org.apache.catalina.Server;
 
 @WebService(endpointInterface = "server.ws.ResourceManager")
 public class ResourceManagerImplMW extends server.ResourceManagerImpl {
     
     protected RMHashtable m_itemHT = new RMHashtable();
     
-	String[][] rms = new String[3][3];
+	String[] rmHosts = new String[3];
+	int[] rmPorts = new int[3];
 	
-	WSClient flightClient = new WSClient(rms[0][0], rms[0][1], rms[0][2]); // name, host, port
-	WSClient carClient = new WSClient(rms[1][0], rms[1][1], rms[1][2]); // name, host, port
-	WSClient roomClient = new WSClient(rms[2][0], rms[2][1], rms[2][2]); // name, host, port
+	WSClient flightClient;
+	WSClient carClient;
+	WSClient roomClient;
     
+	public void setRMs(String rm1, String rm2, String rm3) {
+		rmHosts[0] = rm1;
+		rmHosts[1] = rm2;
+		rmHosts[2] = rm3;
+
+		rmPorts = new int[] { 9083, 9084, 9085 };
+
+	 	flightClient = new WSClient("rm", rmHosts[0], rmPorts[0]); // name, host, port
+		carClient = new WSClient("rm", rmHosts[1], rmPorts[1]); // name, host, port
+		roomClient = new WSClient("rm", rmHosts[2], rmPorts[2]); // name, host, port
+
+	}
+
     // Basic operations on RMItem //
     
     // Read a data item.
@@ -146,7 +162,7 @@ public class ResourceManagerImplMW extends server.ResourceManagerImpl {
 
     @Override
     public boolean deleteFlight(int id, int flightNumber) {
-        return flightClient.proxy.deleteItem(id, flightNumber, numSeats, flightPrice);
+        return flightClient.proxy.deleteFlight(id, flightNumber);
     }
 
     // Returns the number of empty seats on this flight.

@@ -159,9 +159,11 @@
             </classpath>
             <jvmarg value="-Djava.security.policy=${basedir}/etc/server.policy"/>
             <arg value="${service.name}"/>
-            <arg value="${service.port}"/>
+            <arg value="${service.port2}"/>
             <arg value="${basedir}/webapps"/>
-			<arg value="labx-y.cs.mcgill.ca"/>
+	    <arg value="localhost"/>
+	    <arg value="localhost"/>
+	    <arg value="localhost"/>
         </java>
     </target>
 
@@ -179,7 +181,7 @@
         <war 
             warfile="${basedir}/build/war/${service.name}.war" 
             webxml="etc/web.xml">
-            <webinf dir="${basedir}/etc" includes="sun-jaxws-middle.xml"/>
+            <webinf dir="${basedir}/etc2" includes="sun-jaxws.xml"/>
             <zipfileset
                     dir="${basedir}/etc"
                     includes="*.wsdl, *.xsd"
@@ -190,6 +192,7 @@
 	
     <target name="middle" depends="setup">
         <antcall target="clean"/>
+	<antcall target="build-client"/>
         <antcall target="build-middle"/>
         <antcall target="create-war-middle"/>
         <antcall target="deploy-war"/>

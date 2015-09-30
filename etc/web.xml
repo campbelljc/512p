@@ -28,4 +28,12 @@ Inc.//DTD Web Application 2.3//EN"
         <session-timeout>120</session-timeout>
     </session-config>
 
+    <context-param>
+      <param-name>rm1</param-name>
+      <param-value>localhost</param-value>
+      <description>
+        blah
+      </description>
+    </context-param>
+
 </web-app>

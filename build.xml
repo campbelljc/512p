@@ -132,7 +132,7 @@
         <echo message="client:  Builds and runs the client"/>
     </target>
 		
-    <target name="build-middle" depends="setup">
+    <target name="build-middle" depends="setup, generate-middle">
         <annotationProcessing
                 fork="true"
                 debug="true"
@@ -163,6 +163,16 @@
             <arg value="${basedir}/webapps"/>
 			<arg value="labx-y.cs.mcgill.ca"/>
         </java>
+    </target>
+
+   <target name="generate-middle" depends="setup">
+        <wsimport
+                quiet="true"
+                keep="true"
+                destdir="${basedir}/build/classes"
+                package="middle"
+                wsdl="http://${service.host}:${service.port}/${service.name}/service?wsdl">
+        </wsimport>
     </target>
 	
     <target name="middle" depends="setup">

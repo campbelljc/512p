@@ -7,7 +7,8 @@ package middle;
 
 import java.util.*;
 import javax.jws.WebService;
-
+import server.*;
+import client.*;
 
 @WebService(endpointInterface = "server.ws.ResourceManager")
 public class ResourceManagerImplMW extends server.ResourceManagerImpl {

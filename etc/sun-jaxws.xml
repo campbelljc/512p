@@ -11,7 +11,7 @@
 	  
   <endpoint
       name="ResourceManagerMW"
-      implementation="server.ResourceManagerImplMW"
+      implementation="middle.ResourceManagerImplMW"
       url-pattern="/service"/>
 
 </endpoints>

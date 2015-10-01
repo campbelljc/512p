@@ -9,7 +9,7 @@ import java.util.*;
 import javax.jws.WebService;
 
 
-@WebService(endpointInterface = "server.ws.ResourceManager", targetNamespace = "serverrm")
+@WebService(endpointInterface = "server.ws.ResourceManager")
 public class ResourceManagerImpl implements server.ws.ResourceManager {
     
     protected RMHashtable m_itemHT = new RMHashtable();
@@ -89,7 +89,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     }
 
     // Reserve an item.
-    protected boolean reserveItem(int id, int customerId, 
+  /*  protected boolean reserveItem(int id, int customerId, 
                                   String key, String location) {
         Trace.info("RM::reserveItem(" + id + ", " + customerId + ", " 
                 + key + ", " + location + ") called.");
@@ -126,7 +126,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         }
     }
     
-    
+    */
     // Flight operations //
     
     // Create a new flight, or add seats to existing flight.
@@ -412,21 +412,82 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     // Add flight reservation to this customer.  
     @Override
     public boolean reserveFlight(int id, int customerId, int flightNumber) {
-        return reserveItem(id, customerId, 
-                Flight.getKey(flightNumber), String.valueOf(flightNumber));
+  //      return reserveItem(id, customerId, 
+    //            Flight.getKey(flightNumber), String.valueOf(flightNumber));
+	
+		String key = Flight.getKey(flightNumber);
+		String location = String.valueOf(flightNumber);
+		
+	    ReservableItem item = (ReservableItem) readData(id, key);
+	    if (item == null) {
+	        Trace.warn("RM::reserveFlight(" + id + ", " + customerId + ", " 
+	                + key + ", " + location + ") failed: item doesn't exist.");
+	        return false;
+	    } else if (item.getCount() == 0) {
+	        Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", " 
+	                + key + ", " + location + ") failed: no more items.");
+	        return false;
+	    } else {            
+	        // Decrease the number of available items in the storage.
+	        item.setCount(item.getCount() - 1);
+	        item.setReserved(item.getReserved() + 1);
+        
+	        Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", " 
+	                + key + ", " + location + ") OK.");
+	        return true;
+		}
     }
 
     // Add car reservation to this customer. 
     @Override
     public boolean reserveCar(int id, int customerId, String location) {
-        return reserveItem(id, customerId, Car.getKey(location), location);
+     //   return reserveItem(id, customerId, Car.getKey(location), location);
+		String key = Car.getKey(location);
+        ReservableItem item = (ReservableItem) readData(id, key);
+        if (item == null) {
+            Trace.warn("RM::reserveCar(" + id + ", " + customerId + ", " 
+                    + key + ", " + location + ") failed: item doesn't exist.");
+            return false;
+        } else if (item.getCount() == 0) {
+            Trace.warn("RM::reserveCar(" + id + ", " + customerId + ", " 
+                    + key + ", " + location + ") failed: no more items.");
+            return false;
+        } else {            
+            // Decrease the number of available items in the storage.
+            item.setCount(item.getCount() - 1);
+            item.setReserved(item.getReserved() + 1);
+            
+            Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", " 
+                    + key + ", " + location + ") OK.");
+            return true;
+		}
     }
 
     // Add room reservation to this customer. 
     @Override
     public boolean reserveRoom(int id, int customerId, String location) {
-        return reserveItem(id, customerId, Room.getKey(location), location);
-    }
+    //    return reserveItem(id, customerId, Room.getKey(location), location);
+		String key = Room.getKey(location);
+	    ReservableItem item = (ReservableItem) readData(id, key);
+	    if (item == null) {
+	        Trace.warn("RM::reserveRoom(" + id + ", " + customerId + ", " 
+	                + key + ", " + location + ") failed: item doesn't exist.");
+	        return false;
+	    } else if (item.getCount() == 0) {
+	        Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", " 
+	                + key + ", " + location + ") failed: no more items.");
+	        return false;
+	    } else {            
+	        // Decrease the number of available items in the storage.
+	        item.setCount(item.getCount() - 1);
+	        item.setReserved(item.getReserved() + 1);
+        
+	        Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", " 
+	                + key + ", " + location + ") OK.");
+	        return true;
+		}
+	
+	}
     
 
     // Reserve an itinerary.

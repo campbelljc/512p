@@ -47,6 +47,24 @@
         </annotationProcessing>
     </target>
 
+    <target name="build-main" depends="setup">
+        <annotationProcessing
+                fork="true"
+                debug="true"
+                verbose="${verbose}"
+                destdir="${basedir}/build/"
+                srcdir="${basedir}/src"
+                includes="main/**"
+                sourceDestDir="${basedir}/build/"
+                procOnly="false"
+                sourcepath="${basedir}/src">
+            <classpath>
+                <path refid="jaxws.classpath"/>
+                <pathelement location="${basedir}/src"/>
+            </classpath>
+        </annotationProcessing>
+    </target>
+
     <target name="create-war">
         <war 
             warfile="${basedir}/build/war/${service.name}.war" 
@@ -69,12 +87,12 @@
             dest="${basedir}/webapps/${service.name}"/>
     </target>
     
-    <target name="start-tomcat">
+    <target name="start-tomcat" depends="build-main">
         <echo message="Starting Tomcat and deploying service ... "/>
-        <java fork="true" classname="server.ws.Main">
+        <java fork="true" classname="main.Main">
             <classpath>
                 <path refid="jaxws.classpath"/>
-                <pathelement location="${basedir}/build/classes"/>
+                <pathelement location="${basedir}/build/"/>
             </classpath>
             <jvmarg value="-Djava.security.policy=${basedir}/etc/server.policy"/>
             <arg value="${service.name}"/>
@@ -161,12 +179,12 @@
         </annotationProcessing>
     </target>
 	
-    <target name="start-tomcatm">
+    <target name="start-tomcatm" depends="build-main">
         <echo message="Starting Tomcat and deploying service ... "/>
-        <java fork="true" classname="server.ws.Main">
+        <java fork="true" classname="main.Main">
             <classpath>
                 <path refid="jaxws.classpath"/>
-                <pathelement location="${basedir}/build/classes"/>
+                <pathelement location="${basedir}/build/"/>
             </classpath>
             <jvmarg value="-Djava.security.policy=${basedir}/etc/server.policy"/>
             <arg value="${service.name2}"/>
@@ -175,7 +193,7 @@
         </java>
     </target>
 
-  <!--//  <target name="create-war-middle">
+    <target name="create-war-middle">
         <war 
             warfile="${basedir}/build/war/${service.name2}.war" 
             webxml="etc2/web.xml">
@@ -196,15 +214,14 @@
             src="${basedir}/build/war/${service.name2}.war"
             dest="${basedir}/webapps/${service.name2}"/>
     </target>
-	 <//-->
 	
     <target name="middle" depends="setup">
         <antcall target="clean"/>
 <!--//>		<antcall target="build-client"/> <//-->
 		<antcall target="build-server"/>
         <antcall target="build-middle"/>
-        <antcall target="create-war"/>
-        <antcall target="deploy-war"/>
+        <antcall target="create-war-middle"/>
+        <antcall target="deploy-war-middle"/>
         <antcall target="start-tomcatm"/>
     </target>
     

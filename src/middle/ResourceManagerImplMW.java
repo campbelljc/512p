@@ -12,7 +12,7 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
-@WebService(endpointInterface = "server.ws.ResourceManager", targetNamespace = "serverrm")
+@WebService(endpointInterface = "server.ws.ResourceManager")
 public class ResourceManagerImplMW implements server.ws.ResourceManager {
     
     protected RMHashtable m_itemHT = new RMHashtable();
@@ -107,19 +107,23 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
         return value;
     }
 
-    // Reserve an item.
-    protected boolean reserveItem(int id, int customerId, 
-                                  String key, String location) {
-        Trace.info("RM::reserveItem(" + id + ", " + customerId + ", " 
-                + key + ", " + location + ") called.");
+	protected Customer getCustomer(int id, int customerId) {
         // Read customer object if it exists (and read lock it).
         Customer cust = (Customer) readData(id, Customer.getKey(customerId));
         if (cust == null) {
-            Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", " 
-                   + key + ", " + location + ") failed: customer doesn't exist.");
-            return false;
+            Trace.warn("RM::getCustomer(" + id + ", " + customerId + ") failed: customer doesn't exist.");
+            return null;
         } 
-        
+		return cust;
+	}
+    // Reserve an item.
+   /* protected boolean reserveItem(int id, int customerId, 
+                                  String key, String location) {
+        Trace.info("RM::reserveItem(" + id + ", " + customerId + ", " 
+                + key + ", " + location + ") called.");
+        Customer cust = getCustomer(id, customerId);
+		if (cust == null)
+			return false;
         // Check if the item is available.
         ReservableItem item = (ReservableItem) readData(id, key);
         if (item == null) {
@@ -143,7 +147,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
                     + key + ", " + location + ") OK.");
             return true;
         }
-    }
+    }*/
     
     
     // Flight operations //
@@ -155,9 +159,6 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
     public boolean addFlight(int id, int flightNumber, 
                              int numSeats, int flightPrice) {
 		// start a client to talk to the Flight RM.
-		System.out.println("Received request to add new flight, sending to server...");
-		if (flightClient == null) System.out.println("Flight client Null");
-		if (flightClient.proxy == null) System.out.println("Proxy null");
         return flightClient.proxy.addFlight(id, flightNumber, numSeats, flightPrice);
     }
 
@@ -339,20 +340,100 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
     // Add flight reservation to this customer.  
     @Override
     public boolean reserveFlight(int id, int customerId, int flightNumber) {
-        return reserveItem(id, customerId, 
-                Flight.getKey(flightNumber), String.valueOf(flightNumber));
+  //      return reserveItem(id, customerId, 
+    //            Flight.getKey(flightNumber), String.valueOf(flightNumber));
+		
+		String key = Flight.getKey(flightNumber);
+		String location = String.valueOf(flightNumber);
+		
+        Trace.info("RM::reserveFlight(" + id + ", " + customerId + ", " 
+                + key + ", " + flightNumber + ") called.");
+        Customer cust = getCustomer(id, customerId);
+		if (cust == null)
+			return false;
+		
+        // Check if the item is available.
+		boolean reserved = flightClient.proxy.reserveFlight(id, customerId, flightNumber);
+		if (reserved)
+		{
+			int price = flightClient.proxy.queryFlightPrice(id, flightNumber);
+            cust.reserve(key, location, price);
+            writeData(id, cust.getKey(), cust);
+            Trace.warn("RM::reserveFlight(" + id + ", " + customerId + ", " 
+                    + key + ", " + location + ") OK.");
+			return true;
+		}
+		else
+		{
+            Trace.warn("RM::reserveFlight(" + id + ", " + customerId + ", " 
+                    + key + ", " + location + ") failed.");
+			return false;
+		}
     }
 
     // Add car reservation to this customer. 
     @Override
     public boolean reserveCar(int id, int customerId, String location) {
-        return reserveItem(id, customerId, Car.getKey(location), location);
+  //      return reserveItem(id, customerId, Car.getKey(location), location);
+		
+		String key = Car.getKey(location);
+		
+        Trace.info("RM::reserveCar(" + id + ", " + customerId + ", " 
+                + key + ", " + location + ") called.");
+        Customer cust = getCustomer(id, customerId);
+		if (cust == null)
+			return false;
+		
+        // Check if the item is available.
+		boolean reserved = carClient.proxy.reserveCar(id, customerId, location);
+		if (reserved)
+		{
+			int price = carClient.proxy.queryCarsPrice(id, location);
+            Trace.info(cust.reserve(key, location, price));
+            writeData(id, cust.getKey(), cust);
+            Trace.warn("RM::reserveCar(" + id + ", " + customerId + ", " 
+                    + key + ", " + location + ") OK.");
+			return true;
+		}
+		else
+		{
+            Trace.warn("RM::reserveCar(" + id + ", " + customerId + ", " 
+                    + key + ", " + location + ") failed.");
+			return false;
+		}
     }
 
     // Add room reservation to this customer. 
     @Override
     public boolean reserveRoom(int id, int customerId, String location) {
-        return reserveItem(id, customerId, Room.getKey(location), location);
+		String key = Room.getKey(location);
+		
+        Trace.info("RM::reserveRoom(" + id + ", " + customerId + ", " 
+                + key + ", " + location + ") called.");
+        Customer cust = getCustomer(id, customerId);
+		if (cust == null)
+			return false;
+		
+        // Check if the item is available.
+		boolean reserved = roomClient.proxy.reserveRoom(id, customerId, location);
+		if (reserved)
+		{
+			int price = roomClient.proxy.queryRoomsPrice(id, location);
+            cust.reserve(key, location, price);
+            writeData(id, cust.getKey(), cust);
+            Trace.warn("RM::reserveRoom(" + id + ", " + customerId + ", " 
+                    + key + ", " + location + ") OK.");
+			return true;
+		}
+		else
+		{
+            Trace.warn("RM::reserveRoom(" + id + ", " + customerId + ", " 
+                    + key + ", " + location + ") failed.");
+			return false;
+		}
+		
+		
+    //    return reserveItem(id, customerId, Room.getKey(location), location);
     }
     
 

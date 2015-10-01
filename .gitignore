@@ -3,3 +3,5 @@ webapps/
 *.class
 p1.pdf
 /bin/
+.classpath
+.project

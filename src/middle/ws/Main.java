@@ -12,7 +12,7 @@ public class Main {
     public static void main(String[] args) 
     throws Exception {
     
-        if (args.length != 6) {
+        if (args.length != 3) {
             System.out.println(
                 "Usage: java Main <service-name> <service-port> <deploy-dir>");
             System.exit(-1);
@@ -21,9 +21,6 @@ public class Main {
         String serviceName = args[0];
         int port = Integer.parseInt(args[1]);
         String deployDir = args[2];
-	String rm1 = args[3]; // test
-	String rm2 = args[4];
-	String rm3 = args[5];
     
         Tomcat tomcat = new Tomcat();
         tomcat.setPort(port);
@@ -38,14 +35,9 @@ public class Main {
         tomcat.addWebapp("/" + serviceName, 
                 new File(deployDir + "/" + serviceName).getAbsolutePath());
 
-        tomcat.start();
-
-	Server middlewareServer = tomcat.getServer();
-	Service rmImplMW = middlewareServer.findServices()[0];
-	System.out.println("***********Service: " + rmImplMW.getName());
+		tomcat.enableNaming();
 	
-	System.out.println(tomcat.getServletContext().getInitParameter("rm1"));
-((ResourceManagerImplMW)rmImplMW).setRMs(rm1, rm2, rm3);
+        tomcat.start();
 
         tomcat.getServer().await();
     }

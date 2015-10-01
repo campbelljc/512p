@@ -8,13 +8,12 @@ package middle;
 import java.util.*;
 import javax.jws.WebService;
 import server.*;
-import client.*;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
-@WebService(endpointInterface = "server.ws.ResourceManager")
-public class ResourceManagerImplMW extends server.ResourceManagerImpl {
+@WebService(endpointInterface = "server.ws.ResourceManager", targetNamespace = "serverrm")
+public class ResourceManagerImplMW implements server.ws.ResourceManager {
     
     protected RMHashtable m_itemHT = new RMHashtable();
     	
@@ -26,9 +25,10 @@ public class ResourceManagerImplMW extends server.ResourceManagerImpl {
 		try {
 			Context env = (Context) new InitialContext().lookup("java:comp/env");
 
-		 	flightClient = new WSClient("rm", (String) env.lookup("flight-service-host"), (Integer) env.lookup("flight-service-port")); // name, host, port
-		 	carClient = new WSClient("rm", (String) env.lookup("car-service-host"), (Integer) env.lookup("car-service-port")); // name, host, port
-		 	roomClient = new WSClient("rm", (String) env.lookup("room-service-host"), (Integer) env.lookup("room-service-port")); // name, host, port			
+			System.out.println("*** Setting up clients ***");
+		 	flightClient = new middle.WSClient("rm", (String) env.lookup("flight-service-host"), (Integer) env.lookup("flight-service-port")); // name, host, port
+		 	carClient = new middle.WSClient("rm", (String) env.lookup("car-service-host"), (Integer) env.lookup("car-service-port")); // name, host, port
+		 	roomClient = new middle.WSClient("rm", (String) env.lookup("room-service-host"), (Integer) env.lookup("room-service-port")); // name, host, port			
 		} catch(NamingException e) {
 			System.out.println(e);
 		}
@@ -155,6 +155,9 @@ public class ResourceManagerImplMW extends server.ResourceManagerImpl {
     public boolean addFlight(int id, int flightNumber, 
                              int numSeats, int flightPrice) {
 		// start a client to talk to the Flight RM.
+		System.out.println("Received request to add new flight, sending to server...");
+		if (flightClient == null) System.out.println("Flight client Null");
+		if (flightClient.proxy == null) System.out.println("Proxy null");
         return flightClient.proxy.addFlight(id, flightNumber, numSeats, flightPrice);
     }
 

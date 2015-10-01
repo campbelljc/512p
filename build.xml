@@ -130,6 +130,17 @@
     <target name="help">
         <echo message="server:  Builds and deploys the service"/>
         <echo message="client:  Builds and runs the client"/>
+        <echo message="middle:  Builds and runs the middleware"/>
+    </target>
+
+   <target name="generate-middle" depends="setup">
+        <wsimport
+                quiet="true"
+                keep="true"
+                destdir="${basedir}/build/classes"
+                package="middle"
+                wsdl="http://${service.host}:${service.port}/${service.name}/service?wsdl">
+        </wsimport>
     </target>
 		
     <target name="build-middle" depends="setup, generate-middle">
@@ -152,29 +163,19 @@
 	
     <target name="start-tomcatm">
         <echo message="Starting Tomcat and deploying service ... "/>
-        <java fork="true" classname="middle.ws.Main">
+        <java fork="true" classname="server.ws.Main">
             <classpath>
                 <path refid="jaxws.classpath"/>
                 <pathelement location="${basedir}/build/classes"/>
             </classpath>
-            <jvmarg value="-Djava.security.policy=${basedir}/etc2/server.policy"/>
+            <jvmarg value="-Djava.security.policy=${basedir}/etc/server.policy"/>
             <arg value="${service.name2}"/>
             <arg value="${service.port2}"/>
             <arg value="${basedir}/webapps"/>
         </java>
     </target>
 
-   <target name="generate-middle" depends="setup">
-        <wsimport
-                quiet="true"
-                keep="true"
-                destdir="${basedir}/build/classes"
-                package="middle"
-                wsdl="http://${service.host}:${service.port}/${service.name}/service?wsdl">
-        </wsimport>
-    </target>
-
-    <target name="create-war-middle">
+  <!--//  <target name="create-war-middle">
         <war 
             warfile="${basedir}/build/war/${service.name2}.war" 
             webxml="etc2/web.xml">
@@ -195,14 +196,15 @@
             src="${basedir}/build/war/${service.name2}.war"
             dest="${basedir}/webapps/${service.name2}"/>
     </target>
-	
+	 <//-->
 	
     <target name="middle" depends="setup">
         <antcall target="clean"/>
-		<antcall target="build-client"/>
+<!--//>		<antcall target="build-client"/> <//-->
+		<antcall target="build-server"/>
         <antcall target="build-middle"/>
-        <antcall target="create-war-middle"/>
-        <antcall target="deploy-war-middle"/>
+        <antcall target="create-war"/>
+        <antcall target="deploy-war"/>
         <antcall target="start-tomcatm"/>
     </target>
     

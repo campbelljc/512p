@@ -9,7 +9,7 @@ import java.util.*;
 import javax.jws.WebService;
 
 
-@WebService(endpointInterface = "server.ws.ResourceManager")
+@WebService(endpointInterface = "server.ws.ResourceManager", targetNamespace = "serverrm")
 public class ResourceManagerImpl implements server.ws.ResourceManager {
     
     protected RMHashtable m_itemHT = new RMHashtable();

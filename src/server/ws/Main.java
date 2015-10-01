@@ -4,7 +4,6 @@ import java.io.File;
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.startup.Tomcat;
 
-
 public class Main {
 
     public static void main(String[] args) 
@@ -33,6 +32,7 @@ public class Main {
         tomcat.addWebapp("/" + serviceName, 
                 new File(deployDir + "/" + serviceName).getAbsolutePath());
 
+		tomcat.enableNaming();
         tomcat.start();
         tomcat.getServer().await();
     }

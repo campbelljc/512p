@@ -1,13 +1,18 @@
 package middle.tcp;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 
 public class ConnectionHandler implements Runnable {
+	
+	private static final String FLIGHT_STRING = "Flight";
+	private static final String ROOM_STRING = "Room";
+	private static final String CAR_STRING = "Car";
+	private enum ResourceManager {
+		FLIGHT, ROOM, CAR;
+	}
 
 	Socket clientSocket;
 	
@@ -18,7 +23,7 @@ public class ConnectionHandler implements Runnable {
 	private int flightRMPort;
 	private int carRMPort;
 	private int roomRMPort;
-	
+		
 	public ConnectionHandler(Socket clientSocket, String[] rmHostanmes, int[] rmPorts){
 		this.clientSocket = clientSocket;
 		
@@ -32,30 +37,64 @@ public class ConnectionHandler implements Runnable {
 		roomRMPort = rmPorts[2];
 	}
 	
+	
+	public Object sendToRM(ResourceManager rm, Object... message) throws IOException, ClassNotFoundException{
+		Socket rmSocket = null;
+		switch(rm) {
+		case FLIGHT:
+			rmSocket = new Socket(flightRMHostname, flightRMPort);
+		case ROOM:
+			rmSocket = new Socket(roomRMHostname, roomRMPort);
+		case CAR:
+			rmSocket = new Socket(carRMHostname, carRMPort);
+		}
+		ObjectInputStream rmInput = new ObjectInputStream(rmSocket.getInputStream());
+		ObjectOutputStream rmOutput = new ObjectOutputStream(rmSocket.getOutputStream());
+		rmOutput.writeObject(message);
+		Object rmInputObj = rmInput.readObject();
+		rmInput.close();
+		rmOutput.close();
+		rmSocket.close();
+		return rmInputObj;
+	}
+
 	@Override
 	public void run() {
 		try {
-			Socket rm;
+			// get thread ID for stamping messages
+			String threadId = Long.toString(Thread.currentThread().getId());
 			
-			BufferedReader clientInput = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-			BufferedReader rmInput;
+			// get client in/out streams
+			ObjectInputStream clientInput = new ObjectInputStream(clientSocket.getInputStream());
+			Object[] clientInputObj;
+			String clientInputMethodName;
+			ObjectOutputStream clientOutput = new ObjectOutputStream(clientSocket.getOutputStream());
+			Object clientOutputResponse = null;
 			
-			PrintWriter clientOutput = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
-			PrintWriter rmOutput;
-
-			String rmInputLine;
-			String clientInputLine = clientInput.readLine();
+			// keep talking to the client until they leave us
+			while((clientInputObj = (Object[])clientInput.readObject()) != null){
+				clientInputMethodName = (String) clientInputObj[1];
+				System.out.println( threadId + "| Client request: " + clientInputMethodName);
+				
+				if(clientInputMethodName.contains(FLIGHT_STRING)){
+					clientOutputResponse = sendToRM(ResourceManager.FLIGHT, clientInputObj);
+				}
+				else if(clientInputMethodName.contains(ROOM_STRING)){
+					clientOutputResponse = sendToRM(ResourceManager.ROOM, clientInputObj);
+				}
+				else if(clientInputMethodName.contains(CAR_STRING)){
+					clientOutputResponse = sendToRM(ResourceManager.CAR, clientInputObj);
+				}
+				else{
+					//TODO: middleware work
+				}
+				clientOutput.writeObject(clientOutputResponse);
+			}
+			clientInput.close();
+			clientOutput.close();
 			clientSocket.close();
 			
-			System.out.println(clientInputLine);
-			
-			rm = new Socket(flightRMHostname, flightRMPort);
-			rmInput = new BufferedReader(new InputStreamReader(rm.getInputStream()));
-			rmOutput = new PrintWriter(new OutputStreamWriter(rm.getOutputStream()));
-			
-			rmOutput.println(clientInputLine);
-			rm.close();
-		} catch (IOException e) {
+		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}

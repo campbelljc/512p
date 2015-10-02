@@ -21,7 +21,18 @@ public class ConnectionHandler implements Runnable {
 			BufferedReader clientInput = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 			PrintWriter clientOutput = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
 
-			System.out.println(clientInput.readLine());			
+			// get the clients request
+			String clientInputString = clientInput.readLine();
+			
+			System.out.println("Request received: " + clientInputString);
+			// TODO: fulfill the request and get an appropriate response
+			
+			// TODO: send a useful response instead of this garbage
+			clientOutput.println("Request fulfilled.");
+			
+			// close the resources
+			clientInput.close();
+			clientOutput.close();
 			clientSocket.close();
 			
 		} catch (IOException e) {

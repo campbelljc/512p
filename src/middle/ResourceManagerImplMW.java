@@ -61,7 +61,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
     // Basic operations on ReservableItem //
     
     // Delete the entire item.
-    protected boolean deleteItem(int id, String key) {
+/*    protected boolean deleteItem(int id, String key) {
         Trace.info("RM::deleteItem(" + id + ", " + key + ") called.");
         ReservableItem curObj = (ReservableItem) readData(id, key);
         // Check if there is such an item in the storage.
@@ -81,10 +81,10 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
                 return false;
             }
         }
-    }
+    } */
     
     // Query the number of available seats/rooms/cars.
-    protected int queryNum(int id, String key) {
+  /*  protected int queryNum(int id, String key) {
         Trace.info("RM::queryNum(" + id + ", " + key + ") called.");
         ReservableItem curObj = (ReservableItem) readData(id, key);
         int value = 0;  
@@ -93,10 +93,10 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
         }
         Trace.info("RM::queryNum(" + id + ", " + key + ") OK: " + value);
         return value;
-    }    
+    }    */
     
     // Query the price of an item.
-    protected int queryPrice(int id, String key) {
+/*    protected int queryPrice(int id, String key) {
         Trace.info("RM::queryCarsPrice(" + id + ", " + key + ") called.");
         ReservableItem curObj = (ReservableItem) readData(id, key);
         int value = 0; 
@@ -105,7 +105,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
         }
         Trace.info("RM::queryCarsPrice(" + id + ", " + key + ") OK: $" + value);
         return value;
-    }
+    }*/
 
 	protected Customer getCustomer(int id, int customerId) {
         // Read customer object if it exists (and read lock it).
@@ -288,13 +288,21 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
                 Trace.info("RM::deleteCustomer(" + id + ", " + customerId + "): " 
                         + "deleting " + reservedItem.getCount() + " reservations "
                         + "for item " + reservedItem.getKey());
-                ReservableItem item = 
-                        (ReservableItem) readData(id, reservedItem.getKey());
-                item.setReserved(item.getReserved() - reservedItem.getCount());
-                item.setCount(item.getCount() + reservedItem.getCount());
+				
+				String key = reservedItem.getKey();
+				if (key.contains("flight"))
+					flightClient.proxy.deleteReservationWithKey(id, key, reservedItem.getCount());
+				else if (key.contains("room"))
+					roomClient.proxy.deleteReservationWithKey(id, key, reservedItem.getCount());
+				else if (key.contains("car"))
+					carClient.proxy.deleteReservationWithKey(id, key, reservedItem.getCount());
+
+      //          ReservableItem item = 
+        //                (ReservableItem) readData(id, reservedItem.getKey());
+          //      item.setReserved(item.getReserved() - reservedItem.getCount());
+            //    item.setCount(item.getCount() + reservedItem.getCount());
                 Trace.info("RM::deleteCustomer(" + id + ", " + customerId + "): "
-                        + reservedItem.getKey() + " reserved/available = " 
-                        + item.getReserved() + "/" + item.getCount());
+                        + reservedItem.getKey());
             }
             // Remove the customer from the storage.
             removeData(id, cust.getKey());
@@ -302,6 +310,11 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
             return true;
         }
     }
+	
+	@Override
+	public void deleteReservationWithKey(int id, String key, int count) {
+		Trace.info("Should not be called!");
+	}
 
     // Return data structure containing customer reservation info. 
     // Returns null if the customer doesn't exist. 
@@ -441,7 +454,66 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
     @Override
     public boolean reserveItinerary(int id, int customerId, Vector flightNumbers,
                                     String location, boolean car, boolean room) {
-        return false;
+        
+		// check if everything is available first, so we don't have to rollback reservations.
+		for (int count = 0; count < flightNumbers.size(); count ++)
+		{
+			int flightNumber = Integer.parseInt((String)(flightNumbers.get(count)));
+			
+			if (queryFlight(id, flightNumber) == 0)
+			{
+				Trace.warn("No flights available with that flight number " + flightNumber);
+				return false;
+			}
+		}
+		if (car)
+		{
+			if (queryCars(id, location) == 0)
+			{
+				Trace.warn("No cars available with that location " + location);
+				return false;
+			}
+		}
+		if (room)
+		{
+			if (queryRooms(id, location) == 0)
+			{
+				Trace.warn("No rooms available with that location " + location);
+				return false;
+			}
+		}
+
+		for (int count = 0; count < flightNumbers.size(); count ++)
+		{
+			int flightNumber = Integer.parseInt((String)(flightNumbers.get(count)));
+			Trace.warn("Trying to reserve flight " + flightNumber + " with id: " + id);
+			if (!reserveFlight(id, customerId, flightNumber))
+			{
+				Trace.warn("Failed.");
+				return false;
+			}
+		}
+		if (car)
+		{
+			Trace.warn("Trying to reserve car with id: " + id + " and location: " + location);
+			if (!reserveCar(id, customerId, location))
+			{
+				Trace.warn("Failed.");
+				return false;
+			}
+		}
+		if (room)
+		{
+			Trace.warn("Trying to reserve room with id: " + id + " and location: " + location);
+			if (!reserveRoom(id, customerId, location))
+			{
+				Trace.warn("Failed.");
+				return false;
+			}
+		}
+		Trace.warn("Itinerary reservation successful.");
+		
+		return true;
     }
 
 }

@@ -66,9 +66,48 @@ or specify any of them when launching ant from the command line (as below).
 
 ==========
 
-ant middle -Dservice.name=mw -Dservice.port=9081 -Dservice.host=localhost
+Commands to launch everything:
+ant server -Dservice.name=rm -Dservice.port=9083
+ant server -Dservice.name=rm -Dservice.port=9084
+ant server -Dservice.name=rm -Dservice.port=9085
+ant middle -Dservice.port2=9082 -Dservice.port=9083 -Dservice.name2=mw
+ant client -Dservice.port=9082 -Dservice.name=mw
 
+Tests
 
+1) deleteCustomer:
+newcustomer, 1
+newroom, 1, room-1, 10, 10
+reserveroom, 1, custid, room-1
+queryroom, 1, room-1
+deletecustomer, 1, custid
+queryroom, 1, room-1
+
+2) itinerary:
+newcustomer, 1
+newflight, 1, 55, 10, 10
+newflight, 1, 66, 10, 10
+newroom, 1, montreal, 10, 10
+newcar, 1, montreal, 10, 10
+itinerary, 1, custid, 55, 66, montreal, true, true
+querycustomer, 1, custid
+queryflight, 1, 55
+queryflight, 1, 66
+queryroom, 1, montreal
+querycar, 1, montreal
+deletecustomer, 1, custid
+querycustomer, 1, custid
+queryflight, 1, 55
+queryflight, 1, 66
+queryroom, 1, montreal
+querycar, 1, montreal
+
+3) failed itinerary:
+newcustomer, 1
+newflight, 1, 55, 10, 10
+queryflight, 1, 55
+itinerary, 1, custid, 55, boston, true, true
+queryflight, 1, 55
 
 Instructions:
 

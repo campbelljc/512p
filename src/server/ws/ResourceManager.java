@@ -117,6 +117,9 @@ public interface ResourceManager {
     @WebMethod
     public boolean deleteCustomer(int id, int customerId); 
 
+	@WebMethod
+	public void deleteReservationWithKey(int id, String key, int count);
+
     /* Return a bill. */
     @WebMethod
     public String queryCustomerInfo(int id, int customerId); 

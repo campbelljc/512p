@@ -72,6 +72,7 @@ ant server -Dservice.name=rm -Dservice.port=9084
 ant server -Dservice.name=rm -Dservice.port=9085
 ant middle -Dservice.port2=9082 -Dservice.port=9083 -Dservice.name2=mw
 ant client -Dservice.port=9082 -Dservice.name=mw
+ant client -Dservice.port=9082 -Dservice.name=mw
 
 Tests
 

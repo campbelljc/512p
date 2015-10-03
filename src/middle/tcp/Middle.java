@@ -5,6 +5,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 public class Middle {
+	
+	ResouceManager resourceManager;
 
 	public static void main(String[] args){
 		try{
@@ -28,7 +30,7 @@ public class Middle {
 			// run server forever, with each client getting their own thread
 			while(true){
 				Socket clientSocket = serverSocket.accept();
-				new ConnectionHandler(clientSocket, hostnames, ports).run();
+				new ConnectionHandler(clientSocket, hostnames, ports, resourceManager).run();
 			}
 
 		} catch(Exception e) {

@@ -1,45 +1,51 @@
 package server.tcp;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.lang.reflect.Method;
 import java.net.Socket;
+import java.util.Arrays;
 
 public class ConnectionHandler implements Runnable {
 
 	Socket clientSocket;
 
-	public ConnectionHandler(Socket clientSocket){
+	private ResourceManager resourceManager;
+
+	public ConnectionHandler(Socket clientSocket, ResourceManager resourceManager){
 		this.clientSocket = clientSocket;
+		this.resourceManager = resourceManager;
 	}
 
 	@Override
 	public void run() {
 		try {
-			BufferedReader clientInput = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-			PrintWriter clientOutput = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
 
-			// get the clients request
-			String clientInputString = clientInput.readLine();
-			
-			System.out.println("Request received: " + clientInputString);
-			// TODO: fulfill the request and get an appropriate response
-			
-			// TODO: send a useful response instead of this garbage
-			clientOutput.println("Request fulfilled.");
-			
-			// close the resources
+			// get client in/out streams
+			ObjectInputStream clientInput = new ObjectInputStream(clientSocket.getInputStream());
+			Object[] clientInputObj;
+			String clientInputMethodName;
+			ObjectOutputStream clientOutput = new ObjectOutputStream(clientSocket.getOutputStream());
+			Object clientOutputResponse = null;
+
+			// keep talking to the client until they leave us
+			while((clientInputObj = (Object[])clientInput.readObject()) != null){
+				clientInputMethodName = (String) clientInputObj[0];
+				
+				Class<?> c = Class.forName("ResourceManager");
+				Method method = c.getDeclaredMethod (clientInputMethodName);
+				method.invoke (resourceManager, Arrays.copyOfRange(clientInputObj, 1, clientInputObj.length-1));
+				clientOutput.writeObject(clientOutputResponse);
+			}
 			clientInput.close();
 			clientOutput.close();
 			clientSocket.close();
-			
-		} catch (IOException e) {
+
+		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
 	}
-
+	
 }

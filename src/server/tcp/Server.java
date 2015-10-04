@@ -6,26 +6,31 @@ import java.net.Socket;
 
 public class Server {
 	
-	public static void main(String[] args) throws Exception{
-		int port = Integer.parseInt(args[0]);
+	public static void main(String[] args){
+		try{
+			ServerSocket serverSocket = new ServerSocket(Integer.parseInt(args[0]));
+			ResourceManager rm = new ResourceManager();
 
-		ServerSocket serverSocket = new ServerSocket(port);
-		
-		// closes the socket on program shutdown
-		Runtime.getRuntime().addShutdownHook(new Thread() {
-			public void run() {
-				try {
-					serverSocket.close();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+			// closes the socket on program shutdown
+			Runtime.getRuntime().addShutdownHook(new Thread() {
+				public void run() {
+					try {
+						serverSocket.close();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				}
+			});
+
+			// run server forever, with each client getting their own thread
+			while(true){
+				Socket clientSocket = serverSocket.accept();
+				new ConnectionHandler(clientSocket, rm).run();
 			}
-		});
-		
-		while(true){
-			Socket clientSocket = serverSocket.accept();
-			new ConnectionHandler(clientSocket).run();
+
+		} catch(Exception e) {
+			e.printStackTrace();
 		}
 	}
 }

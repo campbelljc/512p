@@ -217,12 +217,110 @@
 	
     <target name="middle" depends="setup">
         <antcall target="clean"/>
-<!--//>		<antcall target="build-client"/> <//-->
 		<antcall target="build-server"/>
         <antcall target="build-middle"/>
         <antcall target="create-war-middle"/>
         <antcall target="deploy-war-middle"/>
         <antcall target="start-tomcatm"/>
+    </target>
+	
+	<!--// TCP targets <//-->
+	
+    <target name="build-client-tcp" depends="setup">
+        <javac
+                fork="true"
+                srcdir="${basedir}/src"
+                destdir="${basedir}/build/classes"
+                includes="client/tcp/**">
+            <classpath refid="jaxws.classpath"/>
+        </javac>
+    </target>
+	
+	<target name="client-tcp" depends="build-client-tcp">
+        <java classname="client.tcp.Client">
+            <classpath>
+                <path refid="jaxws.classpath"/>
+                <pathelement location="${basedir}/build/classes"/>
+            </classpath>
+            <arg value="${service.name}"/>
+            <arg value="${service.host}"/>
+            <arg value="${service.port}"/>
+		</java>
+	</target>
+	
+    <target name="build-server-tcp" depends="setup">
+        <annotationProcessing
+                fork="true"
+                debug="true"
+                verbose="${verbose}"
+                destdir="${basedir}/build/classes"
+                srcdir="${basedir}/src"
+                includes="server/tcp/**"
+                sourceDestDir="${basedir}/build/classes"
+                procOnly="false"
+                sourcepath="${basedir}/src">
+            <classpath>
+                <path refid="jaxws.classpath"/>
+                <pathelement location="${basedir}/src"/>
+            </classpath>
+        </annotationProcessing>
+    </target>
+	
+    <target name="start-server-tcp">
+        <echo message="Starting server.tcp.Server ... "/>
+        <java fork="true" classname="server.tcp.Server">
+            <classpath>
+                <path refid="jaxws.classpath"/>
+                <pathelement location="${basedir}/build/"/>
+            </classpath>
+            <jvmarg value="-Djava.security.policy=${basedir}/etc/server.policy"/>
+            <arg value="${service.name}"/>
+            <arg value="${service.port}"/>
+        </java>
+    </target>
+	
+    <target name="server-tcp" depends="setup">
+        <antcall target="clean"/>
+        <antcall target="build-server-tcp"/>
+        <antcall target="start-server-tcp"/>        
+    </target>
+	
+    <target name="build-middle" depends="setup">
+        <annotationProcessing
+                fork="true"
+                debug="true"
+                verbose="${verbose}"
+                destdir="${basedir}/build/classes"
+                srcdir="${basedir}/src"
+                includes="middle/tcp/**"
+                sourceDestDir="${basedir}/build/classes"
+                procOnly="false"
+                sourcepath="${basedir}/src">
+            <classpath>
+                <path refid="jaxws.classpath"/>
+                <pathelement location="${basedir}/src"/>
+            </classpath>
+        </annotationProcessing>
+    </target>
+	
+    <target name="start-middle-tcp">
+        <echo message="Starting middle.tcp.Middle ... "/>
+        <java fork="true" classname="middle.tcp.Middle">
+            <classpath>
+                <path refid="jaxws.classpath"/>
+                <pathelement location="${basedir}/build/"/>
+            </classpath>
+            <jvmarg value="-Djava.security.policy=${basedir}/etc/server.policy"/>
+            <arg value="${service.name}"/>
+            <arg value="${service.port}"/>
+        </java>
+    </target>
+	
+    <target name="middle-tcp" depends="setup">
+        <antcall target="clean"/>
+		<antcall target="build-server-tcp"/>
+        <antcall target="build-middle-tcp"/>
+        <antcall target="start-middle-tcp"/>
     </target>
     
 </project>

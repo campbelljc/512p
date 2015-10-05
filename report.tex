@@ -9,9 +9,11 @@
 
 \section{Web Services}
 
-The middleware service was positioned between the client and resource manager (RM) servers. It receives requests from the client, determines the nature of the request, and forwards the request to the relevant resource manager server. It is also responsible for processing all operations related to customer data, communicating if necessary with the server depending on the operation (e.g. for the deleteCustomer or reserve methods).
+The middleware service was positioned between the client and resource manager (RM) servers. It receives requests from the client, determines the nature of the request, and forwards the request to the relevant resource manager server. It is also responsible for processing all operations related to customer data, communicating if necessary with the server depending on the operation.
 
-Implementation - The middleware was put into a new package.
+Implementation - The middleware was put into a new package, with its own implementation of the ResourceManager class. The implementation maintains one WSClient instance for each resource manager (flight, car, and room). Each method involving data specifically related to one of flight, car, or room will use the relevant WSClient instance to invoke the same method on the implicated resource manager.
+
+The middleware also maintains by itself all customer-related data in a hashtable. Methods that involve only customer data are processed directly at the middleware layer without any connection to a RM. Methods that involve both customer data and flight/car/room data, such as the reservation methods, or deleteCustomer, involve both processing by the middleware layer and connections to the appropriate resource managers.
 
 \section{TCP}
 

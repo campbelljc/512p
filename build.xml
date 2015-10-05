@@ -242,9 +242,8 @@
                 <path refid="jaxws.classpath"/>
                 <pathelement location="${basedir}/build/classes"/>
             </classpath>
-            <arg value="${service.name}"/>
-            <arg value="${service.host}"/>
-            <arg value="${service.port}"/>
+            <arg value="${mw.host}"/>
+            <arg value="${mw.port}"/>
 		</java>
 	</target>
 	
@@ -271,10 +270,9 @@
         <java fork="true" classname="server.tcp.Server">
             <classpath>
                 <path refid="jaxws.classpath"/>
-                <pathelement location="${basedir}/build/"/>
+                <pathelement location="${basedir}/build/classes/"/>
             </classpath>
             <jvmarg value="-Djava.security.policy=${basedir}/etc/server.policy"/>
-            <arg value="${service.name}"/>
             <arg value="${service.port}"/>
         </java>
     </target>
@@ -308,16 +306,22 @@
         <java fork="true" classname="middle.tcp.Middle">
             <classpath>
                 <path refid="jaxws.classpath"/>
-                <pathelement location="${basedir}/build/"/>
+                <pathelement location="${basedir}/build/classes/"/>
             </classpath>
             <jvmarg value="-Djava.security.policy=${basedir}/etc/server.policy"/>
-            <arg value="${service.name}"/>
-            <arg value="${service.port}"/>
+            <arg value="${rm1.name}"/>
+            <arg value="${rm1.port}"/>
+            <arg value="${rm2.name}"/>
+            <arg value="${rm2.port}"/>
+            <arg value="${rm3.name}"/>
+            <arg value="${rm3.port}"/>
+            <arg value="${mw.port}"/>
         </java>
     </target>
 	
     <target name="middle-tcp" depends="setup">
         <antcall target="clean"/>
+		<antcall target="build-server"/>
 		<antcall target="build-server-tcp"/>
         <antcall target="build-middle-tcp"/>
         <antcall target="start-middle-tcp"/>

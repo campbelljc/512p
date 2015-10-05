@@ -25,12 +25,15 @@ public class Middle {
 					}
 				}
 			});
+			
+			System.out.println("Middleware started");
 
 			// run server forever, with each client getting their own thread
 			Socket clientSocket;
 			Thread clientThread;
 			while(true){
 				clientSocket = serverSocket.accept();
+				System.out.println("Client connected");
 				clientThread = new Thread(new ConnectionHandler(clientSocket, hostnames, ports, customerInfo));
 				clientThread.start();
 			}

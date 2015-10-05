@@ -6,25 +6,24 @@ import java.io.*;
 
 public class Client extends TCPClient {
 
-    public Client(String serviceName, String serviceHost, int servicePort) 
+    public Client(String serviceHost, int servicePort) 
     throws Exception {
-        super(serviceName, serviceHost, servicePort);
+        super(serviceHost, servicePort);
     }
 
     public static void main(String[] args) {
         try {
         
-            if (args.length != 3) {
-                System.out.println("Usage: MyClient <service-name> " 
+            if (args.length != 2) {
+                System.out.println("Usage: MyClient " 
                         + "<service-host> <service-port>");
                 System.exit(-1);
             }
             
-            String serviceName = args[0];
-            String serviceHost = args[1];
-            int servicePort = Integer.parseInt(args[2]);
+            String serviceHost = args[0];
+            int servicePort = Integer.parseInt(args[1]);
             
-            Client client = new Client(serviceName, serviceHost, servicePort);
+            Client client = new Client(serviceHost, servicePort);
             client.run();
             client.close();
             

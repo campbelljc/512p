@@ -66,13 +66,20 @@ or specify any of them when launching ant from the command line (as below).
 
 ==========
 
-Commands to launch everything:
+Commands to launch Pt1:
 ant server -Dservice.name=rm -Dservice.port=9083
 ant server -Dservice.name=rm -Dservice.port=9084
 ant server -Dservice.name=rm -Dservice.port=9085
 ant middle -Dservice.port2=9082 -Dservice.port=9083 -Dservice.name2=mw
 ant client -Dservice.port=9082 -Dservice.name=mw
 ant client -Dservice.port=9082 -Dservice.name=mw
+
+Commands to launch Pt2:
+ant server-tcp -Dservice.port=9083
+ant server-tcp -Dservice.port=9084
+ant server-tcp -Dservice.port=9085
+ant middle-tcp -Drm1.name=localhost -Drm1.port=9083 -Drm2.name=localhost -Drm2.port=9084 -Drm3.name=localhost -Drm3.port=9085 -Dmw.port=9082
+ant client-tcp -Dmw.host=localhost -Dmw.port=9082
 
 Tests
 

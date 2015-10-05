@@ -282,6 +282,7 @@ public class CustomerInfo {
 			} catch(Exception e){
 				Trace.warn("RM::reserveRoom(" + id + ", " + customerId + ", " 
 						+ key + ", " + location + ") failed.");
+				Trace.warn(e.getMessage());
 				return false;
 			}
 		}

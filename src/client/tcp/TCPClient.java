@@ -12,7 +12,7 @@ public class TCPClient {
 	ObjectInputStream serverIn;
 	ObjectOutputStream serverOut;
 	
-	public TCPClient(String serviceName, String serviceHost, int servicePort) throws Exception{
+	public TCPClient(String serviceHost, int servicePort) throws Exception{
 		serviceSocket = new Socket(serviceHost, servicePort);
 		serverOut = new ObjectOutputStream(serviceSocket.getOutputStream());
 		serverIn = new ObjectInputStream(serviceSocket.getInputStream());

@@ -43,7 +43,7 @@ public class ConnectionHandler implements Runnable {
 				try{
 					clientInputObj = (Object[])clientInput.readObject();
 				} catch(EOFException e){
-					// a rare case where exception-based flow control is necessary.
+					// a case where exception-based flow control is necessary.
 					break;
 				}
 				clientInputMethodName = (String) clientInputObj[0];

@@ -5,3 +5,7 @@ p1.pdf
 /bin/
 .classpath
 .project
+*.aux
+*.log
+*.synctex.gz
+*.pdf

@@ -25,9 +25,9 @@ public class TestIntegration {
 	
 	private static final String SERVICE_HOST = "localhost";
 	private static final int SERVICE_PORT = 8080;
-	private static final Object[][] COMMAND_LIST = new Object[][]{
+	private static final Object[][] COMMAND_LIST = {
 		// delete customer
-		{"newCustomer",1,},
+		{"newCustomer",1},
 		{"addRooms", 1, "room-1", 10, 10},
 		{"reserveRoom", 1, "custid", "room-1"},
 		{"queryRooms", 1, "room-1"},
@@ -97,6 +97,8 @@ public class TestIntegration {
 	@Test
 	public void testClientAPI() throws Exception {
 		TCPClient client = new TCPClient(SERVICE_HOST, SERVICE_PORT);
+		
+		
 		for(int i=0; i<RESULT_LIST.length; i++){
 			Object response = client.send(COMMAND_LIST[i]);
 			int custid;

@@ -98,10 +98,21 @@ public class TestIntegration {
 	public void testClientAPI() throws Exception {
 		TCPClient client = new TCPClient(SERVICE_HOST, SERVICE_PORT);
 		
-		
+		int custid = 0;
 		for(int i=0; i<RESULT_LIST.length; i++){
-			Object response = client.send(COMMAND_LIST[i]);
-			int custid;
+			Object[] command = COMMAND_LIST[i];
+			for (Object i : command)
+			{
+				if (i.instanceOf(String) && i.contains("custid"))
+				{
+					i = custid;
+				}
+			}
+			Object response = client.send(command]);
+			if (COMMAND_LIST[i].contains("newcustomer"))
+			{
+				custid = (int)response;
+			}
 			if(RESULT_LIST[i].equals("custid")){
 				custid = (int) response;
 			}

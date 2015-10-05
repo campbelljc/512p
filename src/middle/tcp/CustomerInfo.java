@@ -143,11 +143,11 @@ public class CustomerInfo {
 					String key = reservedItem.getKey();
 					try{
 						if (key.contains("flight"))
-							handler.sendToRM("deleteReservationWithKey", id, key, reservedItem.getCount());
+							handler.sendToRM("deleteFlightReservationWithKey", id, key, reservedItem.getCount());
 						else if (key.contains("room"))
-							handler.sendToRM("deleteReservationWithKey", id, key, reservedItem.getCount());
+							handler.sendToRM("deleteRoomReservationWithKey", id, key, reservedItem.getCount());
 						else if (key.contains("car"))
-							handler.sendToRM("deleteReservationWithKey", id, key, reservedItem.getCount());
+							handler.sendToRM("deleteCarReservationWithKey", id, key, reservedItem.getCount());
 					} catch(Exception e){
 						Trace.warn("RM::deleteCustomer(" + id + ", " 
 								+ customerId + ") failed: unable to delete reservations.");

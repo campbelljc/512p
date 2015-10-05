@@ -1,16 +1,17 @@
 \documentclass[11pt]{article}
 \parindent=0in
 \parskip=8pt
-%\geometry{left=2.54cm,right=2.54cm,top=2.54cm,bottom=3.54cm}
 \begin{document}
 \title{COMP 512 - Project Report - Part 1}
-\author{Luke Emery-Fertitta - Student ID: 260569374 \\ Jonathan Campbell - Student ID: TODO}
+\author{Luke Emery-Fertitta - Student ID: 260569374 \\ Jonathan Campbell - Student ID: 260481285}
 \date{2015 October 6}
 \maketitle
 
 \section{Web Services}
 
-Do this section please. \par
+The middleware service was positioned between the client and resource manager (RM) servers. It receives requests from the client, determines the nature of the request, and forwards the request to the relevant resource manager server. It is also responsible for processing all operations related to customer data, communicating if necessary with the server depending on the operation (e.g. for the deleteCustomer or reserve methods).
+
+Implementation - The middleware was put into a new package.
 
 \section{TCP}
 

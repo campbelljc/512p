@@ -113,10 +113,10 @@ public class TestIntegration {
 			{
 				custid = (int)response;
 			}
-			if(RESULT_LIST[i].equals("custid")){
-				custid = (int) response;
-			}
-			else{
+		//	if(RESULT_LIST[i].equals("custid")){
+		//		custid = (int) response;
+	//		}
+			if (!RESULT_LIST[i].contains("custid")){
 				assertEquals(RESULT_LIST[i], response);
 			}
 		}

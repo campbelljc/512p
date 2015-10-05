@@ -14,8 +14,8 @@ public class TCPClient {
 	
 	public TCPClient(String serviceName, String serviceHost, int servicePort) throws Exception{
 		serviceSocket = new Socket(serviceHost, servicePort);
-		serverIn = new ObjectInputStream(serviceSocket.getInputStream());
 		serverOut = new ObjectOutputStream(serviceSocket.getOutputStream());
+		serverIn = new ObjectInputStream(serviceSocket.getInputStream());
 	}
 	
 	public Object send(Object... message) throws IOException, ClassNotFoundException{

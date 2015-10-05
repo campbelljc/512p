@@ -5,6 +5,8 @@
 
 package server.tcp;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.*;
 
 import javax.jws.WebService;
@@ -49,6 +51,25 @@ public class ResourceManager implements server.ws.ResourceManager {
         }
     }
     
+    
+    public Object invokeMethodByName(String methodName, Object... args){
+    	Class thisClass = this.getClass();
+    	Method[] methods = thisClass.getDeclaredMethods();
+    	for(Method m : methods){
+    		if(m.getName().equals(methodName)){
+    			try {
+    				// TODO: bug is here -- doesn't like object[] for args
+					return (Object) m.invoke(this, args);
+				} catch (IllegalAccessException | IllegalArgumentException
+						| InvocationTargetException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+    		}
+    	}
+    	Trace.warn("Method '" + methodName + "' not found.");
+    	return null;
+    }
     
     // Basic operations on ReservableItem //
     

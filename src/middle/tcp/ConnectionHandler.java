@@ -1,5 +1,6 @@
 package middle.tcp;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -74,15 +75,19 @@ public class ConnectionHandler implements Runnable {
 		else if (methodName.contains("Car")){
 			if (carSocket == null)
 				carSocket = new Socket(carRMHostname, carRMPort);
-			rmSocket = flightSocket;
+			rmSocket = carSocket;
 		}
 		else{
 			Trace.error("Method: " + methodName + " cannot be resolved for proper resource manager dispatch.");
 		}
-		ObjectInputStream rmInput = new ObjectInputStream(rmSocket.getInputStream());
+		
 		ObjectOutputStream rmOutput = new ObjectOutputStream(rmSocket.getOutputStream());
+		ObjectInputStream rmInput = new ObjectInputStream(rmSocket.getInputStream());
+		
 		rmOutput.writeObject(message);
 		Object rmInputObj = rmInput.readObject();
+		// TODO: right now this is causing the server to close its end
+		// this defeats the purpose of only creating a socket once
 		rmInput.close();
 		rmOutput.close();
 		return rmInputObj;
@@ -91,20 +96,23 @@ public class ConnectionHandler implements Runnable {
 	@Override
 	public void run() {
 		try {
-			// get thread ID for stamping messages
-			String threadId = Long.toString(Thread.currentThread().getId());
-
 			// get client in/out streams
+			ObjectOutputStream clientOutput = new ObjectOutputStream(clientSocket.getOutputStream());
 			ObjectInputStream clientInput = new ObjectInputStream(clientSocket.getInputStream());
 			Object[] clientInputObj;
 			String clientInputMethodName;
-			ObjectOutputStream clientOutput = new ObjectOutputStream(clientSocket.getOutputStream());
 			Object clientOutputResponse = null;
 
 			// keep talking to the client until they leave us
-			while((clientInputObj = (Object[])clientInput.readObject()) != null){
+			while(true){
+				try{
+					clientInputObj = (Object[])clientInput.readObject();
+				} catch(EOFException e){
+					// a rare case where exception-based flow control is necessary.
+					break;
+				}
 				clientInputMethodName = (String) clientInputObj[0];
-				System.out.println( threadId + "| Client request: " + clientInputMethodName);
+				Trace.info("Client request: " + clientInputMethodName);
 
 				if(clientInputMethodName.contains("Flight") && !clientInputMethodName.contains("reserve")){
 					clientOutputResponse = sendToRM(clientInputObj);

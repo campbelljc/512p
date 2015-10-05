@@ -48,7 +48,7 @@ public class ConnectionHandler implements Runnable {
 				}
 				clientInputMethodName = (String) clientInputObj[0];
 				Trace.info("Client request: " + clientInputMethodName);
-				clientOutputResponse = resourceManager.invokeMethodByName(clientInputMethodName, Arrays.copyOfRange(clientInputObj, 1, clientInputObj.length-1));
+				clientOutputResponse = resourceManager.invokeMethodByName(clientInputMethodName, Arrays.copyOfRange(clientInputObj, 1, clientInputObj.length));
 				clientOutput.writeObject(clientOutputResponse);
 			}
 			clientInput.close();

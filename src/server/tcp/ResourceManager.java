@@ -53,7 +53,7 @@ public class ResourceManager implements server.ws.ResourceManager {
     
     
     public Object invokeMethodByName(String methodName, Object... args){
-    	Class thisClass = this.getClass();
+    	Class<? extends ResourceManager> thisClass = this.getClass();
     	Method[] methods = thisClass.getDeclaredMethods();
     	for(Method m : methods){
     		if(m.getName().equals(methodName)){
@@ -119,46 +119,7 @@ public class ResourceManager implements server.ws.ResourceManager {
         Trace.info("RM::queryPrice(" + id + ", " + key + ") OK: $" + value);
         return value;
     }
-
-    // Reserve an item.
-  /*  protected boolean reserveItem(int id, int customerId, 
-                                  String key, String location) {
-        Trace.info("RM::reserveItem(" + id + ", " + customerId + ", " 
-                + key + ", " + location + ") called.");
-        // Read customer object if it exists (and read lock it).
-        Customer cust = (Customer) readData(id, Customer.getKey(customerId));
-        if (cust == null) {
-            Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", " 
-                   + key + ", " + location + ") failed: customer doesn't exist.");
-            return false;
-        } 
-        
-        // Check if the item is available.
-        ReservableItem item = (ReservableItem) readData(id, key);
-        if (item == null) {
-            Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", " 
-                    + key + ", " + location + ") failed: item doesn't exist.");
-            return false;
-        } else if (item.getCount() == 0) {
-            Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", " 
-                    + key + ", " + location + ") failed: no more items.");
-            return false;
-        } else {
-            // Do reservation.
-            cust.reserve(key, location, item.getPrice());
-            writeData(id, cust.getKey(), cust);
-            
-            // Decrease the number of available items in the storage.
-            item.setCount(item.getCount() - 1);
-            item.setReserved(item.getReserved() + 1);
-            
-            Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", " 
-                    + key + ", " + location + ") OK.");
-            return true;
-        }
-    }
     
-    */
     // Flight operations //
     
     // Create a new flight, or add seats to existing flight.
@@ -205,44 +166,6 @@ public class ResourceManager implements server.ws.ResourceManager {
     public int queryFlightPrice(int id, int flightNumber) {
         return queryPrice(id, Flight.getKey(flightNumber));
     }
-
-    /*
-    // Returns the number of reservations for this flight. 
-    public int queryFlightReservations(int id, int flightNumber) {
-        Trace.info("RM::queryFlightReservations(" + id 
-                + ", #" + flightNumber + ") called.");
-        RMInteger numReservations = (RMInteger) readData(id, 
-                Flight.getNumReservationsKey(flightNumber));
-        if (numReservations == null) {
-            numReservations = new RMInteger(0);
-       }
-        Trace.info("RM::queryFlightReservations(" + id + 
-                ", #" + flightNumber + ") = " + numReservations);
-        return numReservations.getValue();
-    }
-    */
-    
-    /*
-    // Frees flight reservation record. Flight reservation records help us 
-    // make sure we don't delete a flight if one or more customers are 
-    // holding reservations.
-    public boolean freeFlightReservation(int id, int flightNumber) {
-        Trace.info("RM::freeFlightReservations(" + id + ", " 
-                + flightNumber + ") called.");
-        RMInteger numReservations = (RMInteger) readData(id, 
-                Flight.getNumReservationsKey(flightNumber));
-        if (numReservations != null) {
-            numReservations = new RMInteger(
-                    Math.max(0, numReservations.getValue() - 1));
-        }
-        writeData(id, Flight.getNumReservationsKey(flightNumber), numReservations);
-        Trace.info("RM::freeFlightReservations(" + id + ", " 
-                + flightNumber + ") OK: reservations = " + numReservations);
-        return true;
-    }
-    */
-
-
     // Car operations //
 
     // Create a new car location or add cars to an existing location.

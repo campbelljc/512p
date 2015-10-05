@@ -20,12 +20,23 @@ public class ConnectionHandler implements Runnable {
 	Socket clientSocket;
 	
 	Socket flightSocket = null;
+	private ObjectOutputStream flightRMOut = null;
+	private ObjectInputStream flightRMIn = null;
+	
 	Socket carSocket = null;
+	private ObjectOutputStream carRMOut = null;
+	private ObjectInputStream carRMIn = null;
+	
 	Socket roomSocket = null;
+	private ObjectOutputStream roomRMOut = null;
+	private ObjectInputStream roomRMIn = null;
 
 	private String flightRMHostname;
+	
 	private String carRMHostname;
+	
 	private String roomRMHostname;
+	
 
 	private int flightRMPort;
 	private int carRMPort;
@@ -49,48 +60,63 @@ public class ConnectionHandler implements Runnable {
 	
 	private void closeRMSockets() throws IOException{
 		if(flightSocket != null){
+			flightRMOut.close();
+			flightRMIn.close();
 			flightSocket.close();
 		}
 		if(roomSocket != null){
+			roomRMOut.close();
+			roomRMIn.close();
 			roomSocket.close();
 		}
 		if(carSocket != null){
+			carRMOut.close();
+			carRMIn.close();
 			carSocket.close();
 		}
 	}
 
 	public Object sendToRM(Object... message) throws IOException, ClassNotFoundException{
 		Socket rmSocket = null;
+		ObjectOutputStream rmOutput = null;
+		ObjectInputStream rmInput = null;
 		String methodName = (String) message[0];
 		if (methodName.contains("Flight")){
-			if (flightSocket == null)
+			if (flightSocket == null){
 				flightSocket = new Socket(flightRMHostname, flightRMPort);
+				flightRMOut = new ObjectOutputStream(flightSocket.getOutputStream());
+				flightRMIn = new ObjectInputStream(flightSocket.getInputStream());
+			}
 			rmSocket = flightSocket;
+			rmOutput = flightRMOut;
+			rmInput = flightRMIn;
 		}
 		else if (methodName.contains("Room")){
-			if (roomSocket == null)
+			if (roomSocket == null){
 				roomSocket = new Socket(roomRMHostname, roomRMPort);
+				roomRMOut = new ObjectOutputStream(roomSocket.getOutputStream());
+				roomRMIn = new ObjectInputStream(roomSocket.getInputStream());
+			}
 			rmSocket = roomSocket;
+			rmOutput = roomRMOut;
+			rmInput = roomRMIn;
 		}
 		else if (methodName.contains("Car")){
-			if (carSocket == null)
+			if (carSocket == null){
 				carSocket = new Socket(carRMHostname, carRMPort);
+				carRMOut = new ObjectOutputStream(carSocket.getOutputStream());
+				carRMIn = new ObjectInputStream(carSocket.getInputStream());
+			}
 			rmSocket = carSocket;
+			rmOutput = carRMOut;
+			rmInput = carRMIn;
 		}
 		else{
 			Trace.error("Method: " + methodName + " cannot be resolved for proper resource manager dispatch.");
 		}
-		
-		ObjectOutputStream rmOutput = new ObjectOutputStream(rmSocket.getOutputStream());
-		ObjectInputStream rmInput = new ObjectInputStream(rmSocket.getInputStream());
-		
+				
 		rmOutput.writeObject(message);
-		Object rmInputObj = rmInput.readObject();
-		// TODO: right now this is causing the server to close its end
-		// this defeats the purpose of only creating a socket once
-		rmInput.close();
-		rmOutput.close();
-		return rmInputObj;
+		return rmInput.readObject();
 	}
 
 	@Override

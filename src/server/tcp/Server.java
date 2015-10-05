@@ -24,9 +24,12 @@ public class Server {
 			});
 
 			// run server forever, with each client getting their own thread
+			Socket clientSocket;
+			Thread clientThread;
 			while(true){
-				Socket clientSocket = serverSocket.accept();
-				new ConnectionHandler(clientSocket, rm).run();
+				clientSocket = serverSocket.accept();
+				clientThread = new Thread(new ConnectionHandler(clientSocket, rm));
+				clientThread.start();
 			}
 
 		} catch(Exception e) {

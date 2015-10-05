@@ -27,9 +27,12 @@ public class Middle {
 			});
 
 			// run server forever, with each client getting their own thread
+			Socket clientSocket;
+			Thread clientThread;
 			while(true){
-				Socket clientSocket = serverSocket.accept();
-				new ConnectionHandler(clientSocket, hostnames, ports, customerInfo).run();
+				clientSocket = serverSocket.accept();
+				clientThread = new Thread(new ConnectionHandler(clientSocket, hostnames, ports, customerInfo));
+				clientThread.start();
 			}
 
 		} catch(Exception e) {

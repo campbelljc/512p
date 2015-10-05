@@ -285,7 +285,7 @@
         <antcall target="start-server-tcp"/>        
     </target>
 	
-    <target name="build-middle" depends="setup">
+    <target name="build-middle-tcp" depends="setup">
         <annotationProcessing
                 fork="true"
                 debug="true"

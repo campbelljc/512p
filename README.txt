@@ -110,6 +110,8 @@ queryflight, 1, 55
 itinerary, 1, custid, 55, boston, true, true
 queryflight, 1, 55
 
+4) 
+
 Instructions:
 
 1. Build and launch your service on the server machine:

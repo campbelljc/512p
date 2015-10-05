@@ -135,32 +135,38 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     @Override
     public boolean addFlight(int id, int flightNumber, 
                              int numSeats, int flightPrice) {
-        Trace.info("RM::addFlight(" + id + ", " + flightNumber 
-                + ", $" + flightPrice + ", " + numSeats + ") called.");
-        Flight curObj = (Flight) readData(id, Flight.getKey(flightNumber));
-        if (curObj == null) {
-            // Doesn't exist; add it.
-            Flight newObj = new Flight(flightNumber, numSeats, flightPrice);
-            writeData(id, newObj.getKey(), newObj);
-            Trace.info("RM::addFlight(" + id + ", " + flightNumber 
-                    + ", $" + flightPrice + ", " + numSeats + ") OK.");
-        } else {
-            // Add seats to existing flight and update the price.
-            curObj.setCount(curObj.getCount() + numSeats);
-            if (flightPrice > 0) {
-                curObj.setPrice(flightPrice);
-            }
-            writeData(id, curObj.getKey(), curObj);
-            Trace.info("RM::addFlight(" + id + ", " + flightNumber 
-                    + ", $" + flightPrice + ", " + numSeats + ") OK: "
-                    + "seats = " + curObj.getCount() + ", price = $" + flightPrice);
-        }
-        return(true);
+		synchronized(m_itemHT)
+		{
+	        Trace.info("RM::addFlight(" + id + ", " + flightNumber 
+	                + ", $" + flightPrice + ", " + numSeats + ") called.");
+	        Flight curObj = (Flight) readData(id, Flight.getKey(flightNumber));
+	        if (curObj == null) {
+	            // Doesn't exist; add it.
+	            Flight newObj = new Flight(flightNumber, numSeats, flightPrice);
+	            writeData(id, newObj.getKey(), newObj);
+	            Trace.info("RM::addFlight(" + id + ", " + flightNumber 
+	                    + ", $" + flightPrice + ", " + numSeats + ") OK.");
+	        } else {
+	            // Add seats to existing flight and update the price.
+	            curObj.setCount(curObj.getCount() + numSeats);
+	            if (flightPrice > 0) {
+	                curObj.setPrice(flightPrice);
+	            }
+	            writeData(id, curObj.getKey(), curObj);
+	            Trace.info("RM::addFlight(" + id + ", " + flightNumber 
+	                    + ", $" + flightPrice + ", " + numSeats + ") OK: "
+	                    + "seats = " + curObj.getCount() + ", price = $" + flightPrice);
+	        }
+	        return(true);			
+		}
     }
 
     @Override
     public boolean deleteFlight(int id, int flightNumber) {
-        return deleteItem(id, Flight.getKey(flightNumber));
+		synchronized(m_itemHT)
+		{
+	        return deleteItem(id, Flight.getKey(flightNumber));			
+		}
     }
 
     // Returns the number of empty seats on this flight.
@@ -218,33 +224,39 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     // its current price.
     @Override
     public boolean addCars(int id, String location, int numCars, int carPrice) {
-        Trace.info("RM::addCars(" + id + ", " + location + ", " 
-                + numCars + ", $" + carPrice + ") called.");
-        Car curObj = (Car) readData(id, Car.getKey(location));
-        if (curObj == null) {
-            // Doesn't exist; add it.
-            Car newObj = new Car(location, numCars, carPrice);
-            writeData(id, newObj.getKey(), newObj);
-            Trace.info("RM::addCars(" + id + ", " + location + ", " 
-                    + numCars + ", $" + carPrice + ") OK.");
-        } else {
-            // Add count to existing object and update price.
-            curObj.setCount(curObj.getCount() + numCars);
-            if (carPrice > 0) {
-                curObj.setPrice(carPrice);
-            }
-            writeData(id, curObj.getKey(), curObj);
-            Trace.info("RM::addCars(" + id + ", " + location + ", " 
-                    + numCars + ", $" + carPrice + ") OK: " 
-                    + "cars = " + curObj.getCount() + ", price = $" + carPrice);
+		synchronized(m_itemHT)
+        {
+			Trace.info("RM::addCars(" + id + ", " + location + ", " 
+	                + numCars + ", $" + carPrice + ") called.");
+	        Car curObj = (Car) readData(id, Car.getKey(location));
+	        if (curObj == null) {
+	            // Doesn't exist; add it.
+	            Car newObj = new Car(location, numCars, carPrice);
+	            writeData(id, newObj.getKey(), newObj);
+	            Trace.info("RM::addCars(" + id + ", " + location + ", " 
+	                    + numCars + ", $" + carPrice + ") OK.");
+	        } else {
+	            // Add count to existing object and update price.
+	            curObj.setCount(curObj.getCount() + numCars);
+	            if (carPrice > 0) {
+	                curObj.setPrice(carPrice);
+	            }
+	            writeData(id, curObj.getKey(), curObj);
+	            Trace.info("RM::addCars(" + id + ", " + location + ", " 
+	                    + numCars + ", $" + carPrice + ") OK: " 
+	                    + "cars = " + curObj.getCount() + ", price = $" + carPrice);
+	        }
+	        return(true);
         }
-        return(true);
     }
 
     // Delete cars from a location.
     @Override
     public boolean deleteCars(int id, String location) {
-        return deleteItem(id, Car.getKey(location));
+		synchronized(m_itemHT)
+		{
+	        return deleteItem(id, Car.getKey(location));			
+		}
     }
 
     // Returns the number of cars available at a location.
@@ -267,33 +279,39 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     // its current price.
     @Override
     public boolean addRooms(int id, String location, int numRooms, int roomPrice) {
-        Trace.info("RM::addRooms(" + id + ", " + location + ", " 
-                + numRooms + ", $" + roomPrice + ") called.");
-        Room curObj = (Room) readData(id, Room.getKey(location));
-        if (curObj == null) {
-            // Doesn't exist; add it.
-            Room newObj = new Room(location, numRooms, roomPrice);
-            writeData(id, newObj.getKey(), newObj);
-            Trace.info("RM::addRooms(" + id + ", " + location + ", " 
-                    + numRooms + ", $" + roomPrice + ") OK.");
-        } else {
-            // Add count to existing object and update price.
-            curObj.setCount(curObj.getCount() + numRooms);
-            if (roomPrice > 0) {
-                curObj.setPrice(roomPrice);
-            }
-            writeData(id, curObj.getKey(), curObj);
-            Trace.info("RM::addRooms(" + id + ", " + location + ", " 
-                    + numRooms + ", $" + roomPrice + ") OK: " 
-                    + "rooms = " + curObj.getCount() + ", price = $" + roomPrice);
-        }
-        return(true);
+		synchronized(m_itemHT)
+		{
+	        Trace.info("RM::addRooms(" + id + ", " + location + ", " 
+	                + numRooms + ", $" + roomPrice + ") called.");
+	        Room curObj = (Room) readData(id, Room.getKey(location));
+	        if (curObj == null) {
+	            // Doesn't exist; add it.
+	            Room newObj = new Room(location, numRooms, roomPrice);
+	            writeData(id, newObj.getKey(), newObj);
+	            Trace.info("RM::addRooms(" + id + ", " + location + ", " 
+	                    + numRooms + ", $" + roomPrice + ") OK.");
+	        } else {
+	            // Add count to existing object and update price.
+	            curObj.setCount(curObj.getCount() + numRooms);
+	            if (roomPrice > 0) {
+	                curObj.setPrice(roomPrice);
+	            }
+	            writeData(id, curObj.getKey(), curObj);
+	            Trace.info("RM::addRooms(" + id + ", " + location + ", " 
+	                    + numRooms + ", $" + roomPrice + ") OK: " 
+	                    + "rooms = " + curObj.getCount() + ", price = $" + roomPrice);
+	        }
+	        return(true);
+		}
     }
 
     // Delete rooms from a location.
     @Override
     public boolean deleteRooms(int id, String location) {
-        return deleteItem(id, Room.getKey(location));
+		synchronized(m_itemHT)
+		{
+	        return deleteItem(id, Room.getKey(location));			
+		}
     }
 
     // Returns the number of rooms available at a location.
@@ -377,11 +395,14 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 	
 	@Override
 	public void deleteReservationWithKey(int id, String key, int count) {
-        ReservableItem item = (ReservableItem) readData(id, key);
-        item.setReserved(item.getReserved() - count);
-        item.setCount(item.getCount() + count);
-        Trace.info("RM::deleteCustomer(" + id + "): reserved/available = " 
-                + item.getReserved() + "/" + item.getCount());
+		synchronized(m_itemHT)
+		{
+	        ReservableItem item = (ReservableItem) readData(id, key);
+	        item.setReserved(item.getReserved() - count);
+	        item.setCount(item.getCount() + count);
+	        Trace.info("RM::deleteCustomer(" + id + "): reserved/available = " 
+	                + item.getReserved() + "/" + item.getCount());			
+		}
 	}
 
     // Return data structure containing customer reservation info. 
@@ -423,79 +444,86 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     public boolean reserveFlight(int id, int customerId, int flightNumber) {
   //      return reserveItem(id, customerId, 
     //            Flight.getKey(flightNumber), String.valueOf(flightNumber));
-	
-		String key = Flight.getKey(flightNumber);
-		String location = String.valueOf(flightNumber);
+		synchronized(m_itemHT)
+		{
+			String key = Flight.getKey(flightNumber);
+			String location = String.valueOf(flightNumber);
 		
-	    ReservableItem item = (ReservableItem) readData(id, key);
-	    if (item == null) {
-	        Trace.warn("RM::reserveFlight(" + id + ", " + customerId + ", " 
-	                + key + ", " + location + ") failed: item doesn't exist.");
-	        return false;
-	    } else if (item.getCount() == 0) {
-	        Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", " 
-	                + key + ", " + location + ") failed: no more items.");
-	        return false;
-	    } else {            
-	        // Decrease the number of available items in the storage.
-	        item.setCount(item.getCount() - 1);
-	        item.setReserved(item.getReserved() + 1);
+		    ReservableItem item = (ReservableItem) readData(id, key);
+		    if (item == null) {
+		        Trace.warn("RM::reserveFlight(" + id + ", " + customerId + ", " 
+		                + key + ", " + location + ") failed: item doesn't exist.");
+		        return false;
+		    } else if (item.getCount() == 0) {
+		        Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", " 
+		                + key + ", " + location + ") failed: no more items.");
+		        return false;
+		    } else {            
+		        // Decrease the number of available items in the storage.
+		        item.setCount(item.getCount() - 1);
+		        item.setReserved(item.getReserved() + 1);
         
-	        Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", " 
-	                + key + ", " + location + ") OK.");
-	        return true;
+		        Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", " 
+		                + key + ", " + location + ") OK.");
+		        return true;
+			}		
 		}
     }
 
     // Add car reservation to this customer. 
     @Override
     public boolean reserveCar(int id, int customerId, String location) {
-     //   return reserveItem(id, customerId, Car.getKey(location), location);
-		String key = Car.getKey(location);
-        ReservableItem item = (ReservableItem) readData(id, key);
-        if (item == null) {
-            Trace.warn("RM::reserveCar(" + id + ", " + customerId + ", " 
-                    + key + ", " + location + ") failed: item doesn't exist.");
-            return false;
-        } else if (item.getCount() == 0) {
-            Trace.warn("RM::reserveCar(" + id + ", " + customerId + ", " 
-                    + key + ", " + location + ") failed: no more items.");
-            return false;
-        } else {            
-            // Decrease the number of available items in the storage.
-            item.setCount(item.getCount() - 1);
-            item.setReserved(item.getReserved() + 1);
+		synchronized(m_itemHT)
+		{
+			String key = Car.getKey(location);
+	        ReservableItem item = (ReservableItem) readData(id, key);
+	        if (item == null) {
+	            Trace.warn("RM::reserveCar(" + id + ", " + customerId + ", " 
+	                    + key + ", " + location + ") failed: item doesn't exist.");
+	            return false;
+	        } else if (item.getCount() == 0) {
+	            Trace.warn("RM::reserveCar(" + id + ", " + customerId + ", " 
+	                    + key + ", " + location + ") failed: no more items.");
+	            return false;
+	        } else {            
+	            // Decrease the number of available items in the storage.
+	            item.setCount(item.getCount() - 1);
+	            item.setReserved(item.getReserved() + 1);
             
-            Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", " 
-                    + key + ", " + location + ") OK.");
-            return true;
+	            Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", " 
+	                    + key + ", " + location + ") OK.");
+	            return true;
+			}			
 		}
+     //   return reserveItem(id, customerId, Car.getKey(location), location);
     }
 
     // Add room reservation to this customer. 
     @Override
     public boolean reserveRoom(int id, int customerId, String location) {
-    //    return reserveItem(id, customerId, Room.getKey(location), location);
-		String key = Room.getKey(location);
-	    ReservableItem item = (ReservableItem) readData(id, key);
-	    if (item == null) {
-	        Trace.warn("RM::reserveRoom(" + id + ", " + customerId + ", " 
-	                + key + ", " + location + ") failed: item doesn't exist.");
-	        return false;
-	    } else if (item.getCount() == 0) {
-	        Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", " 
-	                + key + ", " + location + ") failed: no more items.");
-	        return false;
-	    } else {            
-	        // Decrease the number of available items in the storage.
-	        item.setCount(item.getCount() - 1);
-	        item.setReserved(item.getReserved() + 1);
+		synchronized(m_itemHT)
+		{
+			String key = Room.getKey(location);
+		    ReservableItem item = (ReservableItem) readData(id, key);
+		    if (item == null) {
+		        Trace.warn("RM::reserveRoom(" + id + ", " + customerId + ", " 
+		                + key + ", " + location + ") failed: item doesn't exist.");
+		        return false;
+		    } else if (item.getCount() == 0) {
+		        Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", " 
+		                + key + ", " + location + ") failed: no more items.");
+		        return false;
+		    } else {            
+		        // Decrease the number of available items in the storage.
+		        item.setCount(item.getCount() - 1);
+		        item.setReserved(item.getReserved() + 1);
         
-	        Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", " 
-	                + key + ", " + location + ") OK.");
-	        return true;
+		        Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", " 
+		                + key + ", " + location + ") OK.");
+		        return true;
+			}
 		}
-	
+    //    return reserveItem(id, customerId, Room.getKey(location), location);
 	}
     
 

@@ -59,53 +59,6 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
     
     
     // Basic operations on ReservableItem //
-    
-    // Delete the entire item.
-/*    protected boolean deleteItem(int id, String key) {
-        Trace.info("RM::deleteItem(" + id + ", " + key + ") called.");
-        ReservableItem curObj = (ReservableItem) readData(id, key);
-        // Check if there is such an item in the storage.
-        if (curObj == null) {
-            Trace.warn("RM::deleteItem(" + id + ", " + key + ") failed: " 
-                    + " item doesn't exist.");
-            return false;
-        } else {
-            if (curObj.getReserved() == 0) {
-                removeData(id, curObj.getKey());
-                Trace.info("RM::deleteItem(" + id + ", " + key + ") OK.");
-                return true;
-            }
-            else {
-                Trace.info("RM::deleteItem(" + id + ", " + key + ") failed: "
-                        + "some customers have reserved it.");
-                return false;
-            }
-        }
-    } */
-    
-    // Query the number of available seats/rooms/cars.
-  /*  protected int queryNum(int id, String key) {
-        Trace.info("RM::queryNum(" + id + ", " + key + ") called.");
-        ReservableItem curObj = (ReservableItem) readData(id, key);
-        int value = 0;  
-        if (curObj != null) {
-            value = curObj.getCount();
-        }
-        Trace.info("RM::queryNum(" + id + ", " + key + ") OK: " + value);
-        return value;
-    }    */
-    
-    // Query the price of an item.
-/*    protected int queryPrice(int id, String key) {
-        Trace.info("RM::queryCarsPrice(" + id + ", " + key + ") called.");
-        ReservableItem curObj = (ReservableItem) readData(id, key);
-        int value = 0; 
-        if (curObj != null) {
-            value = curObj.getPrice();
-        }
-        Trace.info("RM::queryCarsPrice(" + id + ", " + key + ") OK: $" + value);
-        return value;
-    }*/
 
 	protected Customer getCustomer(int id, int customerId) {
         // Read customer object if it exists (and read lock it).
@@ -116,39 +69,6 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
         } 
 		return cust;
 	}
-    // Reserve an item.
-   /* protected boolean reserveItem(int id, int customerId, 
-                                  String key, String location) {
-        Trace.info("RM::reserveItem(" + id + ", " + customerId + ", " 
-                + key + ", " + location + ") called.");
-        Customer cust = getCustomer(id, customerId);
-		if (cust == null)
-			return false;
-        // Check if the item is available.
-        ReservableItem item = (ReservableItem) readData(id, key);
-        if (item == null) {
-            Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", " 
-                    + key + ", " + location + ") failed: item doesn't exist.");
-            return false;
-        } else if (item.getCount() == 0) {
-            Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", " 
-                    + key + ", " + location + ") failed: no more items.");
-            return false;
-        } else {
-            // Do reservation.
-            cust.reserve(key, location, item.getPrice());
-            writeData(id, cust.getKey(), cust);
-            
-            // Decrease the number of available items in the storage.
-            item.setCount(item.getCount() - 1);
-            item.setReserved(item.getReserved() + 1);
-            
-            Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", " 
-                    + key + ", " + location + ") OK.");
-            return true;
-        }
-    }*/
-    
     
     // Flight operations //
     
@@ -159,16 +79,12 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
     public boolean addFlight(int id, int flightNumber, 
                              int numSeats, int flightPrice) {
 		// start a client to talk to the Flight RM.
-		synchronized(m_itemHT) {
-       	 	return flightClient.proxy.addFlight(id, flightNumber, numSeats, flightPrice);
-		}
+		return flightClient.proxy.addFlight(id, flightNumber, numSeats, flightPrice);
     }
 
     @Override
     public boolean deleteFlight(int id, int flightNumber) {
-		synchronized(m_itemHT) {
-       	 	return flightClient.proxy.deleteFlight(id, flightNumber);
-		}
+		return flightClient.proxy.deleteFlight(id, flightNumber);
     }
 
     // Returns the number of empty seats on this flight.
@@ -190,17 +106,13 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
     // its current price.
     @Override
     public boolean addCars(int id, String location, int numCars, int carPrice) {
-		synchronized(m_itemHT) {
-       	 	return carClient.proxy.addCars(id, location, numCars, carPrice);
-		}
+		return carClient.proxy.addCars(id, location, numCars, carPrice);
     }
 
     // Delete cars from a location.
     @Override
     public boolean deleteCars(int id, String location) {
-		synchronized(m_itemHT) {
-       	 	return carClient.proxy.deleteCars(id, location);
-		}
+		return carClient.proxy.deleteCars(id, location);
     }
 
     // Returns the number of cars available at a location.
@@ -223,17 +135,13 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
     // its current price.
     @Override
     public boolean addRooms(int id, String location, int numRooms, int roomPrice) {
-		synchronized(m_itemHT) {
-       	 	return roomClient.proxy.addRooms(id, location, numRooms, roomPrice);
-		}
+		return roomClient.proxy.addRooms(id, location, numRooms, roomPrice);
     }
 
     // Delete rooms from a location.
     @Override
     public boolean deleteRooms(int id, String location) {
-		synchronized(m_itemHT) {
-       	 	return roomClient.proxy.deleteRooms(id, location);
-		}
+		return roomClient.proxy.deleteRooms(id, location);
     }
 
     // Returns the number of rooms available at a location.
@@ -253,17 +161,15 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 
     @Override
     public int newCustomer(int id) {
-		synchronized(m_itemHT) {
-       	 	Trace.info("INFO: RM::newCustomer(" + id + ") called.");
-	        // Generate a globally unique Id for the new customer.
-	        int customerId = Integer.parseInt(String.valueOf(id) +
-	                String.valueOf(Calendar.getInstance().get(Calendar.MILLISECOND)) +
-	                String.valueOf(Math.round(Math.random() * 100 + 1)));
-	        Customer cust = new Customer(customerId);
-	        writeData(id, cust.getKey(), cust);
-	        Trace.info("RM::newCustomer(" + id + ") OK: " + customerId);
-	        return customerId;
-		}
+   	 	Trace.info("INFO: RM::newCustomer(" + id + ") called.");
+        // Generate a globally unique Id for the new customer.
+        int customerId = Integer.parseInt(String.valueOf(id) +
+                String.valueOf(Calendar.getInstance().get(Calendar.MILLISECOND)) +
+                String.valueOf(Math.round(Math.random() * 100 + 1)));
+        Customer cust = new Customer(customerId);
+        writeData(id, cust.getKey(), cust);
+        Trace.info("RM::newCustomer(" + id + ") OK: " + customerId);
+        return customerId;
     }
 
     // This method makes testing easier.
@@ -476,7 +382,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 
     // Reserve an itinerary.
     @Override
-    public synchronized boolean reserveItinerary(int id, int customerId, Vector flightNumbers,
+    public boolean reserveItinerary(int id, int customerId, Vector flightNumbers,
                                     String location, boolean car, boolean room) {
 		synchronized(m_itemHT) {
        	 	

@@ -45,32 +45,28 @@ public class CustomerInfo {
 	}
 
 	public Customer getCustomer(int id, int customerId) {
-		synchronized(customerInfo){
-			// Read customer object if it exists (and read lock it).
-			Customer cust = (Customer) readData(id, Customer.getKey(customerId));
-			if (cust == null) {
-				Trace.warn("RM::getCustomer(" + id + ", " + customerId + ") failed: customer doesn't exist.");
-				return null;
-			} 
-			return cust;
-		}
+		// Read customer object if it exists (and read lock it).
+		Customer cust = (Customer) readData(id, Customer.getKey(customerId));
+		if (cust == null) {
+			Trace.warn("RM::getCustomer(" + id + ", " + customerId + ") failed: customer doesn't exist.");
+			return null;
+		} 
+		return cust;
 	}
 
 	public int newCustomer(int id) {
-		synchronized(customerInfo){
-			Trace.info("INFO: RM::newCustomer(" + id + ") called.");
+		Trace.info("INFO: RM::newCustomer(" + id + ") called.");
 
-			// Generate a globally unique Id for the new customer.
-			int customerId = Integer.parseInt(String.valueOf(id) +
-					String.valueOf(Calendar.getInstance().get(Calendar.MILLISECOND)) +
-					String.valueOf(Math.round(Math.random() * 100 + 1)));
+		// Generate a globally unique Id for the new customer.
+		int customerId = Integer.parseInt(String.valueOf(id) +
+				String.valueOf(Calendar.getInstance().get(Calendar.MILLISECOND)) +
+				String.valueOf(Math.round(Math.random() * 100 + 1)));
 
-			Customer cust = new Customer(customerId);
-			writeData(id, cust.getKey(), cust);
+		Customer cust = new Customer(customerId);
+		writeData(id, cust.getKey(), cust);
 
-			Trace.info("RM::newCustomer(" + id + ") OK: " + customerId);
-			return customerId;
-		}
+		Trace.info("RM::newCustomer(" + id + ") OK: " + customerId);
+		return customerId;
 	}
 
 	// This method makes testing easier.
@@ -95,36 +91,32 @@ public class CustomerInfo {
 	// Returns null if the customer doesn't exist. 
 	// Returns empty RMHashtable if customer exists but has no reservations.
 	public RMHashtable getCustomerReservations(int id, int customerId) {
-		synchronized(customerInfo){
+		Trace.info("RM::getCustomerReservations(" + id + ", " 
+				+ customerId + ") called.");
+		Customer cust = (Customer) readData(id, Customer.getKey(customerId));
+		if (cust == null) {
 			Trace.info("RM::getCustomerReservations(" + id + ", " 
-					+ customerId + ") called.");
-			Customer cust = (Customer) readData(id, Customer.getKey(customerId));
-			if (cust == null) {
-				Trace.info("RM::getCustomerReservations(" + id + ", " 
-						+ customerId + ") failed: customer doesn't exist.");
-				return null;
-			} else {
-				return cust.getReservations();
-			}
+					+ customerId + ") failed: customer doesn't exist.");
+			return null;
+		} else {
+			return cust.getReservations();
 		}
 	}
 
 	// Return a bill.
 	public String queryCustomerInfo(int id, int customerId) {
-		synchronized(customerInfo){
-			Trace.info("RM::queryCustomerInfo(" + id + ", " + customerId + ") called.");
-			Customer cust = (Customer) readData(id, Customer.getKey(customerId));
-			if (cust == null) {
-				Trace.warn("RM::queryCustomerInfo(" + id + ", " 
-						+ customerId + ") failed: customer doesn't exist.");
-				// Returning an empty bill means that the customer doesn't exist.
-				return "";
-			} else {
-				String s = cust.printBill();
-				Trace.info("RM::queryCustomerInfo(" + id + ", " + customerId + "): \n");
-				System.out.println(s);
-				return s;
-			}
+		Trace.info("RM::queryCustomerInfo(" + id + ", " + customerId + ") called.");
+		Customer cust = (Customer) readData(id, Customer.getKey(customerId));
+		if (cust == null) {
+			Trace.warn("RM::queryCustomerInfo(" + id + ", " 
+					+ customerId + ") failed: customer doesn't exist.");
+			// Returning an empty bill means that the customer doesn't exist.
+			return "";
+		} else {
+			String s = cust.printBill();
+			Trace.info("RM::queryCustomerInfo(" + id + ", " + customerId + "): \n");
+			System.out.println(s);
+			return s;
 		}
 	}
 
@@ -298,7 +290,7 @@ public class CustomerInfo {
 
 
 	// Reserve an itinerary.
-	public synchronized boolean reserveItinerary(int id, int customerId, Vector flightNumbers,
+	public boolean reserveItinerary(int id, int customerId, Vector flightNumbers,
 			String location, boolean car, boolean room, ConnectionHandler handler) {
 		synchronized(customerInfo){
 			try{

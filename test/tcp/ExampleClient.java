@@ -80,8 +80,36 @@ public class ExampleClient {
 		"itinerary, 1, custid, 55, boston, true, true",
 		"queryflight, 1, 55"
 	};
-	private static final String[] RESULT_LIST = new String[]{
-		// TODO
+	private static final String[] RESULT_LIST = new String[]
+	{
+		"*", // test 1
+		"rooms added",
+		"room Reserved",
+		"number of rooms at this location: 9",
+		"Customer Deleted",
+		"number of rooms at this location: 10",
+		"*", // test 2
+		"Flight added",
+		"Flight added",
+		"rooms added",
+		"cars added",
+		"Itinerary Reserved",
+		"*" // can't test querycustomer
+		"Number of seats available: 9",
+		"Number of seats available: 9",
+		"number of rooms at this location: 9",
+		"number of cars at this location: 9",
+		"Customer Deleted",
+		"Customer info:",
+		"Number of seats available: 10",
+		"Number of seats available: 10",
+		"number of rooms at this location: 10",
+		"number of cars at this location: 10",
+		"*", // test 3
+		"Flight added",
+		"Number of seats available: 20", // adding 10 seats
+		"Itinerary could not be reserved.",
+		"Number of seats available: 20"
 	};
 	
 	public static String writeStdinReadStdout(String input){
@@ -95,8 +123,20 @@ public class ExampleClient {
 	public void testClientAPI() throws Exception {
 		ClientRunner r = new ClientRunner(SERVICE_NAME, SERVICE_HOST, SERVICE_PORT);
 		r.run();
+		int id = 0;
 		for(int i=0; i<COMMAND_LIST.length; i++){
-			assertEquals(RESULT_LIST[i], writeStdinReadStdout(COMMAND_LIST[i]));
+			String command = COMMAND_LIST[i];
+			if (command.contains("custid"))
+			{
+				command = command.replaceAll("custid", Integer.toString(id));
+			}
+			String response = writeStdinReadStdout(command);
+			if (COMMAND_LIST[i].contains("newcustomer"))
+			{
+				id = Integer.parseInt(response[i].split(": ")[1]);
+			}
+			if (RESULT_LIST[i] != "*")
+				assertEquals(RESULT_LIST[i], response);
 		}
 	}
 

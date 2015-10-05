@@ -85,15 +85,16 @@ public class ExampleClient {
 	};
 	
 	public static String writeStdinReadStdout(String input){
-		PrintStream out = new PrintStream(new ByteArrayOutputStream());
-		System.setOut(out);
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		System.setOut(new PrintStream(out));
 		System.setIn(new ByteArrayInputStream(input.getBytes()));
-		return out.
+		return out.toString();
 	}
 
 	@Test
 	public void testClientAPI() throws Exception {
 		ClientRunner r = new ClientRunner(SERVICE_NAME, SERVICE_HOST, SERVICE_PORT);
+		r.run();
 		for(int i=0; i<COMMAND_LIST.length; i++){
 			assertEquals(RESULT_LIST[i], writeStdinReadStdout(COMMAND_LIST[i]));
 		}

@@ -17,11 +17,11 @@ The middleware was put into a new package, with its own implementation of the \t
 
 The middleware will receive the list of resource manager server hostnames and ports as command line arguments to the \texttt{ant build} target. \par
 
-The middleware also maintains by itself all customer-related data in a hashtable. Methods that involve only customer data are processed directly at the middleware layer without any connection to a RM. Methods that involve both customer data and flight/car/room data, such as the reservation methods, or deleteCustomer, involve both processing by the middleware layer and connections to the appropriate resource managers. \par
+The middleware also maintains by itself all customer-related data in a hashtable. Methods that involve only customer data are processed directly at the middleware layer without any connection to an RM. Methods that involve both customer data and flight/car/room data, such as the reservation methods, or deleteCustomer, involve both processing by the middleware layer and connections to the appropriate resource managers. \par
 
 \subsection*{Concurrency} 
 
-To protect against data loss from concurrent execution, all methods that involved a write to a data structure must obtain a lock on the data structure before they can begin execution. Specifically, all methods that involve customer data will acquire the lock on the customer data hashtable on the middleware, while methods involving flight, hotel, or room data will acquire the lock on the relevant hashtable on the resource manager server containing that particular data (flight, hotel, or room). Methods that involve data on both middleware and server will acquire the lock on both as well. \par
+To protect against data loss from concurrent execution, all methods that involve a write to a data structure must obtain a lock on the data structure before they can begin execution. Specifically, all methods that involve customer data will acquire the lock on the customer data hashtable on the middleware, while methods involving flight, hotel, or room data will acquire the lock on the relevant hashtable on the resource manager server containing that particular data (flight, hotel, or room). Methods that involve data on both middleware and server will acquire the lock on both as well. \par
 
 \section*{TCP}
 

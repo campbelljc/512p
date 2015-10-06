@@ -3,7 +3,9 @@ package client.tcp;
 import java.util.*;
 import java.io.*;
 
-
+/**
+ * Slight variation of client.Client to utilized the send(...) method for TCP.
+ */
 public class Client extends TCPClient {
 
     public Client(String serviceHost, int servicePort) 

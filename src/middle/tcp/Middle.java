@@ -4,8 +4,15 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+/**
+ * Non-blocking middleware server using TCP.
+ */
 public class Middle {
 	
+	/**
+	 * 
+	 * @param args flightRMhost, port, carRMhost, port, roomRMhost, port, port for middleware
+	 */
 	public static void main(String[] args){
 		try{
 			String[] hostnames = new String[] { args[0], args[2], args[4] };

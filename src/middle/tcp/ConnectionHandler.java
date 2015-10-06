@@ -5,16 +5,13 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.util.Calendar;
 import java.util.Vector;
 
-import server.Car;
-import server.Customer;
-import server.Flight;
-import server.RMHashtable;
-import server.Room;
 import server.Trace;
 
+/**
+ * Class for handling requests from the client in a new thread.
+ */
 public class ConnectionHandler implements Runnable {
 
 	Socket clientSocket;
@@ -76,6 +73,13 @@ public class ConnectionHandler implements Runnable {
 		}
 	}
 
+	/**
+	 * Determines the appropriate resource manager and sends the message there.
+	 * @param message variable list of args, with the first being the method to call on the server
+	 * @return the result
+	 * @throws IOException
+	 * @throws ClassNotFoundException
+	 */
 	public Object sendToRM(Object... message) throws IOException, ClassNotFoundException{
 		Socket rmSocket = null;
 		ObjectOutputStream rmOutput = null;
@@ -139,7 +143,8 @@ public class ConnectionHandler implements Runnable {
 				}
 				clientInputMethodName = (String) clientInputObj[0];
 				Trace.info("Client request: " + clientInputMethodName);
-
+				
+				// simple methods can be sent straight to the relevant resource manager
 				if(clientInputMethodName.contains("Flight") && !clientInputMethodName.contains("reserve")){
 					clientOutputResponse = sendToRM(clientInputObj);
 				}
@@ -150,7 +155,7 @@ public class ConnectionHandler implements Runnable {
 					clientOutputResponse = sendToRM(clientInputObj);
 				}
 				else{
-					// parse and use manager...
+					// methods that require some customer information
 					switch(clientInputMethodName)
 					{
 					case "newCustomer":
@@ -230,8 +235,8 @@ public class ConnectionHandler implements Runnable {
 			clientSocket.close();
 
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			// large number of potential errors here, just send it to the console
+			Trace.error(e.getMessage());
 		}
 
 	}

@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+/**
+ * Non-blocking resource manager server using TCP.
+ */
 public class Server {
 	
 	public static void main(String[] args){

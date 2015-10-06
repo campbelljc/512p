@@ -9,8 +9,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
-import javax.jws.WebService;
-
 import server.Car;
 import server.Customer;
 import server.Flight;
@@ -21,7 +19,9 @@ import server.ReservedItem;
 import server.Room;
 import server.Trace;
 
-
+/**
+ * Modified implementation of the web service version to allow for Reflection.
+ */
 public class ResourceManager {
     
     protected RMHashtable m_itemHT = new RMHashtable();
@@ -50,7 +50,12 @@ public class ResourceManager {
         }
     }
     
-    
+    /**
+     * Invoke a method with a string and a variable list of arguments using Reflection.
+     * @param methodName Name of a public ResourceManager method.
+     * @param args Variable list of args to call the method with.
+     * @return the result of the method invocation, or null upon failure.
+     */
     public Object invokeMethodByName(String methodName, Object... args){
     	Class<? extends ResourceManager> thisClass = this.getClass();
     	Method[] methods = thisClass.getDeclaredMethods();
@@ -61,12 +66,10 @@ public class ResourceManager {
 					return (Object) m.invoke(this, args);
 				} catch (IllegalAccessException | IllegalArgumentException
 						| InvocationTargetException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					Trace.error(e.getMessage());
 				}
     		}
     	}
-    	Trace.warn("Method '" + methodName + "' not found.");
     	return null;
     }
     

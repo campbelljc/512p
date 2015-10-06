@@ -3,28 +3,23 @@ package server.tcp;
 import java.io.EOFException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.lang.reflect.Method;
 import java.net.Socket;
 import java.util.Arrays;
 
 import server.Trace;
 
+/**
+ * Class for handling requests from the middleware in a new thread.
+ */
 public class ConnectionHandler implements Runnable {
 
 	Socket clientSocket;
 
 	private ResourceManager resourceManager;
-	private Method[] resourceManagerMethods;
 
 	public ConnectionHandler(Socket clientSocket, ResourceManager resourceManager){
 		this.clientSocket = clientSocket;
 		this.resourceManager = resourceManager;
-		try {
-			Class<?> c = Class.forName("server.tcp.ResourceManager");
-			resourceManagerMethods = c.getDeclaredMethods();
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		}	
 	}
 
 	@Override
@@ -46,18 +41,20 @@ public class ConnectionHandler implements Runnable {
 					// a case where exception-based flow control is necessary.
 					break;
 				}
+				// trust that the method name is the first argument
 				clientInputMethodName = (String) clientInputObj[0];
 				Trace.info("Client request: " + clientInputMethodName);
 				clientOutputResponse = resourceManager.invokeMethodByName(clientInputMethodName, Arrays.copyOfRange(clientInputObj, 1, clientInputObj.length));
 				clientOutput.writeObject(clientOutputResponse);
 			}
+			
+			// cleanup streams and sockets
 			clientInput.close();
 			clientOutput.close();
 			clientSocket.close();
 
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			Trace.error(e.getMessage());
 		}
 
 	}

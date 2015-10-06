@@ -7,21 +7,40 @@
 \date{2015 October 6}
 \maketitle
 
-\section{Web Services}
+\section*{Web Services}
 
-The middleware service was positioned between the client and resource manager (RM) servers. It receives requests from the client, determines the nature of the request, and forwards the request to the relevant resource manager server. It is also responsible for processing all operations related to customer data, communicating if necessary with the server depending on the operation.
+The middleware service was positioned between the client and resource manager (RM) servers. It receives requests from the client, determines the nature of the request, and forwards the request to the relevant resource manager server. It is also responsible for processing all operations related to customer data, communicating if necessary with the server depending on the operation. \par
 
-\textbf{Implementation} - The middleware was put into a new package, with its own implementation of the ResourceManager class. The implementation maintains one WSClient instance for each resource manager (flight, car, and room). Each method involving data specifically related to one of flight, car, or room will use the relevant WSClient instance to invoke the same method on the implicated resource manager.
+\subsection*{Implementation} 
 
-The middleware will receive the list of resource manager server hostnames and ports as command line arguments to the Ant build target.
+The middleware was put into a new package, with its own implementation of the \texttt{ResourceManager} class. The implementation maintains one \texttt{WSClient} instance for each resource manager (flight, car, and room). Each method involving data specifically related to one of flight, car, or room will use the relevant \texttt{WSClient} instance to invoke the same method on the implicated resource manager. \par
 
-The middleware also maintains by itself all customer-related data in a hashtable. Methods that involve only customer data are processed directly at the middleware layer without any connection to a RM. Methods that involve both customer data and flight/car/room data, such as the reservation methods, or deleteCustomer, involve both processing by the middleware layer and connections to the appropriate resource managers.
+The middleware will receive the list of resource manager server hostnames and ports as command line arguments to the \texttt{ant build} target. \par
 
-\textbf{Concurrency} - To protect against data loss from concurrent execution, all methods that involved a write to a data structure must obtain a lock on the data structure before they can begin execution. Specifically, all methods that involve customer data will acquire the lock on the customer data hashtable on the middleware, while methods involving flight, hotel, or room data will acquire the lock on the relevant hashtable on the resource manager server containing that particular data (flight, hotel, or room). Methods that involve data on both middleware and server will acquire the lock on both as well.
+The middleware also maintains by itself all customer-related data in a hashtable. Methods that involve only customer data are processed directly at the middleware layer without any connection to a RM. Methods that involve both customer data and flight/car/room data, such as the reservation methods, or deleteCustomer, involve both processing by the middleware layer and connections to the appropriate resource managers. \par
 
-\section{TCP}
+\subsection*{Concurrency} 
 
-I'll do this one. \par
+To protect against data loss from concurrent execution, all methods that involved a write to a data structure must obtain a lock on the data structure before they can begin execution. Specifically, all methods that involve customer data will acquire the lock on the customer data hashtable on the middleware, while methods involving flight, hotel, or room data will acquire the lock on the relevant hashtable on the resource manager server containing that particular data (flight, hotel, or room). Methods that involve data on both middleware and server will acquire the lock on both as well. \par
 
+\section*{TCP}
+
+The design philosophy behind the TCP version was to use as much of the existing code as possible, while swapping out the web service elements for Java \texttt{Socket} objects. The majority of the implementation does not touch the client or resource management code. In order to make this possible, we considered designs that would allow the client to make calls similar to \texttt{resourceManager.apiMethod(args)}. As seen in \texttt{client.tcp.Client}, these calls have been replaced with \texttt{send("apiMethod",args)}. This is a drop-in replacement, and can even be automatically swapped in with a short regular expression. \par 
+
+\subsection*{Implementation} 
+
+The technical details of the message delivery process are very straightforward. The \texttt{send} method accepts a variable number of arguments, and then sends them through the socket using Java's built-in Object Streams. On the middleware, the method name is checked to either determine an appropriate resource manager, or to do some immediate work on the request. The delivery process is identical for getting from the middleware to the resource managers. In order to increase the scalability and minimize the writing of additional validation code, the resource manager use Reflection to invoke the method directly from the received method name and argument list. The result is then passed back through the layers using Object Streams. One obvious concern may be the amount of trust that is assumed with this process. There are numerous type casts made on Objects from external processes, and code that operates on the assumption that certain information will be present at specific locations in the message that is passed over the network. In this particular scenario, the code for both the client and the server are being written by the same group, and exist in the same source directory, so this concern was deemed to be harmless enough for the purposes of the project. \par
+
+\subsection*{Concurrency}
+
+The concurrency was trivial to implement. With each new connection to the middleware or a resource manager, we handle the entire lifetime of the new connection in a new thread. The data structure integrity was already considered in the web service portion. \par
+
+\subsection*{Testing}
+
+For testing, initial confirmation was done manually. Later, we set up a JUnit test that acts as an automated client, running a list of commands and verifying the results with assertions. This allows us to run detailed tests, frequently, and without having to rely on human verification. \par
+
+\subsection*{Future}
+
+In the future, additional validation and error handling will help to patch up the aforementioned trust issues. The benefit of this design is that we can effortlessly add new API methods because of the Reflection setup. Scaling to numerous concurrent users and requests is also feasible with the simplicity of the concurrency implementation. \par
 
 \end{document}

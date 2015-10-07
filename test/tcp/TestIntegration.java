@@ -2,11 +2,13 @@ package tcp;
 
 import static org.junit.Assert.*;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Vector;
 
 import org.junit.Test;
 
+import client.tcp.Client;
 import client.tcp.TCPClient;
 
 public class TestIntegration {
@@ -116,6 +118,45 @@ public class TestIntegration {
 			}
 		}
 		client.close();
+	}
+	
+	class ConcurrentClient extends TCPClient implements Runnable{
+		
+		Object[][] commandList;
+
+		public ConcurrentClient(String serviceHost, int servicePort, Object[][] commandList)
+				throws Exception {
+			super(serviceHost, servicePort);
+			this.commandList = commandList;
+		}
+
+		@Override
+		public void run() {
+			for(Object[] command : commandList){
+				try {
+					Object response = send(command);
+				} catch (ClassNotFoundException | IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		
+	}
+	
+	@Test
+	public void TestConcurrentClientRequests() throws Exception{
+		int numClientsToTest = 100;
+		Object[][] commands = {{"addFlight", 1, 55, 10, 10}};
+		ConcurrentClient[] clients = new ConcurrentClient[numClientsToTest];
+		Thread[] clientThreads = new Thread[numClientsToTest];
+		for(int i=0; i<clients.length; i++){
+			clients[i] = new ConcurrentClient(SERVICE_HOST, SERVICE_PORT, commands);
+			clientThreads[i] = new Thread(clients[i]);
+		}
+		for(Thread t : clientThreads){
+			t.start();
+		}
+		
 	}
 
 }

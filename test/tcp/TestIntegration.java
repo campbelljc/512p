@@ -3,9 +3,11 @@ package tcp;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Vector;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import client.tcp.Client;
@@ -86,7 +88,7 @@ public class TestIntegration {
 	
 
 	
-	@Test
+	@Ignore @Test
 	/**
 	 * Utility to automate manual testing and verification of many commands.
 	 * @throws Exception
@@ -122,12 +124,18 @@ public class TestIntegration {
 	
 	class ConcurrentClient extends TCPClient implements Runnable{
 		
-		Object[][] commandList;
+		private Object[][] commandList;
+		private ArrayList<Object> responses;
 
 		public ConcurrentClient(String serviceHost, int servicePort, Object[][] commandList)
 				throws Exception {
 			super(serviceHost, servicePort);
 			this.commandList = commandList;
+			responses = new ArrayList<Object>();
+		}
+		
+		public ArrayList<Object> getResponses(){
+			return responses;
 		}
 
 		@Override
@@ -135,6 +143,7 @@ public class TestIntegration {
 			for(Object[] command : commandList){
 				try {
 					Object response = send(command);
+					responses.add(response);
 				} catch (ClassNotFoundException | IOException e) {
 					e.printStackTrace();
 				}
@@ -143,19 +152,81 @@ public class TestIntegration {
 		
 	}
 	
-	@Test
-	public void TestConcurrentClientRequests() throws Exception{
+	@Ignore @Test
+	public void TestConcurrentClientRequestsNoConflicts() throws Exception{
 		int numClientsToTest = 100;
-		Object[][] commands = {{"addFlight", 1, 55, 10, 10}};
+		
 		ConcurrentClient[] clients = new ConcurrentClient[numClientsToTest];
 		Thread[] clientThreads = new Thread[numClientsToTest];
 		for(int i=0; i<clients.length; i++){
+			Object[][] commands = {
+					{"addFlight",i,i,i,i},
+					{"addCars",i,"loc",i,i},
+					{"addRooms",i,"loc",i,i},
+					{"newCustomer",i},
+					{"newCustomerId",i*2,i},
+					{"queryCars",i,"loc"},
+					{"queryRooms",i,"loc"},
+					{"queryFlight",i,i},
+					{"queryCustomerInfo",i,i},
+					{"queryFlightPrice",i,i},
+					{"queryCarPrice",i,i},
+					{"queryRoomPrice",i,i},
+					{"reserveFlight",i,i,i},
+					{"reserveCar",i,i,"loc",i},
+					{"reserveRoom",i,i,"loc",i},
+					{"reserveItinerary", i, i, new Vector(Arrays.asList(new String[]{Integer.toString(i)})), "loc", true, true},
+					{"deleteFlight",i,i},
+					{"deleteCar",i,i},
+					{"deleteRoom",i,i},
+					{"deleteCustomer",i,i},
+					};
 			clients[i] = new ConcurrentClient(SERVICE_HOST, SERVICE_PORT, commands);
 			clientThreads[i] = new Thread(clients[i]);
 		}
 		for(Thread t : clientThreads){
 			t.start();
 		}
+		
+	}
+	
+	@Test
+	public void TestConcurrentClientRequestsWithConflicts() throws Exception{
+		int numClientsToTest = 100;
+		TCPClient initClient = new TCPClient(SERVICE_HOST, SERVICE_PORT);
+		initClient.send("addFlight",1,1,50,50);
+		initClient.send("addRooms",1,"loc",50,50);
+		initClient.send("addCars",1,"loc",50,50);
+		ConcurrentClient[] clients = new ConcurrentClient[numClientsToTest];
+		Thread[] clientThreads = new Thread[numClientsToTest];
+		for(int i=0; i<clients.length; i++){
+			Object[][] commands = {
+					{"newCustomerId",i,i},
+					{"reserveItinerary", i, i, new Vector(Arrays.asList(new String[]{"1"})), "loc", true, true},
+					};
+			clients[i] = new ConcurrentClient(SERVICE_HOST, SERVICE_PORT, commands);
+			clientThreads[i] = new Thread(clients[i]);
+		}
+		for(Thread t : clientThreads){
+			t.start();
+		}
+		int numFailures = 0;
+		int numSuccesses = 0;
+		for(int i=0; i<clients.length; i++){
+			clientThreads[i].join();
+			if ((boolean)clients[i].getResponses().get(1) == false){
+				numFailures++;
+			}
+			else{
+				numSuccesses++;
+			}
+		}
+		assertEquals(0,(int)initClient.send("queryCars",1,"loc"));
+		assertEquals(0,(int)initClient.send("queryRooms",1,"loc"));
+		assertEquals(0,(int)initClient.send("queryFlight",1,1));
+		assertEquals(50, numFailures);
+		assertEquals(50, numSuccesses);
+		
 		
 	}
 

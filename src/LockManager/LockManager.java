@@ -20,7 +20,9 @@ public class LockManager
     }
     
     public boolean Lock(int xid, String strData, int lockType) throws DeadlockException {
-    
+    	String locks[] = { "read", "write" };
+    	String vars[] = { "a", "b" };
+    	System.out.println("Txn " + xid + " trying to get " + locks[lockType] + " lock on " + vars[Integer.parseInt(strData)]);
         // if any parameter is invalid, then return false
         if (xid < 0) { 
             return false;
@@ -61,6 +63,37 @@ public class LockManager
                         }
                          
                         if (bConvert.get(0) == true) {
+							// 0 is set to true in LockConflict if we are getting a write lock and we already have a read lock.
+							// We have to check if anyone else also has a read lock.
+							// If so, then we must wait, otherwise we can continue and change the read lock to write.
+							
+					        Vector vect = this.lockTable.elements(dataObj);
+							boolean otherSharedLock = false;
+							for (int i = 0; i < vect.size(); i++)
+							{
+								DataObj d2 = (DataObj)vect.elementAt(i);
+								if (d2.getXId() != dataObj.getXId())
+								{ // the d2 transaction has a read or write lock on the data object.
+									otherSharedLock = true;
+								}
+							}
+							
+							if (otherSharedLock)
+							{ // wait until that lock is released
+								bConflict = true;
+							}
+							else
+							{ // we are fine, no other txns have a lock on this data item
+								// convert our read lock to a write lock
+						      //  Vector vect = this.lockTable.elements(dataObj);
+							//	for (int i = 0; i < vect.size(); i++)
+							//	{
+								DataObj d = (DataObj)this.lockTable.get(dataObj);
+								d.setLockType(TrxnObj.WRITE);
+									
+							//	}
+							}
+							
                             // lock conversion 
                             // *** ADD CODE HERE *** to carry out the lock conversion in the
                             // lock table
@@ -85,13 +118,14 @@ public class LockManager
             return true;
         } 
 
+        System.out.println("Txn " + xid + " succeeded.");
         return true;
     }
 
     
     // remove all locks for this transaction in the lock table.
     public boolean  UnlockAll(int xid) {
-
+   // 	System.out.println("Txn " + xid + " unlocking all locks.");
         // if any parameter is invalid, then return false
         if (xid < 0) {
             return false;
@@ -199,6 +233,15 @@ public class LockManager
                 } else if (dataObj.getLockType() == DataObj.WRITE) {
                     // transaction already has a lock and is requesting a WRITE lock
                     // now there are two cases to analyze here
+					if (dataObj2.getLockType() == DataObj.WRITE)
+					{ // we already had a write lock.
+						throw new RedundantLockRequestException(dataObj.getXId(), "Redundant WRITE lock request");
+					}
+					else if (dataObj2.getLockType() == DataObj.READ)
+					{ // we had a read lock and we have to convert it now...
+						bitset.set(0); //set 0 to true
+						return false;
+					}
                     // (1) transaction already had a READ lock
                     // (2) transaction already had a WRITE lock
                     // Seeing the comments at the top of this function might be helpful

@@ -22,11 +22,17 @@ public class TransactionManager {
 	private HashMap<Integer, Transaction> txnMap = new HashMap<Integer, Transaction>();
 	private AtomicInteger nextID = new AtomicInteger(0);
 	
+	private boolean isShutdown = false;
+	
 	/**
 	 * Starts a new transaction. 
 	 * @return the transaction ID.
 	 */
-	public int start(){
+	public synchronized int start(){
+		if(isShutdown){
+			Trace.error("System was shutdown, cannot start a new transaction");
+			return -1;
+		}
 		int tid = nextID.incrementAndGet();
 		txnMap.put(tid, new Transaction());
 
@@ -104,7 +110,8 @@ public class TransactionManager {
 	 * Check if there are any active transactions.
 	 * @return true if there are active transactions, false otherwise
 	 */
-	public boolean transactionsRunning(){
-		return !txnMap.isEmpty();
+	public synchronized void shutdown(){
+		while(!txnMap.isEmpty()){}
+		isShutdown = true;
 	}
 }

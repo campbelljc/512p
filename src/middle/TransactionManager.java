@@ -96,8 +96,10 @@ public class TransactionManager {
 		txnMap.get(tid).addUndoOp(undoFunction);
 	}
 	
-	// requestWrite(0, "a", () -> addFlight(x, y, z));
-	
+	public void removeLastUndoOp(int tid){
+		txnMap.get(tid).removeLastUndoOp();
+	}
+		
 	/**
 	 * Check if there are any active transactions.
 	 * @return true if there are active transactions, false otherwise

@@ -24,8 +24,12 @@ public class Transaction {
 		return (System.nanoTime() - ttl) > TTL_MAX;
 	}
 	
-	public void addUndoOp(Runnable r){
-		undoOps.add(r);
+	public void addUndoOp(Runnable undoFunction){
+		undoOps.add(undoFunction);
+	}
+	
+	public void removeLastUndoOp(){
+		undoOps.remove(undoOps.size()-1);
 	}
 	
 	public void undo(){

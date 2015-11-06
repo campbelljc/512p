@@ -46,32 +46,27 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
     
     // Read a data item.
     private RMItem readData(int id, String key) {
-        synchronized(m_itemHT) {
-            return (RMItem) m_itemHT.get(key);
-        }
+    	txnMgr.requestRead(id, DType.CUSTOMER);
+    	return (RMItem) m_itemHT.get(key);
     }
 
     // Write a data item.
     private void writeData(int id, String key, RMItem value) {
-        synchronized(m_itemHT) {
-            m_itemHT.put(key, value);
-        }
+    	txnMgr.requestWrite(id, DType.CUSTOMER, () -> m_itemHT.put(key, m_itemHT.get(key)));
+    	m_itemHT.put(key, value);
     }
     
     // Remove the item out of storage.
     protected RMItem removeData(int id, String key) {
-        synchronized(m_itemHT) {
-            return (RMItem) m_itemHT.remove(key);
-        }
+    	txnMgr.requestWrite(id, DType.CUSTOMER, () -> m_itemHT.put(key, m_itemHT.get(key)));
+    	return (RMItem) m_itemHT.remove(key);
     }
     
     
     // Basic operations on ReservableItem //
 
 	protected Customer getCustomer(int id, int customerId) {
-        // Read customer object if it exists (and read lock it).
-		txnMgr.requestRead(id, DType.CUSTOMER);
-		
+        // Read customer object if it exists (and read lock it).		
         Customer cust = (Customer) readData(id, Customer.getKey(customerId));
         if (cust == null) {
             Trace.warn("RM::getCustomer(" + id + ", " + customerId + ") failed: customer doesn't exist.");
@@ -93,7 +88,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 		boolean ret = flightClient.proxy.addFlight(id, flightNumber, numSeats, flightPrice);
 		if (!ret)
 		{
-			txnMgr.removeLastUndoOperation(id);
+			txnMgr.removeLastUndoOp(id);
 		}
 		return ret;
     }
@@ -104,7 +99,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 		boolean ret = flightClient.proxy.deleteFlight(id, flightNumber);
 		if (!ret)
 		{
-			txnMgr.removeLastUndoOperation(id);
+			txnMgr.removeLastUndoOp(id);
 		}
 		return ret;
     }
@@ -140,7 +135,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 		boolean ret = carClient.proxy.addCars(id, location, numCars, carPrice);
 		if (!ret)
 		{
-			txnMgr.removeLastUndoOperation(id);
+			txnMgr.removeLastUndoOp(id);
 		}
 		return ret;
     }
@@ -152,7 +147,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 		boolean ret = carClient.proxy.deleteCars(id, location);
 		if (!ret)
 		{
-			txnMgr.removeLastUndoOperation(id);
+			txnMgr.removeLastUndoOp(id);
 		}
 		return ret;
     }
@@ -189,7 +184,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 		boolean ret = roomClient.proxy.addRooms(id, location, numRooms, roomPrice);
 		if (!ret)
 		{
-			txnMgr.removeLastUndoOperation(id);
+			txnMgr.removeLastUndoOp(id);
 		}
 		return ret;
     }
@@ -201,7 +196,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 		boolean ret = roomClient.proxy.deleteRooms(id, location);
 		if (!ret)
 		{
-			txnMgr.removeLastUndoOperation(id);
+			txnMgr.removeLastUndoOp(id);
 		}
 		return ret;
     }
@@ -370,9 +365,11 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 				return false;
 		
 	        // Check if the item is available.
+			txnMgr.requestWrite(id, DType.CAR, ()->carClient.proxy.deleteReservationWithKey(id, key, 1));
 			boolean reserved = flightClient.proxy.reserveFlight(id, customerId, flightNumber);
 			if (reserved)
 			{
+				txnMgr.requestRead(id, DType.FLIGHT);
 				int price = flightClient.proxy.queryFlightPrice(id, flightNumber);
 	            cust.reserve(key, location, price);
 	            writeData(id, cust.getKey(), cust);
@@ -404,9 +401,11 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 				return false;
 		
 	        // Check if the item is available.
+			txnMgr.requestWrite(id, DType.CAR, ()->carClient.proxy.deleteReservationWithKey(id, key, 1));
 			boolean reserved = carClient.proxy.reserveCar(id, customerId, location);
 			if (reserved)
 			{
+				txnMgr.requestRead(id, DType.CAR);
 				int price = carClient.proxy.queryCarsPrice(id, location);
 	            Trace.info(cust.reserve(key, location, price));
 	            writeData(id, cust.getKey(), cust);
@@ -436,9 +435,11 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 				return false;
 		
 	        // Check if the item is available.
+			txnMgr.requestWrite(id, DType.HOTEL, ()->roomClient.proxy.deleteReservationWithKey(id, key, 1));
 			boolean reserved = roomClient.proxy.reserveRoom(id, customerId, location);
 			if (reserved)
 			{
+				txnMgr.requestRead(id, DType.HOTEL);
 				int price = roomClient.proxy.queryRoomsPrice(id, location);
 	            cust.reserve(key, location, price);
 	            writeData(id, cust.getKey(), cust);
@@ -469,6 +470,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 			{
 				int flightNumber = Integer.parseInt((String)(flightNumbers.get(count)));
 			
+				txnMgr.requestRead(id, DType.FLIGHT);
 				if (queryFlight(id, flightNumber) == 0)
 				{
 					Trace.warn("No flights available with that flight number " + flightNumber);
@@ -477,6 +479,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 			}
 			if (car)
 			{
+				txnMgr.requestRead(id, DType.CAR);
 				if (queryCars(id, location) == 0)
 				{
 					Trace.warn("No cars available with that location " + location);
@@ -485,38 +488,47 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 			}
 			if (room)
 			{
+				txnMgr.requestRead(id, DType.HOTEL);
 				if (queryRooms(id, location) == 0)
 				{
 					Trace.warn("No rooms available with that location " + location);
 					return false;
 				}
 			}
-
 			for (int count = 0; count < flightNumbers.size(); count ++)
 			{
 				int flightNumber = Integer.parseInt((String)(flightNumbers.get(count)));
 				Trace.warn("Trying to reserve flight " + flightNumber + " with id: " + id);
+				txnMgr.requestWrite(id, DType.FLIGHT, ()->flightClient.proxy.deleteReservationWithKey(id, Flight.getKey(flightNumber), 1));
 				if (!reserveFlight(id, customerId, flightNumber))
 				{
+					txnMgr.removeLastUndoOp(id);
 					Trace.warn("Failed.");
 					return false;
 				}
+				
+				
 			}
 			if (car)
 			{
 				Trace.warn("Trying to reserve car with id: " + id + " and location: " + location);
+				txnMgr.requestWrite(id, DType.CAR, ()->carClient.proxy.deleteReservationWithKey(id, Car.getKey(location), 1));
 				if (!reserveCar(id, customerId, location))
 				{
 					Trace.warn("Failed.");
+					txnMgr.removeLastUndoOp(id);
 					return false;
 				}
+//				txnMgr.operationDone();
 			}
 			if (room)
 			{
 				Trace.warn("Trying to reserve room with id: " + id + " and location: " + location);
+				txnMgr.requestWrite(id, DType.HOTEL, ()->roomClient.proxy.deleteReservationWithKey(id, Room.getKey(location), 1));
 				if (!reserveRoom(id, customerId, location))
 				{
 					Trace.warn("Failed.");
+					txnMgr.removeLastUndoOp(id);
 					return false;
 				}
 			}

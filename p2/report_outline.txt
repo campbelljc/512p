@@ -1,0 +1,20 @@
+System Architecture / special features of implementation
+--
+-TM at MW
+-LM at MW
+-Undo ops using Runnable added at same time as requesting lock. If op did not succed,remove undo op.
+-Shutdown when possible (all transactions finished).
+-2PL locking scheme, locks converting from shared to exclusive if possible (if no other shared locks exist)
+-Abort runs undo ops and unlocks locks, removes txn from txn list.
+-On commit, remove txn from txn list and unlock locks.
+-TTL mechanism uses timer thread to check at every interval and abort if necessary.
+
+Problems encountered
+--
+-Undo operations, MW has to know a bit about how each function works (addFlight can either add a new flight or modify existing, so undo op must undo either of those). Methods added to RM interface (flightExists, etc) to get existing state so that it can be restored later.
+-Abort procedure - will it cause an inconsistent state.
+
+Tests
+--
+-Lock Manager test framework
+-Transactions tests (to be done)

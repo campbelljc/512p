@@ -1,28 +1,42 @@
 package LockManager;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
 class LockManagerTest {
     public static void main (String[] args)
     {
-        TxnThread t1, t2;
     	LockManager lm = new LockManager ();
-        TxnSimul sim = new TxnSimul(lm, 0, 0, 0, 4000, // txnid, datumid, locktype, amt_secs_to_sleep_after_command_issuing
-        								0, 1, 1, 0,
-        								1, 1, 1, 1000,
-        								1, 0, 1, 0);
-        t1 = new TxnThread(0, sim, lm);
-        t2 = new TxnThread(1, sim, lm);
-        t1.start();
-        t2.start();
-/*	t1 = new MyThread (lm, 1);
-	t2 = new MyThread (lm, 2);
-	t1.start ();
-	t2.start ();
- */   }
-   
+    	TxnSimul[] txns = { /*new TxnSimul(lm, 1, 0, 0, 4000, // txnid, datumid, locktype, amt_secs_to_sleep_after_command_issuing
+        									1, 1, 1, 0,
+        									2, 1, 1, 1000,
+        									2, 0, 1, 0), // T1 reads A, writes B. T2 reads B, writes A.
+    						new TxnSimul(lm, 1, 0, 0, 1000,
+    										1, 0, 1, 0),  // T1 reads A then writes A.
+    						new TxnSimul(lm, 1, 0, 0, 1000, // t1 read a
+    										2, 0, 0, 20000, // t2 read a and wait a long time
+    										1, 0, 1, 0), */ // t1 write a
+    						new TxnSimul(lm, 1, 0, 0, 2000, // t1 read a and wait long time
+    										2, 0, 0, 0, // t2 read a and finish
+    										1, 0, 1, 0) // t1 write a
+    						};
+    	for (TxnSimul sim : txns)
+    	{
+    		boolean secondThread = sim.getNumTxns(1) > 0;
+    		TxnThread t1, t2;
+            t1 = new TxnThread(0, sim, lm);
+            t2 = new TxnThread(1, sim, lm);
+            t1.start();
+            if (secondThread) t2.start();
+            try {
+				t1.join();
+				if (secondThread) t2.join();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+            System.out.println("-----------\n-----------\n-----------");
+    	}
+    }
 }
 
 class TxnSimul
@@ -53,23 +67,10 @@ class TxnSimul
 				}
 			};
 			
-			txnCmds[args[i]].add(r);
+			txnCmds[args[i]-1].add(r);
 			
 			i += 3;
 		}
-	/*	for (int i = 0; i < 2; i ++)
-		{
-			final int j = i;
-			System.out.println("...");
-			Runnable r2 = new Runnable() {
-				@Override
-				public void run() {
-					System.out.println("Unlocking all...");
-					lm.UnlockAll(j);
-				}
-			};
-			txnCmds[i].add(r2);
-		}*/
 	}
 	Runnable getNextCommand(int txn)
 	{
@@ -79,64 +80,11 @@ class TxnSimul
 		curCmdIndices[txn] ++;
 		return nextCmd;
 	}
+	int getNumTxns(int txn)
+	{
+		return txnCmds[txn].size();
+	}
 }
-
-/*class MyThread extends Thread {
-    LockManager lm;
-    int threadId;
-
-    public MyThread (LockManager lm, int threadId) {
-        this.lm = lm;
-	this.threadId = threadId;
-    }
-
-    public void run () {
-        if (threadId == 1) {
-	    try {
-		lm.Lock (1, "a", LockManager.READ);
-	    }
-	    catch (DeadlockException e) {
-	        System.out.println ("Deadlock1a.... ");
-	    }
-
-	    try {
-	        this.sleep (4000);
-	    }
-	    catch (InterruptedException e) { }
-
-	    try {
-		lm.Lock (1, "b", LockManager.WRITE);
-	    }
-	    catch (DeadlockException e) {
-	        System.out.println ("Deadlock1b.... ");
-	    }
-	    
-	    lm.UnlockAll (1);
-	}
-	else if (threadId == 2) {
-	    try {
-		lm.Lock (2, "b", LockManager.READ);
-	    }
-	    catch (DeadlockException e) { 
-	        System.out.println ("Deadlock2b.... ");
-	    }
-
-	    try {
-	        this.sleep (1000);
-	    }
-	    catch (InterruptedException e) { }
-
-	    try {
-		lm.Lock (2, "a", LockManager.WRITE);
-	    }
-	    catch (DeadlockException e) { 
-	        System.out.println ("Deadlock2a.... ");
-	    }
-	    
-	    lm.UnlockAll (2);
-	}
-    }
-}*/
 
 class TxnThread extends Thread {
 	int threadID;

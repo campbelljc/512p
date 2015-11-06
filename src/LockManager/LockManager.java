@@ -80,6 +80,7 @@ public class LockManager
 							
 							if (otherSharedLock)
 							{ // wait until that lock is released
+								System.out.println("Txn " + xid + " can't convert read lock to write lock (other read lock exists).");
 								bConflict = true;
 							}
 							else
@@ -88,8 +89,9 @@ public class LockManager
 						      //  Vector vect = this.lockTable.elements(dataObj);
 							//	for (int i = 0; i < vect.size(); i++)
 							//	{
-								DataObj d = (DataObj)this.lockTable.get(dataObj);
+								DataObj d = (DataObj)vect.elementAt(0);  //(DataObj)this.lockTable.get(dataObj);
 								d.setLockType(TrxnObj.WRITE);
+								System.out.println("Txn " + xid + " converting read lock to write lock.");
 									
 							//	}
 							}

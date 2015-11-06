@@ -538,4 +538,28 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 		}
     }
 
+	@Override
+	public int start() {
+		return txnMgr.start();
+	}
+
+	@Override
+	public void commit(int tid) {
+		txnMgr.commit(tid);
+	}
+
+	@Override
+	public void abort(int tid) {
+		txnMgr.abort(tid);
+	}
+
+	@Override
+	public void shutdown() {
+		while(txnMgr.transactionsRunning()){ /* wait for transactions to finish */ }
+		flightClient.proxy.shutdown();
+		carClient.proxy.shutdown();
+		roomClient.proxy.shutdown();
+		System.exit(0);
+	}
+
 }

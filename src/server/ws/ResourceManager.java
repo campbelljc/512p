@@ -148,5 +148,32 @@ public interface ResourceManager {
     @WebMethod
     public boolean reserveItinerary(int id, int customerId, Vector flightNumbers, 
                                     String location, boolean car, boolean room);
+    
+    @WebMethod
+    /**
+     * Starts a transaction.
+     * @return the transaction id.
+     */
+    public int start();
+    
+    @WebMethod
+    /**
+     * Commits a transaction.
+     * @param tid transaction id.
+     */
+    public void commit(int tid);
+    
+    @WebMethod
+    /**
+     * Aborts a transaction.
+     * @param tid transaction id.
+     */
+    public void abort(int tid);
+    
+    @WebMethod
+    /**
+     * Soft system shutdown.
+     */
+    public void shutdown();
     			
 }

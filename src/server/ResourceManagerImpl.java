@@ -513,4 +513,25 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
         return false;
     }
 
+	@Override
+	public int start() {
+		// DO NOTHING: implemented on MW.
+		return -1;
+	}
+
+	@Override
+	public void commit(int tid) {
+		// DO NOTHING: implemented on MW.
+	}
+
+	@Override
+	public void abort(int tid) {
+		// DO NOTHING : implemented on MW
+	}
+
+	@Override
+	public void shutdown() {
+		System.exit(0);
+	}
+
 }

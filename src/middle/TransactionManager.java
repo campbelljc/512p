@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import server.Trace;
 import LockManager.DeadlockException;
 import LockManager.LockManager;
+import middle.ResourceManagerImplMW.DType;
 
 /**
  * Transaction manager existing locally on the middleware.
@@ -66,12 +67,12 @@ public class TransactionManager {
 	/**
 	 * Sets up a transactional read.
 	 * @param tid the transaction ID.
-	 * @param strData the data item to read.
+	 * @param type the data item to read.
 	 */
-	public void requestRead(int tid, String strData){
+	public void requestRead(int tid, DType type){
 		txnMap.get(tid).resetTTL();
 		try {
-			lockMgr.Lock(tid, strData, LockManager.READ);
+			lockMgr.Lock(tid, Integer.toString(type.ordinal()), LockManager.READ);
 		} catch (DeadlockException e) {
 			Trace.warn("Deadlock detected! Aborting transaction with ID " + Integer.toString(tid));
 			abort(tid);
@@ -81,13 +82,13 @@ public class TransactionManager {
 	/**
 	 * Sets up a transactional read.
 	 * @param tid the transaction ID.
-	 * @param strData the data item to read.
+	 * @param type the data item to read.
 	 * @param undoFunction the inverse of the write operation.
 	 */
-	public void requestWrite(int tid, String strData, Runnable undoFunction){
+	public void requestWrite(int tid, DType type, Runnable undoFunction){
 		txnMap.get(tid).resetTTL();
 		try {
-			lockMgr.Lock(tid, strData, LockManager.WRITE);
+			lockMgr.Lock(tid, Integer.toString(type.ordinal()), LockManager.WRITE);
 		} catch (DeadlockException e) {
 			Trace.warn("Deadlock detected! Aborting transaction with ID " + Integer.toString(tid));
 			abort(tid);

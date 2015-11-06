@@ -16,10 +16,18 @@ import javax.naming.NamingException;
 public class ResourceManagerImplMW implements server.ws.ResourceManager {
     
     protected RMHashtable m_itemHT = new RMHashtable();
+    protected TransactionManager txnMgr = new TransactionManager();
     	
 	WSClient flightClient;
 	WSClient carClient;
 	WSClient roomClient;
+	
+	enum DType {
+		CUSTOMER,
+		FLIGHT,
+		HOTEL,
+		ROOM
+	};
 	
 	public ResourceManagerImplMW() {
 		try {
@@ -62,6 +70,8 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 
 	protected Customer getCustomer(int id, int customerId) {
         // Read customer object if it exists (and read lock it).
+		txnMgr.requestRead(id, DType.CUSTOMER);
+		
         Customer cust = (Customer) readData(id, Customer.getKey(customerId));
         if (cust == null) {
             Trace.warn("RM::getCustomer(" + id + ", " + customerId + ") failed: customer doesn't exist.");
@@ -79,6 +89,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
     public boolean addFlight(int id, int flightNumber, 
                              int numSeats, int flightPrice) {
 		// start a client to talk to the Flight RM.
+    	txnMgr.requestWrite(id, DType.FLIGHT, () -> flightClient.proxy.deleteFlight(id, flightNumber));
 		return flightClient.proxy.addFlight(id, flightNumber, numSeats, flightPrice);
     }
 

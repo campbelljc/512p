@@ -75,14 +75,16 @@ public class TransactionManager {
 	 * @param tid the transaction ID.
 	 * @param type the data item to read.
 	 */
-	public void requestRead(int tid, DType type){
+	public boolean requestRead(int tid, DType type){
 		txnMap.get(tid).resetTTL();
 		try {
 			lockMgr.Lock(tid, Integer.toString(type.ordinal()), LockManager.READ);
 		} catch (DeadlockException e) {
 			Trace.warn("Deadlock detected! Aborting transaction with ID " + Integer.toString(tid));
 			abort(tid);
+			return false;
 		}
+		return true;
 	}
 	
 	/**
@@ -91,15 +93,17 @@ public class TransactionManager {
 	 * @param type the data item to read.
 	 * @param undoFunction the inverse of the write operation.
 	 */
-	public void requestWrite(int tid, DType type, Runnable undoFunction){
+	public boolean requestWrite(int tid, DType type, Runnable undoFunction){
 		txnMap.get(tid).resetTTL();
 		try {
 			lockMgr.Lock(tid, Integer.toString(type.ordinal()), LockManager.WRITE);
 		} catch (DeadlockException e) {
 			Trace.warn("Deadlock detected! Aborting transaction with ID " + Integer.toString(tid));
 			abort(tid);
+			return false;
 		}
 		txnMap.get(tid).addUndoOp(undoFunction);
+		return true;
 	}
 	
 	public void removeLastUndoOp(int tid){

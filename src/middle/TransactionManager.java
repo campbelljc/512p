@@ -15,7 +15,7 @@ import LockManager.LockManager;
  */
 public class TransactionManager {
 	
-	private static final int TTL_CHECK_INTERVAL = 1; // seconds
+	private static final int TTL_CHECK_INTERVAL = 10; // seconds
 	
 	private LockManager lockMgr = new LockManager();
 	private HashMap<Integer, Transaction> txnMap = new HashMap<Integer, Transaction>();
@@ -82,9 +82,9 @@ public class TransactionManager {
 	 * Sets up a transactional read.
 	 * @param tid the transaction ID.
 	 * @param strData the data item to read.
-	 * @param undoFunc the inverse of the write operation.
+	 * @param undoFunction the inverse of the write operation.
 	 */
-	public void requestWrite(int tid, String strData, UndoFunction undoFunc){
+	public void requestWrite(int tid, String strData, Runnable undoFunction){
 		txnMap.get(tid).resetTTL();
 		try {
 			lockMgr.Lock(tid, strData, LockManager.WRITE);
@@ -92,8 +92,10 @@ public class TransactionManager {
 			Trace.warn("Deadlock detected! Aborting transaction with ID " + Integer.toString(tid));
 			abort(tid);
 		}
-		txnMap.get(tid).addUndoOp(undoFunc);
+		txnMap.get(tid).addUndoOp(undoFunction);
 	}
+	
+	// requestWrite(0, "a", () -> addFlight(x, y, z));
 	
 	/**
 	 * Check if there are any active transactions.

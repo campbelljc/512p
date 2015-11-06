@@ -8,12 +8,12 @@ import java.util.ArrayList;
 public class Transaction {
 	
 	private static final long TTL_MAX = 100000000000L; // nanoseconds
-	private ArrayList<UndoFunction> undoOps;
+	private ArrayList<Runnable> undoOps;
 	private long ttl;
 	
 	public Transaction(){
 		ttl = System.nanoTime();
-		undoOps = new ArrayList<UndoFunction>();
+		undoOps = new ArrayList<Runnable>();
 	}
 	
 	public void resetTTL(){
@@ -24,13 +24,13 @@ public class Transaction {
 		return (System.nanoTime() - ttl) > TTL_MAX;
 	}
 	
-	public void addUndoOp(UndoFunction f){
-		undoOps.add(f);
+	public void addUndoOp(Runnable r){
+		undoOps.add(r);
 	}
 	
 	public void undo(){
-		for(UndoFunction f : undoOps){
-			f.call();
+		for(Runnable r : undoOps){
+			r.run();
 		}
 	}
 }

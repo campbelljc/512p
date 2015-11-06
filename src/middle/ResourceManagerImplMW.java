@@ -26,7 +26,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 		CUSTOMER,
 		FLIGHT,
 		HOTEL,
-		ROOM
+		CAR
 	};
 	
 	public ResourceManagerImplMW() {
@@ -89,26 +89,45 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
     public boolean addFlight(int id, int flightNumber, 
                              int numSeats, int flightPrice) {
 		// start a client to talk to the Flight RM.
-    	txnMgr.requestWrite(id, DType.FLIGHT, () -> flightClient.proxy.deleteFlight(id, flightNumber));
-		return flightClient.proxy.addFlight(id, flightNumber, numSeats, flightPrice);
+    	txnMgr.requestWrite(id, DType.FLIGHT, flightExists(id, flightNumber) ? () -> flightClient.proxy.deleteFlight(id, flightNumber) : () -> flightClient.proxy.addFlight(id, flightNumber, -numSeats, -flightPrice));
+		boolean ret = flightClient.proxy.addFlight(id, flightNumber, numSeats, flightPrice);
+		if (!ret)
+		{
+			txnMgr.removeLastUndoOperation(id);
+		}
+		return ret;
     }
 
     @Override
     public boolean deleteFlight(int id, int flightNumber) {
-		return flightClient.proxy.deleteFlight(id, flightNumber);
+    	txnMgr.requestWrite(id, DType.FLIGHT, () -> flightClient.proxy.addFlight(id, flightNumber, queryFlight(id, flightNumber), queryFlightPrice(id, flightNumber)));
+		boolean ret = flightClient.proxy.deleteFlight(id, flightNumber);
+		if (!ret)
+		{
+			txnMgr.removeLastUndoOperation(id);
+		}
+		return ret;
     }
 
     // Returns the number of empty seats on this flight.
     @Override
     public int queryFlight(int id, int flightNumber) {
+    	txnMgr.requestRead(id, DType.FLIGHT);
         return flightClient.proxy.queryFlight(id, flightNumber);
     }
 
     // Returns price of this flight.
 	@Override
     public int queryFlightPrice(int id, int flightNumber) {
+    	txnMgr.requestRead(id, DType.FLIGHT);
 		return flightClient.proxy.queryFlightPrice(id, flightNumber);
     }
+	
+	@Override
+	public boolean flightExists(int id, int flightNumber) {
+		txnMgr.requestRead(id, DType.FLIGHT);
+		return flightClient.proxy.flightExists(id, flightNumber);
+	}
 
     // Car operations //
 
@@ -117,26 +136,46 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
     // its current price.
     @Override
     public boolean addCars(int id, String location, int numCars, int carPrice) {
-		return carClient.proxy.addCars(id, location, numCars, carPrice);
+    	txnMgr.requestWrite(id, DType.CAR, carExists(id, location) ? () -> carClient.proxy.deleteCars(id, location) : () -> carClient.proxy.addCars(id, location, -numCars, -carPrice));
+		boolean ret = carClient.proxy.addCars(id, location, numCars, carPrice);
+		if (!ret)
+		{
+			txnMgr.removeLastUndoOperation(id);
+		}
+		return ret;
     }
 
     // Delete cars from a location.
     @Override
     public boolean deleteCars(int id, String location) {
-		return carClient.proxy.deleteCars(id, location);
+    	txnMgr.requestWrite(id, DType.CAR, () -> carClient.proxy.addCars(id, location, queryCars(id, location), queryCarsPrice(id, location)));
+		boolean ret = carClient.proxy.deleteCars(id, location);
+		if (!ret)
+		{
+			txnMgr.removeLastUndoOperation(id);
+		}
+		return ret;
     }
 
     // Returns the number of cars available at a location.
     @Override
     public int queryCars(int id, String location) {
+    	txnMgr.requestRead(id, DType.CAR);
 		return carClient.proxy.queryCars(id, location);
     }
 
     // Returns price of cars at this location.
     @Override
     public int queryCarsPrice(int id, String location) {
+    	txnMgr.requestRead(id, DType.CAR);
 		return carClient.proxy.queryCarsPrice(id, location);
     }
+	
+	@Override
+	public boolean carExists(int id, String location) {
+		txnMgr.requestRead(id, DType.CAR);
+		return carClient.proxy.carExists(id, location);
+	}
     
 
     // Room operations //
@@ -146,32 +185,54 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
     // its current price.
     @Override
     public boolean addRooms(int id, String location, int numRooms, int roomPrice) {
-		return roomClient.proxy.addRooms(id, location, numRooms, roomPrice);
+    	txnMgr.requestWrite(id, DType.HOTEL, roomExists(id, location) ? () -> roomClient.proxy.deleteRooms(id, location) : () -> roomClient.proxy.addRooms(id, location, -numRooms, -roomPrice));
+		boolean ret = roomClient.proxy.addRooms(id, location, numRooms, roomPrice);
+		if (!ret)
+		{
+			txnMgr.removeLastUndoOperation(id);
+		}
+		return ret;
     }
 
     // Delete rooms from a location.
     @Override
     public boolean deleteRooms(int id, String location) {
-		return roomClient.proxy.deleteRooms(id, location);
+    	txnMgr.requestWrite(id, DType.HOTEL, () -> roomClient.proxy.addRooms(id, location, queryRooms(id, location), queryRoomsPrice(id, location)));
+		boolean ret = roomClient.proxy.deleteRooms(id, location);
+		if (!ret)
+		{
+			txnMgr.removeLastUndoOperation(id);
+		}
+		return ret;
     }
 
     // Returns the number of rooms available at a location.
     @Override
     public int queryRooms(int id, String location) {
+    	txnMgr.requestRead(id, DType.HOTEL);
 		return roomClient.proxy.queryRooms(id, location);
     }
     
     // Returns room price at this location.
     @Override
     public int queryRoomsPrice(int id, String location) {
+    	txnMgr.requestRead(id, DType.HOTEL);
 		return roomClient.proxy.queryRoomsPrice(id, location);
     }
+    
+	@Override
+	public boolean roomExists(int id, String location) {
+		txnMgr.requestRead(id, DType.HOTEL);
+		return roomClient.proxy.roomExists(id, location);
+	}
 
 
     // Customer operations //
 
     @Override
     public int newCustomer(int id) {
+//    	txnMgr.requestWrite(id, DType.CUSTOMER, () -> deleteCustomer(id, customerId));
+    	
    	 	Trace.info("INFO: RM::newCustomer(" + id + ") called.");
         // Generate a globally unique Id for the new customer.
         int customerId = Integer.parseInt(String.valueOf(id) +
@@ -222,14 +283,20 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 	                Trace.info("RM::deleteCustomer(" + id + ", " + customerId + "): " 
 	                        + "deleting " + reservedItem.getCount() + " reservations "
 	                        + "for item " + reservedItem.getKey());
-				
+			
 					String key = reservedItem.getKey();
-					if (key.contains("flight"))
+					if (key.contains("flight")) {
+						txnMgr.requestWrite(id, DType.FLIGHT, () -> reserveFlight(id, customerId, Integer.parseInt(reservedItem.getLocation())));
 						flightClient.proxy.deleteReservationWithKey(id, key, reservedItem.getCount());
-					else if (key.contains("room"))
+					}
+					else if (key.contains("room")) {
+						txnMgr.requestWrite(id, DType.HOTEL, () -> reserveRoom(id, customerId, reservedItem.getLocation()));
 						roomClient.proxy.deleteReservationWithKey(id, key, reservedItem.getCount());
-					else if (key.contains("car"))
+					}
+					else if (key.contains("car")) {
+						txnMgr.requestWrite(id, DType.CAR, () -> reserveCar(id, customerId, reservedItem.getLocation()));
 						carClient.proxy.deleteReservationWithKey(id, key, reservedItem.getCount());
+					}
 
 	      //          ReservableItem item = 
 	        //                (ReservableItem) readData(id, reservedItem.getKey());

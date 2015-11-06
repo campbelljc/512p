@@ -53,6 +53,8 @@ public interface ResourceManager {
     /* Return the price of a seat on this flight. */
     @WebMethod
     public int queryFlightPrice(int id, int flightNumber); 
+    
+    public boolean flightExists(int id, int flightNumber);
 
 
     // Car operations //
@@ -78,6 +80,8 @@ public interface ResourceManager {
     @WebMethod
     public int queryCarsPrice(int id, String location); 
 
+    public boolean carExists(int id, String location);
+
 
     // Room operations //
     
@@ -101,6 +105,9 @@ public interface ResourceManager {
     /* Return the price of a room at this location. */
     @WebMethod
     public int queryRoomsPrice(int id, String location); 
+    
+    public boolean roomExists(int id, String location);
+
 
 
     // Customer operations //

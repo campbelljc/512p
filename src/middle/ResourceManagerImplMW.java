@@ -25,7 +25,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 	enum DType {
 		CUSTOMER,
 		FLIGHT,
-		HOTEL,
+		ROOM,
 		CAR
 	};
 	
@@ -180,7 +180,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
     // its current price.
     @Override
     public boolean addRooms(int id, String location, int numRooms, int roomPrice) {
-    	txnMgr.requestWrite(id, DType.HOTEL, roomExists(id, location) ? () -> roomClient.proxy.deleteRooms(id, location) : () -> roomClient.proxy.addRooms(id, location, -numRooms, -roomPrice));
+    	txnMgr.requestWrite(id, DType.ROOM, roomExists(id, location) ? () -> roomClient.proxy.deleteRooms(id, location) : () -> roomClient.proxy.addRooms(id, location, -numRooms, -roomPrice));
 		boolean ret = roomClient.proxy.addRooms(id, location, numRooms, roomPrice);
 		if (!ret)
 		{
@@ -192,7 +192,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
     // Delete rooms from a location.
     @Override
     public boolean deleteRooms(int id, String location) {
-    	txnMgr.requestWrite(id, DType.HOTEL, () -> roomClient.proxy.addRooms(id, location, queryRooms(id, location), queryRoomsPrice(id, location)));
+    	txnMgr.requestWrite(id, DType.ROOM, () -> roomClient.proxy.addRooms(id, location, queryRooms(id, location), queryRoomsPrice(id, location)));
 		boolean ret = roomClient.proxy.deleteRooms(id, location);
 		if (!ret)
 		{
@@ -204,20 +204,20 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
     // Returns the number of rooms available at a location.
     @Override
     public int queryRooms(int id, String location) {
-    	txnMgr.requestRead(id, DType.HOTEL);
+    	txnMgr.requestRead(id, DType.ROOM);
 		return roomClient.proxy.queryRooms(id, location);
     }
     
     // Returns room price at this location.
     @Override
     public int queryRoomsPrice(int id, String location) {
-    	txnMgr.requestRead(id, DType.HOTEL);
+    	txnMgr.requestRead(id, DType.ROOM);
 		return roomClient.proxy.queryRoomsPrice(id, location);
     }
     
 	@Override
 	public boolean roomExists(int id, String location) {
-		txnMgr.requestRead(id, DType.HOTEL);
+		txnMgr.requestRead(id, DType.ROOM);
 		return roomClient.proxy.roomExists(id, location);
 	}
 
@@ -285,7 +285,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 						flightClient.proxy.deleteReservationWithKey(id, key, reservedItem.getCount());
 					}
 					else if (key.contains("room")) {
-						txnMgr.requestWrite(id, DType.HOTEL, () -> reserveRoom(id, customerId, reservedItem.getLocation()));
+						txnMgr.requestWrite(id, DType.ROOM, () -> reserveRoom(id, customerId, reservedItem.getLocation()));
 						roomClient.proxy.deleteReservationWithKey(id, key, reservedItem.getCount());
 					}
 					else if (key.contains("car")) {
@@ -435,11 +435,11 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 				return false;
 		
 	        // Check if the item is available.
-			txnMgr.requestWrite(id, DType.HOTEL, ()->roomClient.proxy.deleteReservationWithKey(id, key, 1));
+			txnMgr.requestWrite(id, DType.ROOM, ()->roomClient.proxy.deleteReservationWithKey(id, key, 1));
 			boolean reserved = roomClient.proxy.reserveRoom(id, customerId, location);
 			if (reserved)
 			{
-				txnMgr.requestRead(id, DType.HOTEL);
+				txnMgr.requestRead(id, DType.ROOM);
 				int price = roomClient.proxy.queryRoomsPrice(id, location);
 	            cust.reserve(key, location, price);
 	            writeData(id, cust.getKey(), cust);
@@ -488,7 +488,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 			}
 			if (room)
 			{
-				txnMgr.requestRead(id, DType.HOTEL);
+				txnMgr.requestRead(id, DType.ROOM);
 				if (queryRooms(id, location) == 0)
 				{
 					Trace.warn("No rooms available with that location " + location);
@@ -524,7 +524,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 			if (room)
 			{
 				Trace.warn("Trying to reserve room with id: " + id + " and location: " + location);
-				txnMgr.requestWrite(id, DType.HOTEL, ()->roomClient.proxy.deleteReservationWithKey(id, Room.getKey(location), 1));
+				txnMgr.requestWrite(id, DType.ROOM, ()->roomClient.proxy.deleteReservationWithKey(id, Room.getKey(location), 1));
 				if (!reserveRoom(id, customerId, location))
 				{
 					Trace.warn("Failed.");

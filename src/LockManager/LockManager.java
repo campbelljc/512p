@@ -91,11 +91,6 @@ public class LockManager
 								Vector v2 = this.lockTable.elements(trxnObj);
 								TrxnObj t = (TrxnObj)v2.elementAt(0);
 								t.setLockType(TrxnObj.WRITE);
-								
-								/*      
-									  TrxnObj trxnObj = new TrxnObj(xid, strData, lockType);
-     							   	  DataObj dataObj = new DataObj(xid, strData, lockType);
-								*/
 								System.out.println("Txn " + xid + " converting read lock to write lock.");
 							}
                         }

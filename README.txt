@@ -74,6 +74,14 @@ ant middle -Dservice.port2=9082 -Dservice.port=9083 -Dservice.name2=mw -Dservice
 ant client -Dservice.port=9082 -Dservice.name=mw -Dservice.host=lab2-1.cs.mcgill.ca
 ant client -Dservice.port=9082 -Dservice.name=mw -Dservice.host=lab2-1.cs.mcgill.ca
 
+Localhost:
+ant server -Dservice.name=rm -Dservice.port=9083
+ant server -Dservice.name=rm -Dservice.port=9084
+ant server -Dservice.name=rm -Dservice.port=9085
+ant middle -Dservice.port2=9082 -Dservice.port=9083 -Dservice.name2=mw -Dservice.host=localhost
+ant client -Dservice.port=9082 -Dservice.name=mw -Dservice.host=localhost
+ant client -Dservice.port=9082 -Dservice.name=mw -Dservice.host=localhost
+
 Commands to launch Pt2:
 ant server-tcp -Dservice.port=9083
 ant server-tcp -Dservice.port=9084

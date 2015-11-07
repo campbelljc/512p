@@ -558,7 +558,44 @@ public class Client extends WSClient {
                     e.printStackTrace();
                 }
                 break;
-                
+			
+			case 23:
+				System.out.println("Starting new txn");
+				try {
+					int tid = proxy.start();
+					System.out.println("USE THIS ID " + tid);
+				} catch(Exception e) {
+					e.printStackTrace();
+				}
+				break;
+			
+			case 24:
+				System.out.println("Committing txn");
+				try {
+					proxy.commit(getInt(arguments.elementAt(1)));
+				} catch(Exception e) {
+					e.printStackTrace();
+				}
+				break;
+			
+			case 25:
+				System.out.println("Aborting txn");
+				try {
+					proxy.abort(getInt(arguments.elementAt(1)));
+				} catch(Exception e) {
+					e.printStackTrace();
+				}
+				break;
+			
+			case 26:
+				System.out.println("Shutting down txn");
+				try {
+					proxy.shutdown();
+				} catch(Exception e) {
+					e.printStackTrace();
+				}
+				break;
+			
             default:
                 System.out.println("The interface does not support this command.");
                 break;
@@ -623,6 +660,14 @@ public class Client extends WSClient {
             return 21;
         else if (argument.compareToIgnoreCase("newcustomerid") == 0)
             return 22;
+		else if (argument.compareToIgnoreCase("start") == 0)
+			return 23;
+		else if (argument.compareToIgnoreCase("commit") == 0)
+			return 24;
+		else if (argument.compareToIgnoreCase("abort") == 0)
+			return 25;
+		else if (argument.compareToIgnoreCase("shutdown") == 0)
+			return 26;
         else
             return 666;
     }

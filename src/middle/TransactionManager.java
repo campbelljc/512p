@@ -92,6 +92,7 @@ public class TransactionManager {
 		} catch (DeadlockException e) {
 			Trace.warn("Deadlock detected! Aborting transaction with ID " + Integer.toString(tid));
 			abort(tid);
+			return;
 		}
 		txnMap.get(tid).addUndoOp(undoFunction);
 	}

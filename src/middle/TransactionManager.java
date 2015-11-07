@@ -22,11 +22,17 @@ public class TransactionManager {
 	private HashMap<Integer, Transaction> txnMap = new HashMap<Integer, Transaction>();
 	private AtomicInteger nextID = new AtomicInteger(0);
 	
+	private boolean isShutdown = false;
+	
 	/**
 	 * Starts a new transaction. 
 	 * @return the transaction ID.
 	 */
-	public int start(){
+	public synchronized int start(){
+		if(isShutdown){
+			Trace.error("System was shutdown, cannot start a new transaction");
+			return -1;
+		}
 		int tid = nextID.incrementAndGet();
 		txnMap.put(tid, new Transaction());
 
@@ -69,14 +75,16 @@ public class TransactionManager {
 	 * @param tid the transaction ID.
 	 * @param type the data item to read.
 	 */
-	public void requestRead(int tid, DType type){
+	public boolean requestRead(int tid, DType type){
 		txnMap.get(tid).resetTTL();
 		try {
 			lockMgr.Lock(tid, Integer.toString(type.ordinal()), LockManager.READ);
 		} catch (DeadlockException e) {
 			Trace.warn("Deadlock detected! Aborting transaction with ID " + Integer.toString(tid));
 			abort(tid);
+			return false;
 		}
+		return true;
 	}
 	
 	/**
@@ -85,16 +93,17 @@ public class TransactionManager {
 	 * @param type the data item to read.
 	 * @param undoFunction the inverse of the write operation.
 	 */
-	public void requestWrite(int tid, DType type, Runnable undoFunction){
+	public boolean requestWrite(int tid, DType type, Runnable undoFunction){
 		txnMap.get(tid).resetTTL();
 		try {
 			lockMgr.Lock(tid, Integer.toString(type.ordinal()), LockManager.WRITE);
 		} catch (DeadlockException e) {
 			Trace.warn("Deadlock detected! Aborting transaction with ID " + Integer.toString(tid));
 			abort(tid);
-			return;
+			return false;
 		}
 		txnMap.get(tid).addUndoOp(undoFunction);
+		return true;
 	}
 	
 	public void removeLastUndoOp(int tid){
@@ -105,7 +114,8 @@ public class TransactionManager {
 	 * Check if there are any active transactions.
 	 * @return true if there are active transactions, false otherwise
 	 */
-	public boolean transactionsRunning(){
-		return !txnMap.isEmpty();
+	public synchronized void shutdown(){
+		while(!txnMap.isEmpty()){}
+		isShutdown = true;
 	}
 }

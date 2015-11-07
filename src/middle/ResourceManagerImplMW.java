@@ -555,7 +555,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 
 	@Override
 	public void shutdown() {
-		while(txnMgr.transactionsRunning()){ /* wait for transactions to finish */ }
+		txnMgr.shutdown();
 		flightClient.proxy.shutdown();
 		carClient.proxy.shutdown();
 		roomClient.proxy.shutdown();

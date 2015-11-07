@@ -1,20 +1,23 @@
 System Architecture / special features of implementation
 --
--TM at MW
--LM at MW
--Undo ops using Runnable added at same time as requesting lock. If op did not succed,remove undo op.
--Shutdown when possible (all transactions finished).
--2PL locking scheme, locks converting from shared to exclusive if possible (if no other shared locks exist)
--Abort runs undo ops and unlocks locks, removes txn from txn list.
--On commit, remove txn from txn list and unlock locks.
--TTL mechanism uses timer thread to check at every interval and abort if necessary.
+
+-LM at MW - J
+-2PL locking scheme, locks converting from shared to exclusive if possible (if no other shared locks exist) - J
+
+-TM at MW - L
+-Undo ops using Runnable added at same time as requesting lock. If op did not succed,remove undo op. - J
+-Abort runs undo ops and unlocks locks, removes txn from txn list. - J
+-On commit, remove txn from txn list and unlock locks. - J
+-start - L
+-TTL mechanism uses timer thread to check at every interval and abort if necessary. - L
+-Shutdown when possible (all transactions finished). - L
 
 Problems encountered
 --
--Undo operations, MW has to know a bit about how each function works (addFlight can either add a new flight or modify existing, so undo op must undo either of those). Methods added to RM interface (flightExists, etc) to get existing state so that it can be restored later.
--Abort procedure - will it cause an inconsistent state.
+-Undo operations, MW has to know a bit about how each function works (addFlight can either add a new flight or modify existing, so undo op must undo either of those). Methods added to RM interface (flightExists, etc) to get existing state so that it can be restored later. - J
+-Abort procedure - will it cause an inconsistent state. - L
 
 Tests
 --
--Lock Manager test framework
--Transactions tests (to be done)
+-Lock Manager test framework - J
+-Transactions tests (to be done) - L

@@ -9,14 +9,37 @@
 
 \section*{System Architecture}
 
+The lock manager is stored at the middleware server. It receives lock requests from the transaction manager, which specifies the lock type (read or write), the data item to lock, and the ID of the transaction requesting the lock. It uses this centralized model so that the resource managers themselves need know nothing about locking. This approach also simplifies the process of waiting on a lock, since the middleware will know not to accept anymore operations from the same transaction until the lock is received (or a deadlock occurs), instead of having to be told by a resource manager who is waiting that it should wait as well.
 
-\subsection*{Implementation}
+The lock manager uses the strict 2PL locking scheme. Operations that read a data item will request a shared lock on the item. More than one transaction can receive a shared lock for the same data item. Operations that write a data item will request an exclusive lock on the item, which will only be given if there are no shared locks on that item, except for its own. If the transaction does have a shared lock and requests an exclusive lock, the lock is converted to exclusive if possible. If other transactions already have a shared lock on that item, then the requesting transaction will wait until those are released. Transactions will release all their locks only at commit or abort time.
+
+(tm at mw -L)
+
+-start - L
+
+When an operation is sent from the client to the middleware to be performed, the middleware will ask the transaction manager for the necessary locks and also inform it of the operations to perform in case of an abort (the undo operations). These operations are exactly the reverse of the operation sent by the client, e.g., if the operation was removeFlight, the undo operation will be addFlight, with the necessary parameters. The undo operation is passed as a Runnable using the lambda functionality in Java 8. After informing the TM of these details, the middleware will perform the requested operation, forwarding it to a resource manager if appropriate. When it receives the result of the operation, it will check if the operation succeeded or failed - in the latter case, it will ask the TM to remove the last undo operation, since there is nothing to undo.
+
+(Abort is called when... -L)
+-TTL mechanism uses timer thread to check at every interval and abort if necessary. - L
+
+When a transaction is aborted, the transaction manager will run the undo operations that have built up throughout the transaction's lifespan, ask the lock manager to release any locks held by the transaction, and remove the transaction from its transaction list.
+
+When a transaction commits, the TM asks the LM to release the transaction's locks, and removes the transaction from its list.
+
+-Shutdown when possible (all transactions finished). - L
 
 
-\subsection*{Problems encountered}
+\section*{Problems encountered}
 
+One problem that was encountered that originated from the centralized model was the management of undo functions. Since the middleware contains the transaction manager, it is also responsible for informing the TM of the undo operations to perform in case of abort, before the actual operation takes place. Therefore, the middleware will need to know the reverse of each operation, even when it is only forwarding the operation to a resource manager. The undo operations are hardcoded in the middleware, so knowledge about each operation must reside at both middleware and RMs, which breaks the pattern of functional isolation. Further, some undo operations are more complex, in cases where an operation (like addFlight) can have different effects based on data state (it can add a completely new flight, or edit details of a current flight), leading to a necessity for state analysis on the middleware and communication with the RM to determine which action will be performed, in order to record the correct undo operation.
 
-\subsection*{Testing}
+-Abort procedure - will it cause an inconsistent state. - L
+
+\section*{Testing}
+
+-Lock Manager test framework - J
+
+-Transactions tests (to be done) - L
 
 
 \end{document}

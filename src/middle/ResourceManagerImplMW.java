@@ -87,7 +87,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
     public boolean addFlight(int id, int flightNumber, 
                              int numSeats, int flightPrice) {
 		// start a client to talk to the Flight RM.
-    	if (!txnMgr.requestWrite(id, DType.FLIGHT, flightExists(id, flightNumber) ? () -> flightClient.proxy.deleteFlight(id, flightNumber) : () -> flightClient.proxy.addFlight(id, flightNumber, -numSeats, -flightPrice)))
+    	if (!txnMgr.requestWrite(id, DType.FLIGHT, !flightExists(id, flightNumber) ? () -> flightClient.proxy.deleteFlight(id, flightNumber) : () -> flightClient.proxy.addFlight(id, flightNumber, -numSeats, -flightPrice)))
 			return false;
 		boolean ret = flightClient.proxy.addFlight(id, flightNumber, numSeats, flightPrice);
 		if (!ret)

@@ -42,7 +42,7 @@ public class TransactionManager {
 			@Override
 			public void run(){
 				if(txnMap.get(tid).ttlExpired()){
-					Trace.warn("Transaction expired! Aborting transaction with ID " + Integer.toString(tid));
+					System.out.println("Txn " + tid + " EXPIRED! Aborting...");
 					abort(tid);
 				}
 			}
@@ -56,6 +56,7 @@ public class TransactionManager {
 	 * @param tid the transaction ID.
 	 */
 	public void commit(int tid){
+		System.out.println("Txn " + tid + " committing...");
 		txnMap.remove(tid);
 		lockMgr.UnlockAll(tid);
 	}
@@ -65,6 +66,7 @@ public class TransactionManager {
 	 * @param tid the transaction ID.
 	 */
 	public void abort(int tid){
+		System.out.println("Txn " + tid + " aborting...");
 		txnMap.get(tid).undo();
 		txnMap.remove(tid);
 		lockMgr.UnlockAll(tid);
@@ -76,11 +78,16 @@ public class TransactionManager {
 	 * @param type the data item to read.
 	 */
 	public boolean requestRead(int tid, DType type){
+		if (txnMap.get(tid) == null)
+		{
+			return false;
+		}
+		System.out.println("Txn " + tid + " requesting read");
 		txnMap.get(tid).resetTTL();
 		try {
 			lockMgr.Lock(tid, Integer.toString(type.ordinal()), LockManager.READ);
 		} catch (DeadlockException e) {
-			Trace.warn("Deadlock detected! Aborting transaction with ID " + Integer.toString(tid));
+			System.out.println("Txn " + tid + " encountered DEADLOCK after read request! Aborting...");
 			abort(tid);
 			return false;
 		}
@@ -94,11 +101,16 @@ public class TransactionManager {
 	 * @param undoFunction the inverse of the write operation.
 	 */
 	public boolean requestWrite(int tid, DType type, Runnable undoFunction){
+		if (txnMap.get(tid) == null)
+		{
+			return false;
+		}
+		System.out.println("Txn " + tid + " requesting write");
 		txnMap.get(tid).resetTTL();
 		try {
 			lockMgr.Lock(tid, Integer.toString(type.ordinal()), LockManager.WRITE);
 		} catch (DeadlockException e) {
-			Trace.warn("Deadlock detected! Aborting transaction with ID " + Integer.toString(tid));
+			System.out.println("Txn " + tid + " encountered DEADLOCK after write request! Aborting...");
 			abort(tid);
 			return false;
 		}
@@ -107,6 +119,7 @@ public class TransactionManager {
 	}
 	
 	public void removeLastUndoOp(int tid){
+		System.out.println("Txn " + tid + " removing last undo op.");
 		txnMap.get(tid).removeLastUndoOp();
 	}
 		
@@ -115,6 +128,7 @@ public class TransactionManager {
 	 * @return true if there are active transactions, false otherwise
 	 */
 	public synchronized void shutdown(){
+		System.out.println("Txn mgr shutting down");
 		while(!txnMap.isEmpty()){}
 		isShutdown = true;
 	}

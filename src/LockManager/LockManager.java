@@ -22,7 +22,7 @@ public class LockManager
     public boolean Lock(int xid, String strData, int lockType) throws DeadlockException {
     	String locks[] = { "read", "write" };
     	String vars[] = { "a", "b" };
-    	System.out.println("Txn " + xid + " trying to get " + locks[lockType] + " lock on " + vars[Integer.parseInt(strData)]);
+    	System.out.println("Txn " + xid + " trying to get " + locks[lockType] + " lock on data item " + strData); // vars[Integer.parseInt(strData)]);
         // if any parameter is invalid, then return false
         if (xid < 0) { 
             return false;
@@ -86,23 +86,24 @@ public class LockManager
 							else
 							{ // we are fine, no other txns have a lock on this data item
 								// convert our read lock to a write lock
-						      //  Vector vect = this.lockTable.elements(dataObj);
-							//	for (int i = 0; i < vect.size(); i++)
-							//	{
-								DataObj d = (DataObj)vect.elementAt(0);  //(DataObj)this.lockTable.get(dataObj);
+								DataObj d = (DataObj)vect.elementAt(0);
 								d.setLockType(TrxnObj.WRITE);
+								Vector v2 = this.lockTable.elements(trxnObj);
+								TrxnObj t = (TrxnObj)v2.elementAt(0);
+								t.setLockType(TrxnObj.WRITE);
+								
+								/*      
+									  TrxnObj trxnObj = new TrxnObj(xid, strData, lockType);
+     							   	  DataObj dataObj = new DataObj(xid, strData, lockType);
+								*/
 								System.out.println("Txn " + xid + " converting read lock to write lock.");
-									
-							//	}
 							}
-							
-                            // lock conversion 
-                            // *** ADD CODE HERE *** to carry out the lock conversion in the
-                            // lock table
-                        } else {
+                        }
+						else {
                             // a lock request that is not lock conversion
                             this.lockTable.add(trxnObj);
                             this.lockTable.add(dataObj);
+							System.out.println("Txn " + xid + " adding lock on data item " + trxnObj.getDataName());
                         }
                     }
                 }
@@ -117,6 +118,7 @@ public class LockManager
         }
         catch (RedundantLockRequestException redundantlockrequest) {
               // just ignore the redundant lock request
+			  System.out.println("Txn " + xid + " requesting lock it already had, continuing");
             return true;
         } 
 
@@ -127,7 +129,7 @@ public class LockManager
     
     // remove all locks for this transaction in the lock table.
     public boolean  UnlockAll(int xid) {
-   // 	System.out.println("Txn " + xid + " unlocking all locks.");
+    	System.out.println("Txn " + xid + " unlocking all locks.");
         // if any parameter is invalid, then return false
         if (xid < 0) {
             return false;
@@ -149,6 +151,7 @@ public class LockManager
 
                 DataObj dataObj = new DataObj(trxnObj.getXId(), trxnObj.getDataName(), trxnObj.getLockType());
                 this.lockTable.remove(dataObj);
+				System.out.println("Txn " + xid + " removing lock on " + trxnObj.getDataName() + " and notifying waiting transactions.");
                                         
                 // check if there are any waiting transactions. 
                 synchronized (this.waitTable) {
@@ -255,7 +258,7 @@ public class LockManager
                     if (dataObj2.getLockType() == DataObj.WRITE) {
                         // transaction is requesting a READ lock and some other transaction
                         // already has a WRITE lock on it ==> conflict
-                        System.out.println("Want READ, someone has WRITE");
+                        System.out.println("Want READ, someone (" + dataObj2.getXId() + ") has WRITE");
                         return true;
                     }
                     else {
@@ -324,6 +327,7 @@ public class LockManager
         synchronized (thisThread) {
             try {
                 thisThread.wait(LockManager.DEADLOCK_TIMEOUT - timeBlocked);
+				System.out.println("Txn " + dataObj.getXId() + " waiting on data item " + dataObj.getDataName());
                 TimeObj currTime = new TimeObj(dataObj.getXId());
                 timeBlocked = currTime.getTime() - timestamp.getTime();
                 if (timeBlocked >= LockManager.DEADLOCK_TIMEOUT) {

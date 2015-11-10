@@ -1,0 +1,131 @@
+package client;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Random;
+
+import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils.Collections;
+
+public class TestClient extends WSClient implements Runnable {
+	
+	private static final int SLEEP_INTERVAL_RANGE = 100;
+	
+	Random rand = new Random();
+	int numTxn;
+	long sleepTime;
+	Transaction[] transactions;
+	
+	public TestClient(String serviceName, String serviceHost, int servicePort, int numTxn, Transaction[] transactions, long sleepTime) {
+		super(serviceName, serviceHost, servicePort);
+		this.numTxn = numTxn;
+		this.sleepTime = sleepTime;
+		this.transactions = transactions;
+	}
+	
+	public void variedSleep(){
+		try{
+			Thread.sleep(sleepTime - (SLEEP_INTERVAL_RANGE/2) + rand.nextInt(SLEEP_INTERVAL_RANGE));
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+	
+
+	@Override
+	public void run() {
+		for(int i=0; i<numTxn; i++){
+			for(Transaction t : transactions){
+				t.run();
+				variedSleep();
+			}
+		}
+	}
+	
+	public static void main(String[] args){
+		// params
+		String serviceName = "mw";
+		String serviceHost = "localhost";
+		int servicePort = 9082;
+		int numTxn = 50;
+		Transaction[] transactions;
+		
+		// 5a - single client
+		transactions = new Transaction[]{new MWTxn(), new AllRMTxn()};
+		TestClient client = new TestClient(serviceName, serviceHost, servicePort, numTxn, transactions, 0L);
+		client.run();
+		System.out.print("Middleware-only transaction average response time: ");
+		System.out.println(transactions[0].getAvgResponseTime());
+		System.out.print("All RM transaction average response time: ");
+		System.out.println(transactions[1].getAvgResponseTime());
+		
+		// 5b - multi client
+//		int numClients = 10;
+//		long sleepTime = 500*1000000L;
+//		transactions = new Transaction[]{new MWTxn(), new AllRMTxn()};
+//		Client[] clients = new Client[numClients];
+//		for(int i=0; i<numClients; i++){
+//			clients[i] = new Client(serviceName, serviceHost, servicePort, numTxn, 
+//					Arrays.copyOf(transactions, transactions.length), sleepTime);
+//		}
+//		Thread[] clientThreads = new Thread[numClients];
+//		for(int i=0; i<numClients; i++){
+//			clientThreads[i] = new Thread(clients[i]);
+//			clientThreads[i].run();
+//		}
+//		for(Thread t : clientThreads){
+//			try {
+//				t.join();
+//			} catch (InterruptedException e) {
+//				e.printStackTrace();
+//			}
+//		}
+//		for(Client c : clients)
+		
+		
+		
+	}
+}
+
+abstract class Transaction{
+	
+	private static final long NS_PER_S = 1000000000L;
+	private int numRuns = 0;
+	private long avgResponseTime = 0;
+	
+	public void run(){
+		Long txnStart = System.nanoTime();
+		int tid = proxy.start();
+		execute(tid);
+		proxy.commit(tid);
+		Long txnEnd = System.nanoTime();
+		avgResponseTime = avgResponseTime * numRuns + (txnEnd - txnStart);
+	}
+	
+	public long getAvgResponseTime(){
+		return avgResponseTime/NS_PER_S;
+	}
+	
+	
+	abstract protected void execute(int id);
+}
+
+class MWTxn extends Transaction{
+
+	@Override
+	protected void execute(int id) {
+		proxy.newCustomer(id);
+		proxy.newCustomer(id);
+		proxy.newCustomer(id);
+	}
+}
+
+class AllRMTxn extends Transaction{
+
+	@Override
+	protected void execute(int id) {
+		proxy.queryFlight(id, 0);
+		proxy.queryCars(id, "");
+		proxy.queryRooms(id, "");
+	}
+	
+}

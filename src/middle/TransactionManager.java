@@ -35,6 +35,7 @@ public class TransactionManager {
 		}
 		int tid = nextID.incrementAndGet();
 		txnMap.put(tid, new Transaction());
+		System.out.println("Txn " + tid + " starting");
 
 		// Spawn TTL checker
 		final ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor();
@@ -65,7 +66,12 @@ public class TransactionManager {
 	 * Performs an abort operation.
 	 * @param tid the transaction ID.
 	 */
-	public void abort(int tid){
+	public void abort(int tid) {
+		if (txnMap.get(tid) == null)
+		{
+			System.out.println("Txn " + tid + " does not exist!");
+			return;
+		}
 		System.out.println("Txn " + tid + " aborting...");
 		txnMap.get(tid).undo();
 		txnMap.remove(tid);

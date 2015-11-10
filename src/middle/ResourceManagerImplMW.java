@@ -53,14 +53,16 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 
     // Write a data item.
     private void writeData(int id, String key, RMItem value) {
-    	if (!txnMgr.requestWrite(id, DType.CUSTOMER, () -> m_itemHT.put(key, m_itemHT.get(key))))
+		RMItem curVal = m_itemHT.get(key);
+    	if (!txnMgr.requestWrite(id, DType.CUSTOMER, () -> m_itemHT.put(key, curVal)))
 			return;
     	m_itemHT.put(key, value);
     }
     
     // Remove the item out of storage.
     protected RMItem removeData(int id, String key) {
-    	if (!txnMgr.requestWrite(id, DType.CUSTOMER, () -> m_itemHT.put(key, m_itemHT.get(key))))
+		RMItem curVal = m_itemHT.get(key);
+    	if (!txnMgr.requestWrite(id, DType.CUSTOMER, () -> m_itemHT.put(key, curVal)))
 			return null;
     	return (RMItem) m_itemHT.remove(key);
     }
@@ -99,7 +101,9 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 
     @Override
     public boolean deleteFlight(int id, int flightNumber) {
-    	if (!txnMgr.requestWrite(id, DType.FLIGHT, () -> flightClient.proxy.addFlight(id, flightNumber, queryFlight(id, flightNumber), queryFlightPrice(id, flightNumber))))
+		int x = queryFlight(id, flightNumber);
+		int p = queryFlightPrice(id, flightNumber);
+    	if (!txnMgr.requestWrite(id, DType.FLIGHT, () -> flightClient.proxy.addFlight(id, flightNumber, x, p)))
 			return false;
 		boolean ret = flightClient.proxy.deleteFlight(id, flightNumber);
 		if (!ret)
@@ -139,7 +143,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
     // its current price.
     @Override
     public boolean addCars(int id, String location, int numCars, int carPrice) {
-    	if (!txnMgr.requestWrite(id, DType.CAR, carExists(id, location) ? () -> carClient.proxy.deleteCars(id, location) : () -> carClient.proxy.addCars(id, location, -numCars, -carPrice)))
+    	if (!txnMgr.requestWrite(id, DType.CAR, !carExists(id, location) ? () -> carClient.proxy.deleteCars(id, location) : () -> carClient.proxy.addCars(id, location, -numCars, -carPrice)))
 			return false;
 		boolean ret = carClient.proxy.addCars(id, location, numCars, carPrice);
 		if (!ret)
@@ -152,7 +156,9 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
     // Delete cars from a location.
     @Override
     public boolean deleteCars(int id, String location) {
-    	if (!txnMgr.requestWrite(id, DType.CAR, () -> carClient.proxy.addCars(id, location, queryCars(id, location), queryCarsPrice(id, location))))
+		int x = queryCars(id, location);
+		int p = queryCarsPrice(id, location);
+    	if (!txnMgr.requestWrite(id, DType.CAR, () -> carClient.proxy.addCars(id, location, x, p)))
 			return false;
 		boolean ret = carClient.proxy.deleteCars(id, location);
 		if (!ret)
@@ -193,7 +199,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
     // its current price.
     @Override
     public boolean addRooms(int id, String location, int numRooms, int roomPrice) {
-    	if (!txnMgr.requestWrite(id, DType.ROOM, roomExists(id, location) ? () -> roomClient.proxy.deleteRooms(id, location) : () -> roomClient.proxy.addRooms(id, location, -numRooms, -roomPrice)))
+    	if (!txnMgr.requestWrite(id, DType.ROOM, !roomExists(id, location) ? () -> roomClient.proxy.deleteRooms(id, location) : () -> roomClient.proxy.addRooms(id, location, -numRooms, -roomPrice)))
 			return false;
 		boolean ret = roomClient.proxy.addRooms(id, location, numRooms, roomPrice);
 		if (!ret)
@@ -206,7 +212,9 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
     // Delete rooms from a location.
     @Override
     public boolean deleteRooms(int id, String location) {
-    	if (!txnMgr.requestWrite(id, DType.ROOM, () -> roomClient.proxy.addRooms(id, location, queryRooms(id, location), queryRoomsPrice(id, location))))
+		int x = queryRooms(id, location);
+		int p = queryRoomsPrice(id, location);
+    	if (!txnMgr.requestWrite(id, DType.ROOM, () -> roomClient.proxy.addRooms(id, location, x, p)))
 			return false;
 		boolean ret = roomClient.proxy.deleteRooms(id, location);
 		if (!ret)
@@ -391,8 +399,8 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 			boolean reserved = flightClient.proxy.reserveFlight(id, customerId, flightNumber);
 			if (reserved)
 			{
-				if (!txnMgr.requestRead(id, DType.FLIGHT))
-					return false;
+	//			if (!txnMgr.requestRead(id, DType.FLIGHT))
+	//				return false;
 				int price = flightClient.proxy.queryFlightPrice(id, flightNumber);
 	            cust.reserve(key, location, price);
 	            writeData(id, cust.getKey(), cust);
@@ -402,6 +410,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 			}
 			else
 			{
+				txnMgr.removeLastUndoOp(id);
 	            Trace.warn("RM::reserveFlight(" + id + ", " + customerId + ", " 
 	                    + key + ", " + location + ") failed.");
 				return false;
@@ -429,8 +438,8 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 			boolean reserved = carClient.proxy.reserveCar(id, customerId, location);
 			if (reserved)
 			{
-				if (!txnMgr.requestRead(id, DType.CAR))
-					return false;
+	//			if (!txnMgr.requestRead(id, DType.CAR))
+	//				return false;
 				int price = carClient.proxy.queryCarsPrice(id, location);
 	            Trace.info(cust.reserve(key, location, price));
 	            writeData(id, cust.getKey(), cust);
@@ -440,6 +449,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 			}
 			else
 			{
+				txnMgr.removeLastUndoOp(id);
 	            Trace.warn("RM::reserveCar(" + id + ", " + customerId + ", " 
 	                    + key + ", " + location + ") failed.");
 				return false;
@@ -465,8 +475,8 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 			boolean reserved = roomClient.proxy.reserveRoom(id, customerId, location);
 			if (reserved)
 			{
-				if (!txnMgr.requestRead(id, DType.ROOM))
-					return false;
+		//		if (!txnMgr.requestRead(id, DType.ROOM))
+		//			return false;
 				int price = roomClient.proxy.queryRoomsPrice(id, location);
 	            cust.reserve(key, location, price);
 	            writeData(id, cust.getKey(), cust);
@@ -476,6 +486,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 			}
 			else
 			{
+				txnMgr.removeLastUndoOp(id);
 	            Trace.warn("RM::reserveRoom(" + id + ", " + customerId + ", " 
 	                    + key + ", " + location + ") failed.");
 				return false;
@@ -529,26 +540,24 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 			{
 				int flightNumber = Integer.parseInt((String)(flightNumbers.get(count)));
 				Trace.warn("Trying to reserve flight " + flightNumber + " with id: " + id);
-				if (!txnMgr.requestWrite(id, DType.FLIGHT, ()->flightClient.proxy.deleteReservationWithKey(id, Flight.getKey(flightNumber), 1)))
-					return false;
+		//		if (!txnMgr.requestWrite(id, DType.FLIGHT, ()->flightClient.proxy.deleteReservationWithKey(id, Flight.getKey(flightNumber), 1)))
+		//			return false;
 				if (!reserveFlight(id, customerId, flightNumber))
 				{
-					txnMgr.removeLastUndoOp(id);
+		//			txnMgr.removeLastUndoOp(id);
 					Trace.warn("Failed.");
 					return false;
 				}
-				
-				
 			}
 			if (car)
 			{
 				Trace.warn("Trying to reserve car with id: " + id + " and location: " + location);
-				if (!txnMgr.requestWrite(id, DType.CAR, ()->carClient.proxy.deleteReservationWithKey(id, Car.getKey(location), 1)))
-					return false;
+		//		if (!txnMgr.requestWrite(id, DType.CAR, ()->carClient.proxy.deleteReservationWithKey(id, Car.getKey(location), 1)))
+		//			return false;
 				if (!reserveCar(id, customerId, location))
 				{
 					Trace.warn("Failed.");
-					txnMgr.removeLastUndoOp(id);
+		//			txnMgr.removeLastUndoOp(id);
 					return false;
 				}
 //				txnMgr.operationDone();
@@ -556,12 +565,12 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 			if (room)
 			{
 				Trace.warn("Trying to reserve room with id: " + id + " and location: " + location);
-				if (!txnMgr.requestWrite(id, DType.ROOM, ()->roomClient.proxy.deleteReservationWithKey(id, Room.getKey(location), 1)))
-					return false;
+//				if (!txnMgr.requestWrite(id, DType.ROOM, ()->roomClient.proxy.deleteReservationWithKey(id, Room.getKey(location), 1)))
+//					return false;
 				if (!reserveRoom(id, customerId, location))
 				{
 					Trace.warn("Failed.");
-					txnMgr.removeLastUndoOp(id);
+//					txnMgr.removeLastUndoOp(id);
 					return false;
 				}
 			}

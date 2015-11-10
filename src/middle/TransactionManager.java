@@ -138,4 +138,9 @@ public class TransactionManager {
 		while(!txnMap.isEmpty()){}
 		isShutdown = true;
 	}
+	
+	public boolean checkTransaction(int tid)
+	{
+		return !(txnMap.get(tid) == null);
+	}
 }

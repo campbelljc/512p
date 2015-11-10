@@ -53,7 +53,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 
     // Write a data item.
     private void writeData(int id, String key, RMItem value) {
-		RMItem curVal = m_itemHT.get(key);
+		Object curVal = m_itemHT.get(key);
     	if (!txnMgr.requestWrite(id, DType.CUSTOMER, () -> m_itemHT.put(key, curVal)))
 			return;
     	m_itemHT.put(key, value);
@@ -61,7 +61,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
     
     // Remove the item out of storage.
     protected RMItem removeData(int id, String key) {
-		RMItem curVal = m_itemHT.get(key);
+		Object curVal = m_itemHT.get(key);
     	if (!txnMgr.requestWrite(id, DType.CUSTOMER, () -> m_itemHT.put(key, curVal)))
 			return null;
     	return (RMItem) m_itemHT.remove(key);
@@ -602,6 +602,12 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 		carClient.proxy.shutdown();
 		roomClient.proxy.shutdown();
 		System.exit(0);
+	}
+	
+	@Override
+	public boolean checkTransaction(int tid)
+	{
+		return txnMgr.checkTransaction(tid);
 	}
 
 }

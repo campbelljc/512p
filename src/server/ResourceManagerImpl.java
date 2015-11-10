@@ -533,5 +533,11 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 	public void shutdown() {
 		System.exit(0);
 	}
+	
+	@Override
+	public boolean checkTransaction(int tid) {
+		System.out.println("Should not be called here.");
+		return false;
+	}
 
 }

@@ -176,4 +176,6 @@ public interface ResourceManager {
      */
     public void shutdown();
     			
+	@WebMethod
+	public boolean checkTransaction(int tid);
 }

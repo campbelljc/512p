@@ -97,6 +97,12 @@ public class Client extends WSClient {
                     flightNumber = getInt(arguments.elementAt(2));
                     numSeats = getInt(arguments.elementAt(3));
                     flightPrice = getInt(arguments.elementAt(4));
+					
+					if (!transactionExists(id))
+					{
+						System.out.println("Txn " + id + " does not exist!");
+						break;
+					}
                     
                     if (proxy.addFlight(id, flightNumber, numSeats, flightPrice))
                         System.out.println("Flight added");
@@ -124,6 +130,12 @@ public class Client extends WSClient {
                     location = getString(arguments.elementAt(2));
                     numCars = getInt(arguments.elementAt(3));
                     price = getInt(arguments.elementAt(4));
+					
+					if (!transactionExists(id))
+					{
+						System.out.println("Txn " + id + " does not exist!");
+						break;
+					}
 
                     if (proxy.addCars(id, location, numCars, price))
                         System.out.println("cars added");
@@ -151,6 +163,12 @@ public class Client extends WSClient {
                     location = getString(arguments.elementAt(2));
                     numRooms = getInt(arguments.elementAt(3));
                     price = getInt(arguments.elementAt(4));
+					
+					if (!transactionExists(id))
+					{
+						System.out.println("Txn " + id + " does not exist!");
+						break;
+					}
 
                     if (proxy.addRooms(id, location, numRooms, price))
                         System.out.println("rooms added");
@@ -172,6 +190,13 @@ public class Client extends WSClient {
                 System.out.println("Adding a new Customer using id: " + arguments.elementAt(1));
                 try {
                     id = getInt(arguments.elementAt(1));
+					
+					if (!transactionExists(id))
+					{
+						System.out.println("Txn " + id + " does not exist!");
+						break;
+					}
+					
                     int customer = proxy.newCustomer(id);
                     System.out.println("new customer id: " + customer);
                 }
@@ -191,6 +216,13 @@ public class Client extends WSClient {
                 System.out.println("Flight Number: " + arguments.elementAt(2));
                 try {
                     id = getInt(arguments.elementAt(1));
+					
+					if (!transactionExists(id))
+					{
+						System.out.println("Txn " + id + " does not exist!");
+						break;
+					}
+					
                     flightNumber = getInt(arguments.elementAt(2));
 
                     if (proxy.deleteFlight(id, flightNumber))
@@ -214,6 +246,13 @@ public class Client extends WSClient {
                 System.out.println("car Location: " + arguments.elementAt(2));
                 try {
                     id = getInt(arguments.elementAt(1));
+					
+					if (!transactionExists(id))
+					{
+						System.out.println("Txn " + id + " does not exist!");
+						break;
+					}
+					
                     location = getString(arguments.elementAt(2));
 
                     if (proxy.deleteCars(id, location))
@@ -238,7 +277,13 @@ public class Client extends WSClient {
                 try {
                     id = getInt(arguments.elementAt(1));
                     location = getString(arguments.elementAt(2));
-
+					
+					if (!transactionExists(id))
+					{
+						System.out.println("Txn " + id + " does not exist!");
+						break;
+					}
+					
                     if (proxy.deleteRooms(id, location))
                         System.out.println("rooms Deleted");
                     else
@@ -261,7 +306,13 @@ public class Client extends WSClient {
                 try {
                     id = getInt(arguments.elementAt(1));
                     int customer = getInt(arguments.elementAt(2));
-
+					
+					if (!transactionExists(id))
+					{
+						System.out.println("Txn " + id + " does not exist!");
+						break;
+					}
+					
                     if (proxy.deleteCustomer(id, customer))
                         System.out.println("Customer Deleted");
                     else
@@ -284,6 +335,13 @@ public class Client extends WSClient {
                 try {
                     id = getInt(arguments.elementAt(1));
                     flightNumber = getInt(arguments.elementAt(2));
+					
+					if (!transactionExists(id))
+					{
+						System.out.println("Txn " + id + " does not exist!");
+						break;
+					}
+					
                     int seats = proxy.queryFlight(id, flightNumber);
                     System.out.println("Number of seats available: " + seats);
                 }
@@ -304,7 +362,13 @@ public class Client extends WSClient {
                 try {
                     id = getInt(arguments.elementAt(1));
                     location = getString(arguments.elementAt(2));
-
+					
+					if (!transactionExists(id))
+					{
+						System.out.println("Txn " + id + " does not exist!");
+						break;
+					}
+					
                     numCars = proxy.queryCars(id, location);
                     System.out.println("number of cars at this location: " + numCars);
                 }
@@ -325,7 +389,13 @@ public class Client extends WSClient {
                 try {
                     id = getInt(arguments.elementAt(1));
                     location = getString(arguments.elementAt(2));
-
+					
+					if (!transactionExists(id))
+					{
+						System.out.println("Txn " + id + " does not exist!");
+						break;
+					}
+					
                     numRooms = proxy.queryRooms(id, location);
                     System.out.println("number of rooms at this location: " + numRooms);
                 }
@@ -346,7 +416,13 @@ public class Client extends WSClient {
                 try {
                     id = getInt(arguments.elementAt(1));
                     int customer = getInt(arguments.elementAt(2));
-
+					
+					if (!transactionExists(id))
+					{
+						System.out.println("Txn " + id + " does not exist!");
+						break;
+					}
+					
                     String bill = proxy.queryCustomerInfo(id, customer);
                     System.out.println("Customer info: " + bill);
                 }
@@ -367,7 +443,13 @@ public class Client extends WSClient {
                 try {
                     id = getInt(arguments.elementAt(1));
                     flightNumber = getInt(arguments.elementAt(2));
-
+					
+					if (!transactionExists(id))
+					{
+						System.out.println("Txn " + id + " does not exist!");
+						break;
+					}
+					
                     price = proxy.queryFlightPrice(id, flightNumber);
                     System.out.println("Price of a seat: " + price);
                 }
@@ -388,7 +470,13 @@ public class Client extends WSClient {
                 try {
                     id = getInt(arguments.elementAt(1));
                     location = getString(arguments.elementAt(2));
-
+					
+					if (!transactionExists(id))
+					{
+						System.out.println("Txn " + id + " does not exist!");
+						break;
+					}
+					
                     price = proxy.queryCarsPrice(id, location);
                     System.out.println("Price of a car at this location: " + price);
                 }
@@ -409,7 +497,13 @@ public class Client extends WSClient {
                 try {
                     id = getInt(arguments.elementAt(1));
                     location = getString(arguments.elementAt(2));
-
+					
+					if (!transactionExists(id))
+					{
+						System.out.println("Txn " + id + " does not exist!");
+						break;
+					}
+					
                     price = proxy.queryRoomsPrice(id, location);
                     System.out.println("Price of rooms at this location: " + price);
                 }
@@ -432,7 +526,13 @@ public class Client extends WSClient {
                     id = getInt(arguments.elementAt(1));
                     int customer = getInt(arguments.elementAt(2));
                     flightNumber = getInt(arguments.elementAt(3));
-
+					
+					if (!transactionExists(id))
+					{
+						System.out.println("Txn " + id + " does not exist!");
+						break;
+					}
+					
                     if (proxy.reserveFlight(id, customer, flightNumber))
                         System.out.println("Flight Reserved");
                     else
@@ -457,7 +557,13 @@ public class Client extends WSClient {
                     id = getInt(arguments.elementAt(1));
                     int customer = getInt(arguments.elementAt(2));
                     location = getString(arguments.elementAt(3));
-                    
+					
+					if (!transactionExists(id))
+					{
+						System.out.println("Txn " + id + " does not exist!");
+						break;
+					}
+					
                     if (proxy.reserveCar(id, customer, location))
                         System.out.println("car Reserved");
                     else
@@ -482,7 +588,13 @@ public class Client extends WSClient {
                     id = getInt(arguments.elementAt(1));
                     int customer = getInt(arguments.elementAt(2));
                     location = getString(arguments.elementAt(3));
-                    
+					
+					if (!transactionExists(id))
+					{
+						System.out.println("Txn " + id + " does not exist!");
+						break;
+					}
+					
                     if (proxy.reserveRoom(id, customer, location))
                         System.out.println("room Reserved");
                     else
@@ -516,7 +628,13 @@ public class Client extends WSClient {
                     location = getString(arguments.elementAt(arguments.size()-3));
                     car = getBoolean(arguments.elementAt(arguments.size()-2));
                     room = getBoolean(arguments.elementAt(arguments.size()-1));
-                    
+					
+					if (!transactionExists(id))
+					{
+						System.out.println("Txn " + id + " does not exist!");
+						break;
+					}
+					
                     if (proxy.reserveItinerary(id, customer, flightNumbers, 
                             location, car, room))
                         System.out.println("Itinerary Reserved");
@@ -548,7 +666,13 @@ public class Client extends WSClient {
                 try {
                     id = getInt(arguments.elementAt(1));
                     int customer = getInt(arguments.elementAt(2));
-
+					
+					if (!transactionExists(id))
+					{
+						System.out.println("Txn " + id + " does not exist!");
+						break;
+					}
+					
                     boolean c = proxy.newCustomerId(id, customer);
                     System.out.println("new customer id: " + customer);
                 }
@@ -559,7 +683,11 @@ public class Client extends WSClient {
                 }
                 break;
 			
-			case 23:
+			case 23: // start new txn.
+	            if (arguments.size() != 1) {
+	                wrongNumber();
+	                break;
+	            }
 				System.out.println("Starting new txn");
 				try {
 					int tid = proxy.start();
@@ -569,26 +697,54 @@ public class Client extends WSClient {
 				}
 				break;
 			
-			case 24:
+			case 24: // commit txn.
+	            if (arguments.size() != 2) {
+	                wrongNumber();
+	                break;
+	            }
 				System.out.println("Committing txn");
 				try {
-					proxy.commit(getInt(arguments.elementAt(1)));
+					id = getInt(arguments.elementAt(1));
+					
+					if (!transactionExists(id))
+					{
+						System.out.println("Txn " + id + " does not exist!");
+						break;
+					}
+					
+					proxy.commit(id);
 				} catch(Exception e) {
 					e.printStackTrace();
 				}
 				break;
 			
-			case 25:
+			case 25: // abort txn.
+	            if (arguments.size() != 2) {
+	                wrongNumber();
+	                break;
+	            }
 				System.out.println("Aborting txn");
 				try {
-					proxy.abort(getInt(arguments.elementAt(1)));
+					id = getInt(arguments.elementAt(1));
+					
+					if (!transactionExists(id))
+					{
+						System.out.println("Txn " + id + " does not exist!");
+						break;
+					}
+					
+					proxy.abort(id);
 				} catch(Exception e) {
 					e.printStackTrace();
 				}
 				break;
 			
 			case 26:
-				System.out.println("Shutting down txn");
+	            if (arguments.size() != 1) {
+	                wrongNumber();
+	                break;
+	            }
+				System.out.println("Shutting down middleware and RMs...");
 				try {
 					proxy.shutdown();
 				} catch(Exception e) {
@@ -905,4 +1061,7 @@ public class Client extends WSClient {
         }
     }
     
+	public boolean transactionExists(int tid) {
+		return proxy.checkTransaction(tid);
+	}
 }

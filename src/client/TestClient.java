@@ -1,12 +1,10 @@
-package client;
+package TestClient;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Random;
 
-import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils.Collections;
-
-public class TestClient extends WSClient implements Runnable {
+public class TestClient extends WSTestClient implements Runnable {
 	
 	private static final int SLEEP_INTERVAL_RANGE = 100;
 	
@@ -49,37 +47,37 @@ public class TestClient extends WSClient implements Runnable {
 		int numTxn = 50;
 		Transaction[] transactions;
 		
-		// 5a - single client
-		transactions = new Transaction[]{new MWTxn(), new AllRMTxn()};
-		TestClient client = new TestClient(serviceName, serviceHost, servicePort, numTxn, transactions, 0L);
-		client.run();
+		// 5a - single TestClient
+		transactions = new Transaction[]{new MWTxn(proxy), new AllRMTxn(proxy)};
+		TestClient TestClient = new TestClient(serviceName, serviceHost, servicePort, numTxn, transactions, 0L);
+		TestClient.run();
 		System.out.print("Middleware-only transaction average response time: ");
 		System.out.println(transactions[0].getAvgResponseTime());
 		System.out.print("All RM transaction average response time: ");
 		System.out.println(transactions[1].getAvgResponseTime());
 		
-		// 5b - multi client
-//		int numClients = 10;
+		// 5b - multi TestClient
+//		int numTestClients = 10;
 //		long sleepTime = 500*1000000L;
 //		transactions = new Transaction[]{new MWTxn(), new AllRMTxn()};
-//		Client[] clients = new Client[numClients];
-//		for(int i=0; i<numClients; i++){
-//			clients[i] = new Client(serviceName, serviceHost, servicePort, numTxn, 
+//		TestClient[] TestClients = new TestClient[numTestClients];
+//		for(int i=0; i<numTestClients; i++){
+//			TestClients[i] = new TestClient(serviceName, serviceHost, servicePort, numTxn, 
 //					Arrays.copyOf(transactions, transactions.length), sleepTime);
 //		}
-//		Thread[] clientThreads = new Thread[numClients];
-//		for(int i=0; i<numClients; i++){
-//			clientThreads[i] = new Thread(clients[i]);
-//			clientThreads[i].run();
+//		Thread[] TestClientThreads = new Thread[numTestClients];
+//		for(int i=0; i<numTestClients; i++){
+//			TestClientThreads[i] = new Thread(TestClients[i]);
+//			TestClientThreads[i].run();
 //		}
-//		for(Thread t : clientThreads){
+//		for(Thread t : TestClientThreads){
 //			try {
 //				t.join();
 //			} catch (InterruptedException e) {
 //				e.printStackTrace();
 //			}
 //		}
-//		for(Client c : clients)
+//		for(TestClient c : TestClients)
 		
 		
 		
@@ -91,6 +89,9 @@ abstract class Transaction{
 	private static final long NS_PER_S = 1000000000L;
 	private int numRuns = 0;
 	private long avgResponseTime = 0;
+	ResourceManager proxy;
+	
+	public Transaction(ResourceManager proxy_) { proxy = proxy_; }
 	
 	public void run(){
 		Long txnStart = System.nanoTime();
@@ -110,6 +111,7 @@ abstract class Transaction{
 }
 
 class MWTxn extends Transaction{
+	public MWTxn(ResourceManager proxy_) { super(proxy_); }
 
 	@Override
 	protected void execute(int id) {
@@ -120,6 +122,7 @@ class MWTxn extends Transaction{
 }
 
 class AllRMTxn extends Transaction{
+	public AllRMTxn(ResourceManager proxy_) { super(proxy_); }
 
 	@Override
 	protected void execute(int id) {

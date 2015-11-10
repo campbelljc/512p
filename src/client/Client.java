@@ -691,7 +691,7 @@ public class Client extends WSClient {
 				System.out.println("Starting new txn");
 				try {
 					int tid = proxy.start();
-					System.out.println("USE THIS ID " + tid);
+					System.out.println("New txn started with ID: " + tid);
 				} catch(Exception e) {
 					e.printStackTrace();
 				}
@@ -712,7 +712,9 @@ public class Client extends WSClient {
 						break;
 					}
 					
-					proxy.commit(id);
+					if (proxy.commit(id))
+						System.out.println("Committed!");
+					else System.out.println("Failed");
 				} catch(Exception e) {
 					e.printStackTrace();
 				}
@@ -733,7 +735,9 @@ public class Client extends WSClient {
 						break;
 					}
 					
-					proxy.abort(id);
+					if (proxy.abort(id))
+						System.out.println("Aborted!");
+					else System.out.println("Failed");
 				} catch(Exception e) {
 					e.printStackTrace();
 				}
@@ -746,7 +750,9 @@ public class Client extends WSClient {
 	            }
 				System.out.println("Shutting down middleware and RMs...");
 				try {
-					proxy.shutdown();
+					if (proxy.shutdown())
+						System.out.println("Shut down successfully!");
+					else System.out.println("Failed");
 				} catch(Exception e) {
 					e.printStackTrace();
 				}

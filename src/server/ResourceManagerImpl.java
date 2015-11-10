@@ -520,18 +520,21 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 	}
 
 	@Override
-	public void commit(int tid) {
+	public boolean commit(int tid) {
 		// DO NOTHING: implemented on MW.
+		return false;
 	}
 
 	@Override
-	public void abort(int tid) {
+	public boolean abort(int tid) {
 		// DO NOTHING : implemented on MW
+		return false;
 	}
 
 	@Override
-	public void shutdown() {
+	public boolean shutdown() {
 		System.exit(0);
+		return true; // never reach here, doesnt matter.
 	}
 	
 	@Override

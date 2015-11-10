@@ -56,26 +56,33 @@ public class TransactionManager {
 	 * Performs a commit operation.
 	 * @param tid the transaction ID.
 	 */
-	public void commit(int tid){
+	public boolean commit(int tid){
+		if (txnMap.get(tid) == null)
+		{
+			System.out.println("Txn " + tid + " does not exist!");
+			return false;
+		}
 		System.out.println("Txn " + tid + " committing...");
 		txnMap.remove(tid);
 		lockMgr.UnlockAll(tid);
+		return true;
 	}
 	
 	/**
 	 * Performs an abort operation.
 	 * @param tid the transaction ID.
 	 */
-	public void abort(int tid) {
+	public boolean abort(int tid) {
 		if (txnMap.get(tid) == null)
 		{
 			System.out.println("Txn " + tid + " does not exist!");
-			return;
+			return false;
 		}
 		System.out.println("Txn " + tid + " aborting...");
 		txnMap.get(tid).undo();
 		txnMap.remove(tid);
 		lockMgr.UnlockAll(tid);
+		return true;
 	}
 	
 	/**

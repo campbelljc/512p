@@ -1,6 +1,7 @@
 package middle;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 /**
  * Object representation of a transaction.
@@ -32,8 +33,9 @@ public class Transaction {
 		undoOps.remove(undoOps.size()-1);
 	}
 	
-	public void undo(){
-		for(Runnable r : undoOps){
+	public void undo() {
+		Collections.reverse(undoOps);
+		for(Runnable r : undoOps) {
 			r.run();
 		}
 	}

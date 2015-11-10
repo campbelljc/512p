@@ -161,20 +161,20 @@ public interface ResourceManager {
      * Commits a transaction.
      * @param tid transaction id.
      */
-    public void commit(int tid);
+    public boolean commit(int tid);
     
     @WebMethod
     /**
      * Aborts a transaction.
      * @param tid transaction id.
      */
-    public void abort(int tid);
+    public boolean abort(int tid);
     
     @WebMethod
     /**
      * Soft system shutdown.
      */
-    public void shutdown();
+    public boolean shutdown();
     			
 	@WebMethod
 	public boolean checkTransaction(int tid);

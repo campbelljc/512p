@@ -46,24 +46,18 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
     
     // Read a data item.
     private RMItem readData(int id, String key) {
-    //	if (!txnMgr.requestRead(id, DType.CUSTOMER))
-	//		return null;
     	return (RMItem) m_itemHT.get(key);
     }
 
     // Write a data item.
     private void writeData(int id, String key, RMItem value) {
 		Object curVal = m_itemHT.get(key);
-   // 	if (!txnMgr.requestWrite(id, DType.CUSTOMER, () -> m_itemHT.put(key, curVal)))
-	//		return;
     	m_itemHT.put(key, value);
     }
     
     // Remove the item out of storage.
     protected RMItem removeData(int id, String key) {
 		Object curVal = m_itemHT.get(key);
-    //	if (!txnMgr.requestWrite(id, DType.CUSTOMER, () -> m_itemHT.put(key, curVal)))
-	//		return null;
     	return (RMItem) m_itemHT.remove(key);
     }
     
@@ -91,8 +85,8 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
     public boolean addFlight(int id, int flightNumber, 
                              int numSeats, int flightPrice) {
 		// start a client to talk to the Flight RM.
-		int oldFlightPrice = queryFlightPrice(id, flightNumber);
-    	if (!txnMgr.requestWrite(id, DType.FLIGHT, !flightExists(id, flightNumber) ? () -> flightClient.proxy.deleteFlight(id, flightNumber) : () -> flightClient.proxy.addFlight(id, flightNumber, -numSeats, oldFlightPrice)))
+		int oldPrice = queryFlightPrice(id, flightNumber);
+    	if (!txnMgr.requestWrite(id, DType.FLIGHT, !flightExists(id, flightNumber) ? () -> flightClient.proxy.deleteFlight(id, flightNumber) : () -> flightClient.proxy.addFlight(id, flightNumber, -numSeats, oldPrice)))
 			return false;
 		boolean ret = flightClient.proxy.addFlight(id, flightNumber, numSeats, flightPrice);
 		if (!ret)
@@ -146,7 +140,8 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
     // its current price.
     @Override
     public boolean addCars(int id, String location, int numCars, int carPrice) {
-    	if (!txnMgr.requestWrite(id, DType.CAR, !carExists(id, location) ? () -> carClient.proxy.deleteCars(id, location) : () -> carClient.proxy.addCars(id, location, -numCars, -carPrice)))
+		int oldPrice = queryCarsPrice(id, location);
+    	if (!txnMgr.requestWrite(id, DType.CAR, !carExists(id, location) ? () -> carClient.proxy.deleteCars(id, location) : () -> carClient.proxy.addCars(id, location, -numCars, oldPrice)))
 			return false;
 		boolean ret = carClient.proxy.addCars(id, location, numCars, carPrice);
 		if (!ret)
@@ -202,7 +197,8 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
     // its current price.
     @Override
     public boolean addRooms(int id, String location, int numRooms, int roomPrice) {
-    	if (!txnMgr.requestWrite(id, DType.ROOM, !roomExists(id, location) ? () -> roomClient.proxy.deleteRooms(id, location) : () -> roomClient.proxy.addRooms(id, location, -numRooms, -roomPrice)))
+		int oldPrice = queryRoomsPrice(id, location);
+    	if (!txnMgr.requestWrite(id, DType.ROOM, !roomExists(id, location) ? () -> roomClient.proxy.deleteRooms(id, location) : () -> roomClient.proxy.addRooms(id, location, -numRooms, oldPrice)))
 			return false;
 		boolean ret = roomClient.proxy.addRooms(id, location, numRooms, roomPrice);
 		if (!ret)
@@ -255,9 +251,6 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 
     @Override
     public int newCustomer(int id) {
-//    	txnMgr.requestWrite(id, DType.CUSTOMER, () -> deleteCustomer(id, customerId));
-
-    	
    	 	Trace.info("INFO: RM::newCustomer(" + id + ") called.");
         // Generate a globally unique Id for the new customer.
         int customerId = Integer.parseInt(String.valueOf(id) +

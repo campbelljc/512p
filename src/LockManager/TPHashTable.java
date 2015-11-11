@@ -9,7 +9,7 @@ import java.util.Enumeration;
 
 public class TPHashTable
 {
-    private static final int HASH_DEPTH = 8;
+    private static final int HASH_DEPTH = 12;
     
     private Vector vect;
     private int iSize;    // size of the hash table
@@ -47,7 +47,7 @@ public class TPHashTable
         if (xobj == null) return (new Vector());
         
         Vector vectSlot;    // hash slot
-        Vector elemVect = new Vector(24); // return object
+        Vector elemVect = new Vector(2048); // return object
         
         int hashSlot = (xobj.hashCode() % this.iSize);
         if ( hashSlot < 0 ) {
@@ -132,7 +132,7 @@ public class TPHashTable
     public Vector allElements() {
         Vector vectSlot = null;
         XObj xobj = null;
-        Vector hashContents = new Vector(1024);
+        Vector hashContents = new Vector(2048);
         
         for (int i = 0; i < this.iSize; i++) {    // walk down hashslots
             if ( (this.vect).size() > 0 ) {    // contains elements?

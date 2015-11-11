@@ -103,8 +103,20 @@ public class TestClient extends WSClient implements Runnable {
         String serviceName = args[0];
         String serviceHost = args[1];
         int servicePort = Integer.parseInt(args[2]);
+        System.out.println("Part (a): Single client experiment: ");
         runExperiment(serviceName, serviceHost, servicePort, 1, 0, 0);
+        System.out.println();
+        System.out.println("Part (b): Multi-client experiment: ");
+        
+        System.out.println("TPS: ");
         runExperiment(serviceName, serviceHost, servicePort, 10, 0, 0);
+        System.out.println();
+        System.out.println("TPS: ");
+        runExperiment(serviceName, serviceHost, servicePort, 10, 0, 0);
+        System.out.println();
+        System.out.println("TPS: ");
+        runExperiment(serviceName, serviceHost, servicePort, 10, 0, 0);
+        System.out.println();
 	}
 }
 

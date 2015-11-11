@@ -6,8 +6,11 @@
 package middle;
 
 import java.util.*;
+
 import javax.jws.WebService;
+
 import server.*;
+
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
@@ -647,15 +650,18 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 		flightClient.proxy.shutdown();
 		carClient.proxy.shutdown();
 		roomClient.proxy.shutdown();
-		new java.util.Timer().schedule( 
-		        new java.util.TimerTask() {
-		            @Override
-		            public void run() {
-						System.exit(0);
-		            }
-		        }, 
-		        5000 
-		);
+		Thread t = new Thread(new Runnable(){
+			@Override
+			public void run() {
+				try {
+					Thread.sleep(100);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				System.exit(0);
+			}
+		});
+		t.start();
 		return true;
 	}
 	

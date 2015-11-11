@@ -6,6 +6,7 @@
 package server;
 
 import java.util.*;
+
 import javax.jws.WebService;
 
 
@@ -533,7 +534,18 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
 	@Override
 	public boolean shutdown() {
-		System.exit(0);
+		Thread t = new Thread(new Runnable(){
+			@Override
+			public void run() {
+				try {
+					Thread.sleep(100);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				System.exit(0);
+			}
+		});
+		t.start();
 		return true; // never reach here, doesnt matter.
 	}
 	

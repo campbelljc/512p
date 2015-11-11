@@ -68,7 +68,7 @@ public class LockManager
 							// If so, then we must wait, otherwise we can continue and change the read lock to write.
 							
 					        Vector vect = this.lockTable.elements(dataObj);
-							System.out.println("Lock :: vect :: " + vect.toString());
+							//System.out.println("Lock :: vect :: " + vect.toString());
 							
 							boolean otherSharedLock = false;
 							for (int i = 0; i < vect.size(); i++)
@@ -88,26 +88,24 @@ public class LockManager
 							else
 							{ // we are fine, no other txns have a lock on this data item
 								// convert our read lock to a write lock
-								System.out.println("Txn " + xid + " starting to convert read lock to write lock.");
-								System.out.println(this.lockTable.toString());
+						//		System.out.println("Txn " + xid + " starting to convert read lock to write lock.");
+					//			System.out.println(this.lockTable.toString());
 								DataObj d = (DataObj)vect.elementAt(0);
 								d.setLockType(TrxnObj.WRITE);
 								Vector v2 = this.lockTable.elements(trxnObj);
-								System.out.println("Lock :: v2 :: " + v2.toString());
+				//				System.out.println("Lock :: v2 :: " + v2.toString());
 								for (int i = 0; i < v2.size(); i ++)
 								{
-									System.out.println(((TrxnObj)v2.elementAt(i)).getDataName() + " and strdata: " + strData);
+				//					System.out.println(((TrxnObj)v2.elementAt(i)).getDataName() + " and strdata: " + strData);
 									if (((TrxnObj)v2.elementAt(i)).getDataName().equals(strData))
 									{
-										System.out.println("Found...setting.");
+				//						System.out.println("Found...setting.");
 										((TrxnObj)v2.elementAt(i)).setLockType(TrxnObj.WRITE);
 										break;
 									}
 								}
-	//							TrxnObj t = (TrxnObj)v2.elementAt(0);
-	//							t.setLockType(TrxnObj.WRITE);
-								System.out.println("Txn " + xid + " done converting read lock to write lock.");
-								System.out.println(this.lockTable.toString());
+								System.out.println("Txn " + xid + " converting read lock to write lock.");
+				//				System.out.println(this.lockTable.toString());
 							}
                         }
 						else {
@@ -149,7 +147,7 @@ public class LockManager
         TrxnObj trxnQueryObj = new TrxnObj(xid, "", -1);  // Only used in elements() call below.
         synchronized (this.lockTable) {
             Vector vect = this.lockTable.elements(trxnQueryObj);
-			System.out.println("UnlockAll :: vect :: " + vect.toString());
+		//	System.out.println("UnlockAll :: vect :: " + vect.toString());
 
             TrxnObj trxnObj;
             Vector waitVector;
@@ -159,12 +157,12 @@ public class LockManager
             for (int i = (size - 1); i >= 0; i--) {
                 
                 trxnObj = (TrxnObj) vect.elementAt(i);
-				System.out.println("UnlockAll :: for :: trxnObj :: " + trxnObj.toString());
+			//	System.out.println("UnlockAll :: for :: trxnObj :: " + trxnObj.toString());
                 if (!this.lockTable.remove(trxnObj))
 					System.out.println("We couldn't remove the transaction object");
 
                 DataObj dataObj = new DataObj(trxnObj.getXId(), trxnObj.getDataName(), trxnObj.getLockType());
-				System.out.println("UnlockAll :: for :: dataObj :: " + dataObj.toString());
+	//			System.out.println("UnlockAll :: for :: dataObj :: " + dataObj.toString());
                 if (!this.lockTable.remove(dataObj))
 					System.out.println("We couldn't remove the data object");
 				System.out.println("Txn " + xid + " removing lock on " + trxnObj.getDataName() + " and notifying waiting transactions.");
@@ -237,12 +235,16 @@ public class LockManager
     
     private boolean LockConflict(DataObj dataObj, BitSet bitset) throws DeadlockException, RedundantLockRequestException {
         Vector vect = this.lockTable.elements(dataObj);
+		System.out.println("LockConflict :: vect :: " + vect.toString());
         DataObj dataObj2;
         int size = vect.size();
         
         // as soon as a lock that conflicts with the current lock request is found, return true
         for (int i = 0; i < size; i++) {
+			if (vect.elementAt(i) instanceof TrxnObj)
+				continue;
             dataObj2 = (DataObj) vect.elementAt(i);
+			
             if (dataObj.getXId() == dataObj2.getXId()) {    
                 // the transaction already has a lock on this data item which means that it is either
                 // relocking it or is converting the lock

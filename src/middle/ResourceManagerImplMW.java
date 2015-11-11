@@ -269,7 +269,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
     // This method makes testing easier.
     @Override
     public boolean newCustomerId(int id, int customerId) {
-		synchronized(m_itemHT) {
+	//	synchronized(m_itemHT) {
        	 	Trace.info("INFO: RM::newCustomer(" + id + ", " + customerId + ") called.");
 			if (!txnMgr.requestRead(id, DType.CUSTOMER))
 				return false;
@@ -286,13 +286,13 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 	                    customerId + ") failed: customer already exists.");
 	            return false;
 	        }
-		}
+	//	}
     }
 
     // Delete customer from the database. 
     @Override
     public boolean deleteCustomer(int id, int customerId) {
-		synchronized(m_itemHT) {
+	//	synchronized(m_itemHT) {
        	 	Trace.info("RM::deleteCustomer(" + id + ", " + customerId + ") called.");
 			if (!txnMgr.requestRead(id, DType.CUSTOMER))
 				return false;
@@ -343,7 +343,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 	            Trace.info("RM::deleteCustomer(" + id + ", " + customerId + ") OK.");
 	            return true;
 	        }
-		}
+	//	}
     }
 	
 	@Override
@@ -392,7 +392,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
     // Add flight reservation to this customer.  
     @Override
     public boolean reserveFlight(int id, int customerId, int flightNumber) {
-		synchronized(m_itemHT) {
+	//	synchronized(m_itemHT) {
        	 	
   //      return reserveItem(id, customerId, 
     //            Flight.getKey(flightNumber), String.valueOf(flightNumber));
@@ -439,7 +439,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 	                    + key + ", " + location + ") failed.");
 				return false;
 			}
-		}
+	//	}
     }
 
     // Add car reservation to this customer. 
@@ -447,7 +447,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
     public boolean reserveCar(int id, int customerId, String location) {
   //      return reserveItem(id, customerId, Car.getKey(location), location);
 		
-		synchronized(m_itemHT) {
+	//	synchronized(m_itemHT) {
 	 	 	String key = Car.getKey(location);
 		
 	        Trace.info("RM::reserveCar(" + id + ", " + customerId + ", " 
@@ -489,13 +489,13 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 	                    + key + ", " + location + ") failed.");
 				return false;
 			}
-		}
+	//	}
     }
 
     // Add room reservation to this customer. 
     @Override
     public boolean reserveRoom(int id, int customerId, String location) {
-		synchronized(m_itemHT) {
+	//	synchronized(m_itemHT) {
 			String key = Room.getKey(location);
 		
 	        Trace.info("RM::reserveRoom(" + id + ", " + customerId + ", " 
@@ -537,7 +537,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 	                    + key + ", " + location + ") failed.");
 				return false;
 			}
-		}
+	//	}
 		
     //    return reserveItem(id, customerId, Room.getKey(location), location);
     }
@@ -547,7 +547,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
     @Override
     public boolean reserveItinerary(int id, int customerId, Vector flightNumbers,
                                     String location, boolean car, boolean room) {
-		synchronized(m_itemHT) {
+		//synchronized(m_itemHT) {
        	 	
 			// check if everything is available first, so we don't have to rollback reservations.
 			for (int count = 0; count < flightNumbers.size(); count ++)
@@ -623,7 +623,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 			Trace.warn("Itinerary reservation successful.");
 		
 			return true;
-		}
+			//}
     }
 
 	@Override

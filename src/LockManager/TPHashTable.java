@@ -94,10 +94,10 @@ public class TPHashTable
             hashSlot = -hashSlot;
         }
 		
-        System.out.println("Trying to remove: " + xobj.toString());
+ //       System.out.println("Trying to remove: " + xobj.toString());
         
 		vectSlot = (Vector) vect.elementAt( hashSlot );
-		System.out.println("and vectslot is: " + vectSlot.toString());
+//		System.out.println("and vectslot is: " + vectSlot.toString());
         return vectSlot.removeElement(xobj);
     }
 

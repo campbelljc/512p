@@ -72,6 +72,11 @@ public class TestClient extends WSClient implements Runnable {
 		
 		for(Thread t : threads){
 			t.start();
+			try {
+				Thread.sleep((int)((double)sleepTime/numClients)*MS_PER_S);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
 		
 		for(Thread t : threads){
@@ -108,15 +113,17 @@ public class TestClient extends WSClient implements Runnable {
         System.out.println();
         System.out.println("Part (b): Multi-client experiment: ");
         
+        
+        
         System.out.println("TPS: ");
-        runExperiment(serviceName, serviceHost, servicePort, 10, 5000, 100);
+        runExperiment(serviceName, serviceHost, servicePort, 50, 1000, 10);
         System.out.println();
-        System.out.println("TPS: ");
-        runExperiment(serviceName, serviceHost, servicePort, 10, 2000, 100);
-        System.out.println();
-        System.out.println("TPS: ");
-        runExperiment(serviceName, serviceHost, servicePort, 10, 1000, 100);
-        System.out.println();
+//        System.out.println("TPS: ");
+//        runExperiment(serviceName, serviceHost, servicePort, 50, 100, 5);
+//        System.out.println();
+//        System.out.println("TPS: ");
+//        runExperiment(serviceName, serviceHost, servicePort, 10, 200, 5);
+//        System.out.println();
 	}
 }
 

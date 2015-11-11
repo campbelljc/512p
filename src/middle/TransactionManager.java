@@ -16,7 +16,7 @@ import middle.ResourceManagerImplMW.DType;
  */
 public class TransactionManager {
 	
-	private static final int TTL_CHECK_INTERVAL = 10; // seconds
+	private static final int TTL_CHECK_INTERVAL = 25; // seconds
 	
 	private LockManager lockMgr = new LockManager();
 	private HashMap<Integer, Transaction> txnMap = new HashMap<Integer, Transaction>();
@@ -78,7 +78,7 @@ public class TransactionManager {
 			System.out.println("Txn " + tid + " does not exist!");
 			return false;
 		}
-		System.out.println("Txn " + tid + " aborting...");
+		System.out.println("*** Txn " + tid + " aborting ***");
 		txnMap.get(tid).undo();
 		txnMap.remove(tid);
 		lockMgr.UnlockAll(tid);

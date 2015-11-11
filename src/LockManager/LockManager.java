@@ -68,6 +68,8 @@ public class LockManager
 							// If so, then we must wait, otherwise we can continue and change the read lock to write.
 							
 					        Vector vect = this.lockTable.elements(dataObj);
+							System.out.println("Lock :: vect :: " + vect.toString());
+							
 							boolean otherSharedLock = false;
 							for (int i = 0; i < vect.size(); i++)
 							{
@@ -86,12 +88,25 @@ public class LockManager
 							else
 							{ // we are fine, no other txns have a lock on this data item
 								// convert our read lock to a write lock
+								System.out.println("Txn " + xid + " starting to convert read lock to write lock.");
+								System.out.println(this.lockTable.toString());
 								DataObj d = (DataObj)vect.elementAt(0);
 								d.setLockType(TrxnObj.WRITE);
 								Vector v2 = this.lockTable.elements(trxnObj);
-								TrxnObj t = (TrxnObj)v2.elementAt(0);
-								t.setLockType(TrxnObj.WRITE);
-								System.out.println("Txn " + xid + " converting read lock to write lock.");
+								System.out.println("Lock :: v2 :: " + v2.toString());
+								for (int i = 0; i < v2.size(); i ++)
+								{
+									System.out.println(((TrxnObj)v2.elementAt(i)).getDataName() + " and strdata: " + strData);
+									if (((TrxnObj)v2.elementAt(i)).getDataName().equals(strData))
+									{
+										System.out.println("Found...setting.");
+										((TrxnObj)v2.elementAt(i)).setLockType(TrxnObj.WRITE);
+										break;
+									}
+								}
+	//							TrxnObj t = (TrxnObj)v2.elementAt(0);
+	//							t.setLockType(TrxnObj.WRITE);
+								System.out.println("Txn " + xid + " done converting read lock to write lock.");
 								System.out.println(this.lockTable.toString());
 							}
                         }

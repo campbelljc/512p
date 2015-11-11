@@ -36,9 +36,15 @@ Concurrency was a concern due to the multithreaded request handling and asynchro
 
 \section*{Testing}
 
--Lock Manager test framework - J
+To test the lock manager, we created a framework to easily specify transactions and their specific operations to be executed. A Transaction Simulation class (TxnSimul) receives as input a series of integers representing the operations that the transaction should execute, with each group of four integers specifying the transaction ID, data item, lock type (read or write), and the amount of seconds to sleep after executing the operation. With this latter argument, it is possible to interleave the operations of two different transactions. The TxnSimul objects once created are inserted into an array, and then a new thread is created for each, so that all run concurrently. We created several tests in this format to verify the integrity of the lock manager, including the following schedules, with reasoning for each:
 
--Transactions tests (to be done) - L
+\begin{itemize}
+\item T1 reads A, T1 writes A, T1 commit (lock conversion)
+\item T1 reads A, T2 reads B, T2 writes A, T1 writes B, T1 commit, T2 commit (deadlock detection)
+\item T1 reads A, T2 reads A, T2 commit, T1 writes A, T1 commit (check that read lock can be acquired on object with read lock already, and unlocking of locks upon commit)
+\item T1 reads A, T2 reads A, T1 writes A, T1 commit, T2 commit (check if shared lock blocks other's write)
+\end{itemize}
 
+With regards to testing of the transaction manager, sequences of commands were manually inputted into the client console with verification of results. Testing of undo operations was of particular focus, as well as concurrent modification situations (to verify correctness of locks).
 
 \end{document}

@@ -7,7 +7,8 @@ class LockManagerTest {
     public static void main (String[] args)
     {
     	LockManager lm = new LockManager ();
-    	TxnSimul[] txns = { new TxnSimul(lm, 1, 0, 0, 4000, // txnid, datumid, locktype, amt_secs_to_sleep_after_command_issuing
+    	TxnSimul[] txns = { new TxnSimul(lm, 1, 0, 0, 4000,
+									// txnid, datumid, locktype, amt_secs_to_sleep_after_command_issuing
         									1, 1, 1, 0,
         									2, 1, 1, 1000,
         									2, 0, 1, 0) /*, // T1 reads A, writes B. T2 reads B, writes A.

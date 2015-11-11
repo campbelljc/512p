@@ -116,7 +116,7 @@ public class TestClient extends WSClient implements Runnable {
         
         
         System.out.println("TPS: ");
-        runExperiment(serviceName, serviceHost, servicePort, 50, 1000, 10);
+        runExperiment(serviceName, serviceHost, servicePort, 250, 5000, 250);
         System.out.println();
 //        System.out.println("TPS: ");
 //        runExperiment(serviceName, serviceHost, servicePort, 50, 100, 5);

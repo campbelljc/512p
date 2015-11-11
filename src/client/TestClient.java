@@ -73,7 +73,7 @@ public class TestClient extends WSClient implements Runnable {
 		for(Thread t : threads){
 			t.start();
 			try {
-				Thread.sleep((int)((double)sleepTime/numClients)*MS_PER_S);
+				Thread.sleep((int)((double)sleepTime/numClients)/MS_PER_S);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}

@@ -34,8 +34,9 @@ public class Transaction {
 	}
 	
 	public void undo() {
-		Collections.reverse(undoOps);
-		for(Runnable r : undoOps) {
+		ArrayList<Runnable> curUndoOps = new ArrayList(undoOps);
+		Collections.reverse(curUndoOps);
+		for(Runnable r : curUndoOps) {
 			r.run();
 		}
 	}

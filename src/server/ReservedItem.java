@@ -24,6 +24,14 @@ public class ReservedItem extends RMItem {
         m_nCount = count;
         m_nPrice = price;
     }
+	
+	public ReservedItem(ReservedItem i) {
+		super();
+        m_strReservableItemKey = i.getReservableItemKey();
+        m_strLocation = i.getLocation();
+        m_nCount = i.getCount();
+        m_nPrice = i.getPrice();
+	}
 
     public String getReservableItemKey() { 
         return m_strReservableItemKey; 

@@ -85,7 +85,7 @@ public class TPHashTable
     
     public synchronized boolean remove(XObj xobj)
     {
-        if (xobj == null) return false;
+        if (xobj == null) { System.out.println("Xobj null"); return false; }
         
         Vector vectSlot;
 
@@ -93,8 +93,11 @@ public class TPHashTable
         if ( hashSlot < 0 ) {
             hashSlot = -hashSlot;
         }
+		
+        System.out.println("Trying to remove: " + xobj.toString());
         
-        vectSlot = (Vector) vect.elementAt( hashSlot );
+		vectSlot = (Vector) vect.elementAt( hashSlot );
+		System.out.println("and vectslot is: " + vectSlot.toString());
         return vectSlot.removeElement(xobj);
     }
 
@@ -168,4 +171,12 @@ public class TPHashTable
             }
         }
     }
+	
+	public String toString()
+	{
+		String s = "LockTable :: ";
+		for (Object o : vect)
+			s += o.toString() + " :: ";
+		return s;
+	}
 }

@@ -92,6 +92,7 @@ public class LockManager
 								TrxnObj t = (TrxnObj)v2.elementAt(0);
 								t.setLockType(TrxnObj.WRITE);
 								System.out.println("Txn " + xid + " converting read lock to write lock.");
+								System.out.println(this.lockTable.toString());
 							}
                         }
 						else {
@@ -133,6 +134,7 @@ public class LockManager
         TrxnObj trxnQueryObj = new TrxnObj(xid, "", -1);  // Only used in elements() call below.
         synchronized (this.lockTable) {
             Vector vect = this.lockTable.elements(trxnQueryObj);
+			System.out.println("UnlockAll :: vect :: " + vect.toString());
 
             TrxnObj trxnObj;
             Vector waitVector;
@@ -142,10 +144,14 @@ public class LockManager
             for (int i = (size - 1); i >= 0; i--) {
                 
                 trxnObj = (TrxnObj) vect.elementAt(i);
-                this.lockTable.remove(trxnObj);
+				System.out.println("UnlockAll :: for :: trxnObj :: " + trxnObj.toString());
+                if (!this.lockTable.remove(trxnObj))
+					System.out.println("We couldn't remove the transaction object");
 
                 DataObj dataObj = new DataObj(trxnObj.getXId(), trxnObj.getDataName(), trxnObj.getLockType());
-                this.lockTable.remove(dataObj);
+				System.out.println("UnlockAll :: for :: dataObj :: " + dataObj.toString());
+                if (!this.lockTable.remove(dataObj))
+					System.out.println("We couldn't remove the data object");
 				System.out.println("Txn " + xid + " removing lock on " + trxnObj.getDataName() + " and notifying waiting transactions.");
                                         
                 // check if there are any waiting transactions. 

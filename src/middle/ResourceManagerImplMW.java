@@ -46,24 +46,24 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
     
     // Read a data item.
     private RMItem readData(int id, String key) {
-    	if (!txnMgr.requestRead(id, DType.CUSTOMER))
-			return null;
+    //	if (!txnMgr.requestRead(id, DType.CUSTOMER))
+	//		return null;
     	return (RMItem) m_itemHT.get(key);
     }
 
     // Write a data item.
     private void writeData(int id, String key, RMItem value) {
 		Object curVal = m_itemHT.get(key);
-    	if (!txnMgr.requestWrite(id, DType.CUSTOMER, () -> m_itemHT.put(key, curVal)))
-			return;
+   // 	if (!txnMgr.requestWrite(id, DType.CUSTOMER, () -> m_itemHT.put(key, curVal)))
+	//		return;
     	m_itemHT.put(key, value);
     }
     
     // Remove the item out of storage.
     protected RMItem removeData(int id, String key) {
 		Object curVal = m_itemHT.get(key);
-    	if (!txnMgr.requestWrite(id, DType.CUSTOMER, () -> m_itemHT.put(key, curVal)))
-			return null;
+    //	if (!txnMgr.requestWrite(id, DType.CUSTOMER, () -> m_itemHT.put(key, curVal)))
+	//		return null;
     	return (RMItem) m_itemHT.remove(key);
     }
     
@@ -71,7 +71,9 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
     // Basic operations on ReservableItem //
 
 	protected Customer getCustomer(int id, int customerId) {
-        // Read customer object if it exists (and read lock it).		
+        // Read customer object if it exists (and read lock it).
+		if (!txnMgr.requestRead(id, DType.CUSTOMER))
+			return null;
         Customer cust = (Customer) readData(id, Customer.getKey(customerId));
         if (cust == null) {
             Trace.warn("RM::getCustomer(" + id + ", " + customerId + ") failed: customer doesn't exist.");
@@ -89,7 +91,8 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
     public boolean addFlight(int id, int flightNumber, 
                              int numSeats, int flightPrice) {
 		// start a client to talk to the Flight RM.
-    	if (!txnMgr.requestWrite(id, DType.FLIGHT, !flightExists(id, flightNumber) ? () -> flightClient.proxy.deleteFlight(id, flightNumber) : () -> flightClient.proxy.addFlight(id, flightNumber, -numSeats, -flightPrice)))
+		int oldFlightPrice = queryFlightPrice(id, flightNumber);
+    	if (!txnMgr.requestWrite(id, DType.FLIGHT, !flightExists(id, flightNumber) ? () -> flightClient.proxy.deleteFlight(id, flightNumber) : () -> flightClient.proxy.addFlight(id, flightNumber, -numSeats, oldFlightPrice)))
 			return false;
 		boolean ret = flightClient.proxy.addFlight(id, flightNumber, numSeats, flightPrice);
 		if (!ret)
@@ -253,12 +256,17 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
     @Override
     public int newCustomer(int id) {
 //    	txnMgr.requestWrite(id, DType.CUSTOMER, () -> deleteCustomer(id, customerId));
+
     	
    	 	Trace.info("INFO: RM::newCustomer(" + id + ") called.");
         // Generate a globally unique Id for the new customer.
         int customerId = Integer.parseInt(String.valueOf(id) +
                 String.valueOf(Calendar.getInstance().get(Calendar.MILLISECOND)) +
                 String.valueOf(Math.round(Math.random() * 100 + 1)));
+
+		if (!txnMgr.requestWrite(id, DType.CUSTOMER, () -> deleteCustomer(id, customerId)))
+			return -1;
+
         Customer cust = new Customer(customerId);
         writeData(id, cust.getKey(), cust);
         Trace.info("RM::newCustomer(" + id + ") OK: " + customerId);
@@ -270,8 +278,12 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
     public boolean newCustomerId(int id, int customerId) {
 		synchronized(m_itemHT) {
        	 	Trace.info("INFO: RM::newCustomer(" + id + ", " + customerId + ") called.");
+			if (!txnMgr.requestRead(id, DType.CUSTOMER))
+				return false;
 	        Customer cust = (Customer) readData(id, Customer.getKey(customerId));
 	        if (cust == null) {
+				if (!txnMgr.requestWrite(id, DType.CUSTOMER, () -> deleteCustomer(id, customerId)))
+					return false;
 	            cust = new Customer(customerId);
 	            writeData(id, cust.getKey(), cust);
 	            Trace.info("INFO: RM::newCustomer(" + id + ", " + customerId + ") OK.");
@@ -289,6 +301,8 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
     public boolean deleteCustomer(int id, int customerId) {
 		synchronized(m_itemHT) {
        	 	Trace.info("RM::deleteCustomer(" + id + ", " + customerId + ") called.");
+			if (!txnMgr.requestRead(id, DType.CUSTOMER))
+				return false;
 	        Customer cust = (Customer) readData(id, Customer.getKey(customerId));
 	        if (cust == null) {
 	            Trace.warn("RM::deleteCustomer(" + id + ", " 
@@ -330,6 +344,8 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 	                        + reservedItem.getKey());
 	            }
 	            // Remove the customer from the storage.
+				if (!txnMgr.requestWrite(id, DType.CUSTOMER, () -> newCustomerId(id, customerId)))
+					return false;
 	            removeData(id, cust.getKey());
 	            Trace.info("RM::deleteCustomer(" + id + ", " + customerId + ") OK.");
 	            return true;
@@ -348,6 +364,8 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
     public RMHashtable getCustomerReservations(int id, int customerId) {
         Trace.info("RM::getCustomerReservations(" + id + ", " 
                 + customerId + ") called.");
+		if (!txnMgr.requestRead(id, DType.CUSTOMER))
+			return null;
         Customer cust = (Customer) readData(id, Customer.getKey(customerId));
         if (cust == null) {
             Trace.info("RM::getCustomerReservations(" + id + ", " 
@@ -362,12 +380,14 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
     @Override
     public String queryCustomerInfo(int id, int customerId) {
         Trace.info("RM::queryCustomerInfo(" + id + ", " + customerId + ") called.");
+		if (!txnMgr.requestRead(id, DType.CUSTOMER))
+			return "Error...";
         Customer cust = (Customer) readData(id, Customer.getKey(customerId));
         if (cust == null) {
             Trace.warn("RM::queryCustomerInfo(" + id + ", " 
                     + customerId + ") failed: customer doesn't exist.");
             // Returning an empty bill means that the customer doesn't exist.
-            return "";
+            return "Does not exist.";
         } else {
             String s = cust.printBill();
             Trace.info("RM::queryCustomerInfo(" + id + ", " + customerId + "): \n");
@@ -389,6 +409,10 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 		
 	        Trace.info("RM::reserveFlight(" + id + ", " + customerId + ", " 
 	                + key + ", " + flightNumber + ") called.");
+
+			if (!txnMgr.requestRead(id, DType.CUSTOMER))
+				return false;
+
 	        Customer cust = getCustomer(id, customerId);
 			if (cust == null)
 				return false;
@@ -402,7 +426,14 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 	//			if (!txnMgr.requestRead(id, DType.FLIGHT))
 	//				return false;
 				int price = flightClient.proxy.queryFlightPrice(id, flightNumber);
-	            cust.reserve(key, location, price);
+				
+				Customer oldCust = new Customer(cust);
+	            
+				String s = cust.reserve(key, location, price);
+				Trace.info(s);
+
+				if (!txnMgr.requestWrite(id, DType.CUSTOMER, () -> writeData(id, oldCust.getKey(), oldCust)))
+					return false;
 	            writeData(id, cust.getKey(), cust);
 	            Trace.warn("RM::reserveFlight(" + id + ", " + customerId + ", " 
 	                    + key + ", " + location + ") OK.");
@@ -428,6 +459,10 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 		
 	        Trace.info("RM::reserveCar(" + id + ", " + customerId + ", " 
 	                + key + ", " + location + ") called.");
+
+			if (!txnMgr.requestRead(id, DType.CUSTOMER))
+				return false;
+			
 	        Customer cust = getCustomer(id, customerId);
 			if (cust == null)
 				return false;
@@ -441,7 +476,14 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 	//			if (!txnMgr.requestRead(id, DType.CAR))
 	//				return false;
 				int price = carClient.proxy.queryCarsPrice(id, location);
-	            Trace.info(cust.reserve(key, location, price));
+				
+				Customer oldCust = new Customer(cust);
+	            
+				String s = cust.reserve(key, location, price);
+				Trace.info(s);
+
+				if (!txnMgr.requestWrite(id, DType.CUSTOMER, () -> writeData(id, oldCust.getKey(), oldCust)))
+					return false;
 	            writeData(id, cust.getKey(), cust);
 	            Trace.warn("RM::reserveCar(" + id + ", " + customerId + ", " 
 	                    + key + ", " + location + ") OK.");
@@ -465,6 +507,10 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 		
 	        Trace.info("RM::reserveRoom(" + id + ", " + customerId + ", " 
 	                + key + ", " + location + ") called.");
+
+			if (!txnMgr.requestRead(id, DType.CUSTOMER))
+				return false;
+			
 	        Customer cust = getCustomer(id, customerId);
 			if (cust == null)
 				return false;
@@ -478,7 +524,14 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 		//		if (!txnMgr.requestRead(id, DType.ROOM))
 		//			return false;
 				int price = roomClient.proxy.queryRoomsPrice(id, location);
-	            cust.reserve(key, location, price);
+				
+				Customer oldCust = new Customer(cust);
+	            
+				String s = cust.reserve(key, location, price);
+				Trace.info(s);
+
+				if (!txnMgr.requestWrite(id, DType.CUSTOMER, () -> writeData(id, oldCust.getKey(), oldCust)))
+					return false;
 	            writeData(id, cust.getKey(), cust);
 	            Trace.warn("RM::reserveRoom(" + id + ", " + customerId + ", " 
 	                    + key + ", " + location + ") OK.");

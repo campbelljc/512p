@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Random;
 
-public class TestClient extends WSTestClient implements Runnable {
+public class TestClient extends WSClient implements Runnable {
 	
 	private static final int SLEEP_INTERVAL_RANGE = 100;
 	

@@ -151,6 +151,9 @@
                 <path refid="jaxws.classpath"/>
                 <pathelement location="${basedir}/build/classes"/>
             </classpath>
+        	<arg value="${service.name}"/>
+            <arg value="${service.host}"/>
+            <arg value="${service.port}"/>
         </java>
     </target>
 

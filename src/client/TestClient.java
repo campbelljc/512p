@@ -1,4 +1,4 @@
-package TestClient;
+package client;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -6,25 +6,42 @@ import java.util.Random;
 
 public class TestClient extends WSClient implements Runnable {
 	
-	private static final int SLEEP_INTERVAL_RANGE = 100;
-	
+	private static final int MS_PER_S = 1000;
+		
 	Random rand = new Random();
 	int numTxn;
-	long sleepTime;
+	int sleepTime;
+	int sleepVariance;
 	Transaction[] transactions;
 	
-	public TestClient(String serviceName, String serviceHost, int servicePort, int numTxn, Transaction[] transactions, long sleepTime) {
+	public TestClient(String serviceName, String serviceHost, int servicePort, int numTxn, 
+			Transaction[] transactions, int sleepTime, int sleepVariance) {
 		super(serviceName, serviceHost, servicePort);
 		this.numTxn = numTxn;
 		this.sleepTime = sleepTime;
+		this.sleepVariance = sleepVariance;
 		this.transactions = transactions;
+		for(Transaction t : transactions){
+			t.setProxy(proxy);
+		}
+	}
+	
+	
+	public double[] getAverageResponseTimes(){
+		double[] times = new double[transactions.length];
+		for(int i=0; i < transactions.length; i++){
+			times[i] = transactions[i].getAvgResponseTime();
+		}
+		return times;
 	}
 	
 	public void variedSleep(){
-		try{
-			Thread.sleep(sleepTime - (SLEEP_INTERVAL_RANGE/2) + rand.nextInt(SLEEP_INTERVAL_RANGE));
-		} catch (InterruptedException e) {
-			e.printStackTrace();
+		if(sleepTime > 0){
+			try{
+				Thread.sleep((sleepTime - sleepVariance) + rand.nextInt(sleepVariance));
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 	
@@ -39,59 +56,68 @@ public class TestClient extends WSClient implements Runnable {
 		}
 	}
 	
+	
+	
+	public static void runExperiment(String serviceName, String serviceHost, int servicePort, int numClients, int sleepTime, int sleepVariance){
+		int numTxn = 10;
+		
+		TestClient[] clients = new TestClient[numClients];
+		Thread[] threads = new Thread[numClients];
+		
+		for(int i=0; i < numClients; i++){
+			clients[i] = new TestClient(serviceName, serviceHost, servicePort, numTxn, 
+					new Transaction[]{new MWTxn(), new AllRMTxn()}, sleepTime, sleepVariance);
+			threads[i] = new Thread(clients[i]);
+		}
+		
+		for(Thread t : threads){
+			t.start();
+		}
+		
+		for(Thread t : threads){
+			try {
+				t.join();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		double totMWAvgTimes = 0.0;
+		double totRMAvgTimes = 0.0;
+		for(TestClient tc : clients){
+			double[] avgTimes = tc.getAverageResponseTimes();
+			totMWAvgTimes += avgTimes[0];
+			totRMAvgTimes += avgTimes[1];
+		}
+		System.out.println("Average MW-only response time: " + Double.toString(totMWAvgTimes/numClients));
+		System.out.println("Average RM-only response time: " + Double.toString(totRMAvgTimes/numClients));
+	}
+	
 	public static void main(String[] args){
 		// params
-		String serviceName = "mw";
-		String serviceHost = "localhost";
-		int servicePort = 9082;
-		int numTxn = 50;
-		Transaction[] transactions;
-		
-		// 5a - single TestClient
-		transactions = new Transaction[]{new MWTxn(proxy), new AllRMTxn(proxy)};
-		TestClient TestClient = new TestClient(serviceName, serviceHost, servicePort, numTxn, transactions, 0L);
-		TestClient.run();
-		System.out.print("Middleware-only transaction average response time: ");
-		System.out.println(transactions[0].getAvgResponseTime());
-		System.out.print("All RM transaction average response time: ");
-		System.out.println(transactions[1].getAvgResponseTime());
-		
-		// 5b - multi TestClient
-//		int numTestClients = 10;
-//		long sleepTime = 500*1000000L;
-//		transactions = new Transaction[]{new MWTxn(), new AllRMTxn()};
-//		TestClient[] TestClients = new TestClient[numTestClients];
-//		for(int i=0; i<numTestClients; i++){
-//			TestClients[i] = new TestClient(serviceName, serviceHost, servicePort, numTxn, 
-//					Arrays.copyOf(transactions, transactions.length), sleepTime);
-//		}
-//		Thread[] TestClientThreads = new Thread[numTestClients];
-//		for(int i=0; i<numTestClients; i++){
-//			TestClientThreads[i] = new Thread(TestClients[i]);
-//			TestClientThreads[i].run();
-//		}
-//		for(Thread t : TestClientThreads){
-//			try {
-//				t.join();
-//			} catch (InterruptedException e) {
-//				e.printStackTrace();
-//			}
-//		}
-//		for(TestClient c : TestClients)
-		
-		
-		
+		if (args.length != 3) {
+            System.out.println("Usage: MyClient <service-name> " 
+                    + "<service-host> <service-port>");
+            System.exit(-1);
+        }
+        String serviceName = args[0];
+        String serviceHost = args[1];
+        int servicePort = Integer.parseInt(args[2]);
+        runExperiment(serviceName, serviceHost, servicePort, 1, 0, 0);
+        runExperiment(serviceName, serviceHost, servicePort, 10, 0, 0);
 	}
 }
 
 abstract class Transaction{
 	
-	private static final long NS_PER_S = 1000000000L;
+	private static final double NS_PER_S = 1000000000.0;
 	private int numRuns = 0;
-	private long avgResponseTime = 0;
+	private long totalResponseTime = 0;
 	ResourceManager proxy;
 	
-	public Transaction(ResourceManager proxy_) { proxy = proxy_; }
+	public void setProxy(ResourceManager proxy){
+		this.proxy = proxy;
+	}
 	
 	public void run(){
 		Long txnStart = System.nanoTime();
@@ -99,36 +125,39 @@ abstract class Transaction{
 		execute(tid);
 		proxy.commit(tid);
 		Long txnEnd = System.nanoTime();
-		avgResponseTime = avgResponseTime * numRuns + (txnEnd - txnStart);
+		totalResponseTime += txnEnd - txnStart;
+		numRuns++;
 	}
 	
-	public long getAvgResponseTime(){
-		return avgResponseTime/NS_PER_S;
+	public double getAvgResponseTime(){
+		return totalResponseTime/(numRuns*NS_PER_S);
 	}
 	
-	
+
 	abstract protected void execute(int id);
 }
 
 class MWTxn extends Transaction{
-	public MWTxn(ResourceManager proxy_) { super(proxy_); }
 
 	@Override
 	protected void execute(int id) {
-		proxy.newCustomer(id);
-		proxy.newCustomer(id);
-		proxy.newCustomer(id);
+		proxy.queryCustomerInfo(id, proxy.newCustomer(id));
+		proxy.queryCustomerInfo(id, proxy.newCustomer(id));
+		proxy.queryCustomerInfo(id, proxy.newCustomer(id));
 	}
 }
 
 class AllRMTxn extends Transaction{
-	public AllRMTxn(ResourceManager proxy_) { super(proxy_); }
 
 	@Override
 	protected void execute(int id) {
-		proxy.queryFlight(id, 0);
-		proxy.queryCars(id, "");
-		proxy.queryRooms(id, "");
+		proxy.addFlight(id, id, 10, 10);
+		proxy.queryFlight(id, id);
+		String loc = Integer.toString(id);
+		proxy.addCars(id, loc, 1, 1);
+		proxy.queryCars(id, loc);
+		proxy.addRooms(id, loc, 1, 1);
+		proxy.queryRooms(id, loc);
 	}
 	
 }

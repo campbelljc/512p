@@ -1,4 +1,5 @@
 \documentclass[11pt]{article}
+\usepackage{graphicx}
 \parindent=0in
 \parskip=8pt
 \begin{document}
@@ -52,6 +53,14 @@ With regards to testing of the transaction manager, sequences of commands were m
 \section*{Performance Analysis}
 
 \subsection*{Technique}
+
+For both parts, we use testing clients that repeatedly submit two transaction types. One is a middle-ware only transaction containing three customer read operations and three write operations. The other uses all three resource managers, performing a read and a write at each one. Each experiment can have the number of clients and delay between transactions varied, allowing us to controll transactions per second.
+
+\subsection*{Results}
+
+\begin{tabular}{cc}
+
+\end{tabular}
 
 \subsection*{Analysis}
 

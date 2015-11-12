@@ -1,5 +1,5 @@
 \documentclass[11pt]{article}
-\usepackage{graphicx}
+\usepackage{graphicx, float}
 \parindent=0in
 \parskip=8pt
 \begin{document}
@@ -58,10 +58,36 @@ For both parts, we use testing clients that repeatedly submit two transaction ty
 
 \subsection*{Results}
 
-\begin{tabular}{cc}
-
+\begin{table}[H]
+\centering
+\caption{Performance of Single-Client Tran}
+\begin{tabular}{c|c}
+Type & Average Response Time(s) \\
+\hline
+Local MW & 0.0445 \\
+Local RM & 0.1000 \\
+Network MW & 0.0915 \\
+Network RM & 0.1704 \\
 \end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[scale=1]{plot.png}
+\end{figure}
 
 \subsection*{Analysis}
+
+\textbf{Single-Client Observations:} \\
+Network operations take roughly twice as long as local operations. RM transactions take roughly twice as long as their MW counterparts.\par
+
+\textbf{Single-Client Analysis:} \\
+There is network latency, and increased message hops for RM transactions. \par
+
+\textbf{Multi-Client Observation:}\\
+Initially, RM-only transactions have a longer average response time than MW-only transactions. This swaps near 40 tps. After that, both increase at steady exponential rate (due to the logarithmic $x$-axis scale) with MW-only transactions being a constant amount above RM. At 500 transactions per second these amounts converge, followed by a slight increase in the response time on the part of the middleware. Both converge and plateau at 5000 transactions per second. \par
+
+\textbf{Multi-Client Analysis:}\\
+Between 1 and 40 tps, the RM transactions take longer due to the message transfer overhead. This may be a bit extreme at 10 tps and could be slightly exaggerated by noise. After this, the limiting factor is the bottlenecking due to lock conflicts, which continues to become more severe. There may also be network congestion, contributing to the increase to a lesser degree. Finally, the plateau occurs due to the limitation on the Java client. We can only send so many transactions per second, so although we set the parameters for 10,000 tps, we are unable to actually achieve that number. Due to this insufficiency, we are capped in the number of transactions per second that can be tested.
 
 \end{document}

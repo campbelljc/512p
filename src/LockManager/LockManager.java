@@ -235,7 +235,7 @@ public class LockManager
     
     private boolean LockConflict(DataObj dataObj, BitSet bitset) throws DeadlockException, RedundantLockRequestException {
         Vector vect = this.lockTable.elements(dataObj);
-		System.out.println("LockConflict :: vect :: " + vect.toString());
+//		System.out.println("LockConflict :: vect :: " + vect.toString());
         DataObj dataObj2;
         int size = vect.size();
         

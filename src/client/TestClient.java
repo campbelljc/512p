@@ -59,7 +59,7 @@ public class TestClient extends WSClient implements Runnable {
 	
 	
 	public static void runExperiment(String serviceName, String serviceHost, int servicePort, int numClients, int sleepTime, int sleepVariance){
-		int numTxn = 10;
+		int numTxn = 5;
 		
 		TestClient[] clients = new TestClient[numClients];
 		Thread[] threads = new Thread[numClients];
@@ -112,12 +112,40 @@ public class TestClient extends WSClient implements Runnable {
         runExperiment(serviceName, serviceHost, servicePort, 1, 0, 0);
         System.out.println();
         System.out.println("Part (b): Multi-client experiment: ");
+    
+
+        System.out.println("TPS: 250-5000-250 (50)");
+        runExperiment(serviceName, serviceHost, servicePort, 250, 5000, 250);
+        System.out.println();
+/*		
+        System.out.println("TPS: 250-5000-250 (100)");
+        runExperiment(serviceName, serviceHost, servicePort, 250, 2500, 250);
+        System.out.println();
         
+        System.out.println("TPS: 250-1000-250 (250)");
+        runExperiment(serviceName, serviceHost, servicePort, 250, 1000, 250);
+        System.out.println();
+		
+        System.out.println("TPS: 250-5000-250 (500)");
+        runExperiment(serviceName, serviceHost, servicePort, 250, 500, 250);
+        System.out.println();
         
+        System.out.println("TPS: 250-100-250 (2500)");
+        runExperiment(serviceName, serviceHost, servicePort, 250, 100, 250);
+        System.out.println();
+*/
+        /*
+        System.out.println("TPS: ");
+        runExperiment(serviceName, serviceHost, servicePort, , , 250);
+        System.out.println();
         
         System.out.println("TPS: ");
         runExperiment(serviceName, serviceHost, servicePort, 250, 5000, 250);
         System.out.println();
+        
+        System.out.println("TPS: ");
+        runExperiment(serviceName, serviceHost, servicePort, 250, 5000, 250);
+        System.out.println();*/
 //        System.out.println("TPS: ");
 //        runExperiment(serviceName, serviceHost, servicePort, 50, 100, 5);
 //        System.out.println();

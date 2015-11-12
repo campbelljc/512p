@@ -20,23 +20,23 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     
     // Read a data item.
     private RMItem readData(int id, String key) {
-        synchronized(m_itemHT) {
+   //     synchronized(m_itemHT) {
             return (RMItem) m_itemHT.get(key);
-        }
+   //     }
     }
 
     // Write a data item.
     private void writeData(int id, String key, RMItem value) {
-        synchronized(m_itemHT) {
+   //     synchronized(m_itemHT) {
             m_itemHT.put(key, value);
-        }
+   //     }
     }
     
     // Remove the item out of storage.
     protected RMItem removeData(int id, String key) {
-        synchronized(m_itemHT) {
+  //      synchronized(m_itemHT) {
             return (RMItem) m_itemHT.remove(key);
-        }
+   //     }
     }
     
     
@@ -136,8 +136,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     @Override
     public boolean addFlight(int id, int flightNumber, 
                              int numSeats, int flightPrice) {
-		synchronized(m_itemHT)
-		{
+//		synchronized(m_itemHT)
+//		{
 	        Trace.info("RM::addFlight(" + id + ", " + flightNumber 
 	                + ", $" + flightPrice + ", " + numSeats + ") called.");
 	        Flight curObj = (Flight) readData(id, Flight.getKey(flightNumber));
@@ -159,15 +159,15 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 	                    + "seats = " + curObj.getCount() + ", price = $" + flightPrice);
 	        }
 	        return(true);			
-		}
+	//	}
     }
 
     @Override
     public boolean deleteFlight(int id, int flightNumber) {
-		synchronized(m_itemHT)
-		{
+//		synchronized(m_itemHT)
+//		{
 	        return deleteItem(id, Flight.getKey(flightNumber));			
-		}
+//		}
     }
 
     // Returns the number of empty seats on this flight.
@@ -182,11 +182,11 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     }
     
     public boolean flightExists(int id, int flightNumber) {
-		synchronized(m_itemHT)
-		{
+//		synchronized(m_itemHT)
+//		{
 	        Flight curObj = (Flight) readData(id, Flight.getKey(flightNumber));
 	        return curObj != null;
-		}
+//		}
     }
 
     /*
@@ -233,7 +233,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     // its current price.
     @Override
     public boolean addCars(int id, String location, int numCars, int carPrice) {
-		synchronized(m_itemHT)
+//		synchronized(m_itemHT)
         {
 			Trace.info("RM::addCars(" + id + ", " + location + ", " 
 	                + numCars + ", $" + carPrice + ") called.");
@@ -262,7 +262,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     // Delete cars from a location.
     @Override
     public boolean deleteCars(int id, String location) {
-		synchronized(m_itemHT)
+//		synchronized(m_itemHT)
 		{
 	        return deleteItem(id, Car.getKey(location));			
 		}
@@ -281,7 +281,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     }
     
     public boolean carExists(int id, String location) {
-		synchronized(m_itemHT)
+//		synchronized(m_itemHT)
 		{
 			Car curObj = (Car) readData(id, Car.getKey(location));
 	        return curObj != null;
@@ -296,7 +296,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     // its current price.
     @Override
     public boolean addRooms(int id, String location, int numRooms, int roomPrice) {
-		synchronized(m_itemHT)
+//		synchronized(m_itemHT)
 		{
 	        Trace.info("RM::addRooms(" + id + ", " + location + ", " 
 	                + numRooms + ", $" + roomPrice + ") called.");
@@ -325,7 +325,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     // Delete rooms from a location.
     @Override
     public boolean deleteRooms(int id, String location) {
-		synchronized(m_itemHT)
+//		synchronized(m_itemHT)
 		{
 	        return deleteItem(id, Room.getKey(location));			
 		}
@@ -344,7 +344,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     }
     
     public boolean roomExists(int id, String location) {
-		synchronized(m_itemHT)
+	//	synchronized(m_itemHT)
 		{
 			Room curObj = (Room) readData(id, Room.getKey(location));
 	        return curObj != null;
@@ -375,7 +375,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 	
 	@Override
 	public void deleteReservationWithKey(int id, String key, int count) {
-		synchronized(m_itemHT)
+//		synchronized(m_itemHT)
 		{
 	        ReservableItem item = (ReservableItem) readData(id, key);
 	        item.setReserved(item.getReserved() - count);
@@ -424,7 +424,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     public boolean reserveFlight(int id, int customerId, int flightNumber) {
   //      return reserveItem(id, customerId, 
     //            Flight.getKey(flightNumber), String.valueOf(flightNumber));
-		synchronized(m_itemHT)
+//		synchronized(m_itemHT)
 		{
 			String key = Flight.getKey(flightNumber);
 			String location = String.valueOf(flightNumber);
@@ -453,7 +453,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     // Add car reservation to this customer. 
     @Override
     public boolean reserveCar(int id, int customerId, String location) {
-		synchronized(m_itemHT)
+//		synchronized(m_itemHT)
 		{
 			String key = Car.getKey(location);
 	        ReservableItem item = (ReservableItem) readData(id, key);
@@ -481,7 +481,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
     // Add room reservation to this customer. 
     @Override
     public boolean reserveRoom(int id, int customerId, String location) {
-		synchronized(m_itemHT)
+//		synchronized(m_itemHT)
 		{
 			String key = Room.getKey(location);
 		    ReservableItem item = (ReservableItem) readData(id, key);

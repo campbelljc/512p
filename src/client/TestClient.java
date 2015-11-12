@@ -118,7 +118,7 @@ public class TestClient extends WSClient implements Runnable {
         runExperiment(serviceName, serviceHost, servicePort, 250, 5000, 250);
         System.out.println();
 /*		
-        System.out.println("TPS: 250-5000-250 (100)");
+        System.out.println("TPS: 250-2500-250 (100)");
         runExperiment(serviceName, serviceHost, servicePort, 250, 2500, 250);
         System.out.println();
         
@@ -126,7 +126,7 @@ public class TestClient extends WSClient implements Runnable {
         runExperiment(serviceName, serviceHost, servicePort, 250, 1000, 250);
         System.out.println();
 		
-        System.out.println("TPS: 250-5000-250 (500)");
+        System.out.println("TPS: 250-500-250 (500)");
         runExperiment(serviceName, serviceHost, servicePort, 250, 500, 250);
         System.out.println();
         

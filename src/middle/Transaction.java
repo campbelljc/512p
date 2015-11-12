@@ -8,7 +8,7 @@ import java.util.Collections;
  */
 public class Transaction {
 	
-	private static final long TTL_MAX = 100000000000L; // nanoseconds
+	private static final long TTL_MAX = 60000000000L; // nanoseconds
 	private ArrayList<Runnable> undoOps;
 	private long ttl;
 	

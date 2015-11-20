@@ -1,0 +1,72 @@
+on txn-commit at MW:
+	check master record for txn:
+		if txn already aborted/committed (InvalidTransactionException):
+			return abort/commit to client
+	prepare transaction:
+		log "starting to send vote requests"
+		for each RM/MW:
+			send vote request
+			log "vote request sent"
+			block until response (if timeout: voted NO)
+			log response
+		log "all vote replies received"
+		if all voted YES:
+			log "vote decision - yes"
+			for each RM/MW:
+				send commit request
+				log "commit request sent"
+				block until response (no timeout)
+			log "end of txn - succeded"
+			return "commit successful" to client
+		else if at least one voted NO, OR times out (TransactionAbortedException):
+			log "vote decision - no"
+			for each RM/MW:
+				send abort request
+				log "abort request sent"
+				block until response (no timeout)
+			log "end of txn - aborted"
+			return "commit aborted" to client.
+
+on receive vote request on all:
+	log "vote request received"
+	if already aborted:
+		decide no
+	else(?) decide yes
+	log decision
+	reply with decision
+	log "decision sent"
+	(wait for response? (block indefinitely?))
+	(if implementing termination protocol: start timer thread, handle timeout)
+
+------------
+
+on commit-request on all:
+	log "received request to commit"
+	save uncommitted version to disk as clean version
+	log "commit successful"
+	send response - successful
+	
+on abort-request on all:
+	log "received request to abort"
+	delete uncommitted version from disk
+	log "commit aborted"
+	send response - successful
+	
+on start of RM/MW:
+	if no master record on disk:
+		create new master record on disk
+		save clean version (empty hashtable) to disk
+	else:
+		"recover"
+
+on writeData/readData/removeData on all:
+	use uncommitted version (in memory)
+	
+on writeData on all:
+	write/overwrite uncommitted version (of hashtable) to disk.
+
+on crash(rid):
+	call selfdestruct(rid)
+	
+Client command: crash, rid, crashpt # crash at crash point
+Client command: crash, rid, -1      # crash server

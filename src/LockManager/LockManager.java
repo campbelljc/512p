@@ -241,8 +241,8 @@ public class LockManager
         
         // as soon as a lock that conflicts with the current lock request is found, return true
         for (int i = 0; i < size; i++) {
-			if (vect.elementAt(i) instanceof TrxnObj)
-				continue;
+	//		if (vect.elementAt(i) instanceof TrxnObj)
+	//			continue;
             dataObj2 = (DataObj) vect.elementAt(i);
 			
             if (dataObj.getXId() == dataObj2.getXId()) {    

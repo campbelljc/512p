@@ -9,6 +9,8 @@ import java.util.*;
 
 import javax.jws.WebService;
 
+import middle.MasterRecord;
+
 
 @WebService(endpointInterface = "server.ws.ResourceManager")
 public class ResourceManagerImpl implements server.ws.ResourceManager {
@@ -553,6 +555,13 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 	public boolean checkTransaction(int tid) {
 		System.out.println("Should not be called here.");
 		return false;
+	}
+
+	@Override
+	public boolean voteRequest(int tid) {
+		// TODO: if already aborted??
+		MasterRecord.log(tid, "VOTED_YES");
+		return true;
 	}
 
 }

@@ -1,9 +1,14 @@
 package middle;
 
 import java.util.HashMap;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import server.Trace;
@@ -17,12 +22,18 @@ import middle.ResourceManagerImplMW.DType;
 public class TransactionManager {
 	
 	private static final int TTL_CHECK_INTERVAL = 25; // seconds
+	private static final int VOTE_REQUEST_TIMEOUT = 10; // seconds
 	
 	private LockManager lockMgr = new LockManager();
 	private HashMap<Integer, Transaction> txnMap = new HashMap<Integer, Transaction>();
 	private AtomicInteger nextID = new AtomicInteger(0);
+	private WSClient[] resourceManagers;
 	
 	private boolean isShutdown = false;
+	
+	public TransactionManager(WSClient[] resourceManagers){ 
+		this.resourceManagers = resourceManagers;
+	}
 	
 	/**
 	 * Starts a new transaction. 
@@ -59,13 +70,33 @@ public class TransactionManager {
 	public boolean commit(int tid){
 		if (txnMap.get(tid) == null)
 		{
-			System.out.println("Txn " + tid + " does not exist!");
+			// txn doesn't exist, or was already comitted/aborted. Ignore this commit request.
+			MasterRecord.log(tid, "INVALID_TXN_COMMIT");
 			return false;
 		}
-		System.out.println("Txn " + tid + " committing...");
-		txnMap.remove(tid);
-		lockMgr.UnlockAll(tid);
-		return true;
+		
+		MasterRecord.log(tid, "CLIENT_COMMIT");
+		boolean commitSuccess = false;
+		
+		if (prepare(tid)){
+			// all resource managers said YES to vote request.
+			MasterRecord.log(tid, "DECISION_YES");
+			for(WSClient rm : resourceManagers){
+				MasterRecord.log(tid, "COMMIT_SENT"); // TODO: rm identifier
+				rm.proxy.commit();
+			}
+			MasterRecord.log(tid, "ALL_COMMITS_SENT");
+			txnMap.remove(tid);
+			lockMgr.UnlockAll(tid);
+			commitSuccess = true;
+			MasterRecord.log(tid, "TXN_COMPLETE");
+		}
+		else{
+			// at least one resource manager did not say YES to the vote request.
+			MasterRecord.log(tid, "DECISION_NO");
+			abort(tid);
+		}
+		return commitSuccess;
 	}
 	
 	/**
@@ -75,13 +106,23 @@ public class TransactionManager {
 	public boolean abort(int tid) {
 		if (txnMap.get(tid) == null)
 		{
-			System.out.println("Txn " + tid + " does not exist!");
+			// txn doesn't exist, or was already comitted/aborted. Ignore this abort request.
+			MasterRecord.log(tid, "INVALID_TXN_ABORT");
 			return false;
 		}
-		System.out.println("*** Txn " + tid + " aborting ***");
-		txnMap.get(tid).undo();
+		MasterRecord.log(tid, "CLIENT_ABORT");
+		
+		for(WSClient rm : resourceManagers){
+			MasterRecord.log(tid, "ABORT_SENT"); // TODO: rm identifier
+			rm.proxy.abort();
+		}
+		
+		MasterRecord.log(tid, "ALL_ABORTS_SENT");
+		txnMap.get(tid).undo(); // TODO: do we still need to undo, and if so, where? should anything be logged?
 		txnMap.remove(tid);
 		lockMgr.UnlockAll(tid);
+		MasterRecord.log(tid, "TXN_COMPLETE");
+		
 		return true;
 	}
 	
@@ -149,5 +190,36 @@ public class TransactionManager {
 	public boolean checkTransaction(int tid)
 	{
 		return !(txnMap.get(tid) == null);
+	}
+	
+	private boolean prepare(int tid){
+		MasterRecord.log(tid, "PREPARE");
+		boolean decision = true;
+		for(WSClient rm : resourceManagers){
+			MasterRecord.log(tid, "REQUEST_SENT"); // TODO: rm identifier
+			
+			// Execute voteRequest with a timeout
+			ExecutorService executor = Executors.newCachedThreadPool();
+			Callable<Boolean> task = new Callable<Boolean>() {
+			   public Boolean call() {
+				   return rm.proxy.voteRequest();
+			   }
+			};
+			Future<Boolean> future = executor.submit(task);
+			try {
+			   decision = future.get(VOTE_REQUEST_TIMEOUT, TimeUnit.SECONDS); 
+			} catch (TimeoutException | InterruptedException | ExecutionException e) {
+			   decision = false;
+			}
+			
+			if(!decision){
+				MasterRecord.log(tid, "REQUEST_RESPONSE_NO"); // TODO: rm identifier
+				break;
+			}
+			else{
+				MasterRecord.log(tid, "REQUEST_RESPONSE_YES"); // TODO: rm identifier
+			}
+		}
+		return decision;
 	}
 }

@@ -176,6 +176,17 @@ public interface ResourceManager {
      */
     public boolean shutdown();
     			
+    
 	@WebMethod
 	public boolean checkTransaction(int tid);
+	
+	
+	@WebMethod
+	/**
+	 * 2PC - request a vote from this participant.
+	 * @param tid
+	 * @return true = YES, false = NO
+	 */
+	public boolean voteRequest(int tid);
+	
 }

@@ -43,16 +43,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 				
 		// load hashtable record into class var.
 		System.out.println("Loading hashtable data.");
-		try {
-			FileInputStream fis_ht = new FileInputStream(new File(rmName+"_committed.ht"));
-            ObjectInputStream ois = new ObjectInputStream(fis_ht);
-			m_itemHT = (RMHashtable) ois.readObject();
-			fis_ht.close();
-		} catch (IOException e) {
-			System.out.println("No hashtable data found on disk - creating new copy.");
-			saveChanges();
-		}
-		
+		m_itemHT.load(rmName, true); // load last committed version of data.
+				
 		// check for master record
 		record = MasterRecord.loadLog(rmName);
 		if (!record.isEmpty())
@@ -74,24 +66,15 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
     // Write a data item.
     private void writeData(int id, String key, RMItem value) {
 		m_itemHT.put(key, value);
-		saveChanges(true);
+		m_itemHT.save(rmName, false); // save dirty changes
     }
     
     // Remove the item out of storage.
     protected RMItem removeData(int id, String key) {
 		RMItem removed = (RMItem) m_itemHT.remove(key);
-		saveChanges(true);
+		m_itemHT.save(rmName, false); // save dirty changes
 		return removed;
     }
-	
-	private synchronized void saveChanges(boolean dirty)
-	{
-		String name = "";
-		FileOutputStream fos = new FileOutputStream(dirty ? rmName+"_uncommitted.ht" : rmName+"_committed.ht");
-		ObjectOutputStream oos = new ObjectOutputStream(fos);
-		oos.writeObject(m_itemHT);
-		oos.close();
-	}
     
     // Basic operations on ReservableItem //
     
@@ -575,7 +558,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 
 	@Override
 	public boolean commit(int tid) {
-		saveChanges(false);
+		m_itemHT.save(rmName, true); // save committed changes
 		return false;
 	}
 

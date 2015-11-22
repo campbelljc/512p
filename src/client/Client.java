@@ -758,6 +758,40 @@ public class Client extends WSClient {
 				}
 				break;
 			
+			case 27: // crash(rm_to_crash, [crashpt])
+				if (arguments.size() < 2 || arguments.size() > 3)
+				{
+					wrongNumber();
+					break;
+				}
+				System.out.println("Setting crash point.");
+				String whichRM = getString(arguments.elementAt(1));
+				CrashPoint pt = CrashPoint.IMMEDIATE;
+				if (arguments.size() == 3)
+					pt = CrashPoint.values()[getInt(arguments.elementAt(2))];
+				try {
+					proxy.crashAtPoint(whichRM, pt);
+				} catch(Exception e) {
+					e.printStackTrace();
+				}
+				break;
+			
+			case 28: // set vote reply
+				if (arguments.size() != 3)
+				{
+					wrongNumber();
+					break;
+				}
+				System.out.println("Setting vote reply...");
+				String whichRM = getString(arguments.elementAt(1));
+				boolean voteReply = getBoolean(arguments.elementAt(2));
+				try {
+					proxy.setVoteReply(whichRM, voteReply);
+				} catch(Exception e) {
+					e.printStackTrace();
+				}
+				break;
+			
             default:
                 System.out.println("The interface does not support this command.");
                 break;
@@ -830,6 +864,10 @@ public class Client extends WSClient {
 			return 25;
 		else if (argument.compareToIgnoreCase("shutdown") == 0)
 			return 26;
+		else if (argument.compareToIgnoreCase("crash") == 0)
+			return 27;
+		else if (argument.compareToIgnoreCase("setvotereply") == 0)
+			return 28;
         else
             return 666;
     }

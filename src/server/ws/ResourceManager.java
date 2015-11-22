@@ -189,4 +189,21 @@ public interface ResourceManager {
 	 */
 	public boolean voteRequest(int tid);
 	
+	@WebMethod
+	public void crashAtPoint(String which, CrashPoint pt);
+	
+	@WebMethod
+	public void crash(String which);
+	
+	@WebMethod
+	public void selfDestruct(CrashPoint pt);
+	
+	@WebMethod
+	private void checkForCrash(CrashPoint pt);
+	
+	@WebMethod
+	public void setVoteReply(boolean commit_);
+	
+	@WebMethod
+	public void setVoteReply(String which, boolean commit_);
 }

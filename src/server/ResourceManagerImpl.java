@@ -11,12 +11,13 @@ import javax.jws.WebService;
 
 import middle.MasterRecord;
 
-
 @WebService(endpointInterface = "server.ws.ResourceManager")
 public class ResourceManagerImpl implements server.ws.ResourceManager {
     
     protected RMHashtable m_itemHT = new RMHashtable();
     
+	CrashPoint crashPoint;
+	boolean commitReply = true;
     
     // Basic operations on RMItem //
     
@@ -564,4 +565,35 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 		return true;
 	}
 
+	@WebMethod // MW only method
+	public void crashAtPoint(String which, CrashPoint pt) { }
+
+	@WebMethod // MW only method
+	public void crash(String which) { }
+	
+	@WebMethod
+	public void selfDestruct(CrashPoint pt)
+	{
+		crashPoint = pt;
+		if (crashPoint == CrashPoint.IMMEDIATE)
+			System.exit(0);
+	}
+		
+	@WebMethod
+	private void checkForCrash(CrashPoint pt)
+	{
+		if (crashPoint == pt)
+		{ // crash now
+			selfDestruct(CrashPoint.IMMEDIATE);
+		}
+	}
+	
+	@WebMethod
+	public void setVoteReply(boolean commit_)
+	{
+		commitReply = commit_;
+	}
+	
+	@WebMethod
+	public void setVoteReply(String which, boolean commit_) { }
 }

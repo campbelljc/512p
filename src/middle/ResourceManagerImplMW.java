@@ -21,6 +21,9 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
     protected RMHashtable m_itemHT = new RMHashtable();
     protected TransactionManager txnMgr = new TransactionManager();
     	
+	CrashPoint crashPoint;
+	boolean commitReply = true;
+	
 	WSClient flightClient;
 	WSClient carClient;
 	WSClient roomClient;
@@ -670,5 +673,71 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 	{
 		return txnMgr.checkTransaction(tid);
 	}
-
+	
+	@WebMethod
+	public void crashAtPoint(String which, CrashPoint pt)
+	{
+		switch(which) {
+			case 'FLIGHT':
+				flightClient.proxy.selfDestruct(pt);
+				break;
+			case 'CAR':
+				carClient.proxy.selfDestruct(pt);
+				break;
+			case 'ROOM':
+				roomClient.proxy.selfDestruct(pt);
+				break;
+			case 'MW':
+				selfDestruct(pt);
+				break;
+		}
+	}
+	
+	@WebMethod
+	public void crash(String which)
+	{
+		crashAtPoint(which, CrashPoint.IMMEDIATE);
+	}
+	
+	@WebMethod
+	public void selfDestruct(CrashPoint pt)
+	{
+		crashPoint = pt;
+		if (crashPoint == CrashPoint.IMMEDIATE)
+			System.exit(0);
+	}
+		
+	@WebMethod
+	private void checkForCrash(CrashPoint pt)
+	{
+		if (crashPoint == pt)
+		{ // crash now
+			selfDestruct(CrashPoint.IMMEDIATE);
+		}
+	}
+	
+	@WebMethod
+	public void setVoteReply(boolean commit_)
+	{
+		commitReply = commit_;
+	}
+	
+	@WebMethod
+	public void setVoteReply(String which, boolean commit_)
+	{
+		switch(which) {
+			case 'FLIGHT':
+				flightClient.proxy.setVoteReply(commit_);
+				break;
+			case 'CAR':
+				carClient.proxy.setVoteReply(commit_);
+				break;
+			case 'ROOM':
+				roomClient.proxy.setVoteReply(commit_);
+				break;
+			case 'MW':
+				setVoteReply(commit_);
+				break;
+		}
+	}
 }

@@ -661,9 +661,23 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 		return txnMgr.commit(tid);
 	}
 
+	public boolean commit2(int tid) { // Different from above.
+		record.log(tid, Message.RM_RCV_COMMIT_REQUEST);
+		m_itemHT.save(rmName, true); // save committed changes
+		record.log(tid, Message.RM_COMMIT_SUCCESS);
+		return true;
+	}
+
 	@Override
 	public boolean abort(int tid) {
 		return txnMgr.abort(tid);
+	}
+	
+	public boolean abort2(int tid) {
+		record.log(tid, Message.RM_RCV_ABORT_REQUEST);
+		// TODO: Delete uncommitted version on disk? Is that necessary though?
+		record.log(tid, Message.RM_COMMIT_ABORTED);
+		return true;
 	}
 
 	@Override

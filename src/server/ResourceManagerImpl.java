@@ -558,14 +558,18 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 
 	@Override
 	public boolean commit(int tid) {
+		record.log(tid, Message.RM_RCV_COMMIT_REQUEST);
 		m_itemHT.save(rmName, true); // save committed changes
-		return false;
+		record.log(tid, Message.RM_COMMIT_SUCCESS);
+		return true;
 	}
 
 	@Override
 	public boolean abort(int tid) {
-		// DO NOTHING : implemented on MW
-		return false;
+		record.log(tid, Message.RM_RCV_ABORT_REQUEST);
+		// TODO: Delete uncommitted version on disk? Is that necessary though?
+		record.log(tid, Message.RM_COMMIT_ABORTED);
+		return true;
 	}
 
 	@Override
@@ -594,7 +598,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 	@Override
 	public boolean voteRequest(int tid) {
 		// TODO: if already aborted??
-		MasterRecord.log(tid, "VOTED_YES");
+		record.log(tid, "VOTED_YES");
 		return true;
 	}
 

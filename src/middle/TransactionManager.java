@@ -71,29 +71,30 @@ public class TransactionManager {
 		if (txnMap.get(tid) == null)
 		{
 			// txn doesn't exist, or was already comitted/aborted. Ignore this commit request.
-			MasterRecord.log(tid, "INVALID_TXN_COMMIT");
+			record.log(tid, "INVALID_TXN_COMMIT");
 			return false;
 		}
 		
-		MasterRecord.log(tid, "CLIENT_COMMIT");
+		record.log(tid, "CLIENT_COMMIT");
 		boolean commitSuccess = false;
 		
 		if (prepare(tid)){
 			// all resource managers said YES to vote request.
-			MasterRecord.log(tid, "DECISION_YES");
+			record.log(tid, "DECISION_YES");
 			for(WSClient rm : resourceManagers){
-				MasterRecord.log(tid, "COMMIT_SENT"); // TODO: rm identifier
+				record.log(tid, "COMMIT_SENT"); // TODO: rm identifier
 				rm.proxy.commit();
 			}
-			MasterRecord.log(tid, "ALL_COMMITS_SENT");
+			// TODO: call commit2 on MW
+			record.log(tid, "ALL_COMMITS_SENT");
 			txnMap.remove(tid);
 			lockMgr.UnlockAll(tid);
 			commitSuccess = true;
-			MasterRecord.log(tid, "TXN_COMPLETE");
+			record.log(tid, "TXN_COMPLETE");
 		}
 		else{
 			// at least one resource manager did not say YES to the vote request.
-			MasterRecord.log(tid, "DECISION_NO");
+			record.log(tid, "DECISION_NO");
 			abort(tid);
 		}
 		return commitSuccess;
@@ -107,21 +108,22 @@ public class TransactionManager {
 		if (txnMap.get(tid) == null)
 		{
 			// txn doesn't exist, or was already comitted/aborted. Ignore this abort request.
-			MasterRecord.log(tid, "INVALID_TXN_ABORT");
+			record.log(tid, "INVALID_TXN_ABORT");
 			return false;
 		}
-		MasterRecord.log(tid, "CLIENT_ABORT");
+		record.log(tid, "CLIENT_ABORT");
 		
 		for(WSClient rm : resourceManagers){
-			MasterRecord.log(tid, "ABORT_SENT"); // TODO: rm identifier
+			record.log(tid, "ABORT_SENT"); // TODO: rm identifier
 			rm.proxy.abort();
 		}
+		// TODO: abort2 on MW.
 		
-		MasterRecord.log(tid, "ALL_ABORTS_SENT");
+		record.log(tid, "ALL_ABORTS_SENT");
 		txnMap.get(tid).undo(); // TODO: do we still need to undo, and if so, where? should anything be logged?
 		txnMap.remove(tid);
 		lockMgr.UnlockAll(tid);
-		MasterRecord.log(tid, "TXN_COMPLETE");
+		record.log(tid, "TXN_COMPLETE");
 		
 		return true;
 	}
@@ -193,10 +195,10 @@ public class TransactionManager {
 	}
 	
 	private boolean prepare(int tid){
-		MasterRecord.log(tid, "PREPARE");
+		record.log(tid, "PREPARE");
 		boolean decision = true;
 		for(WSClient rm : resourceManagers){
-			MasterRecord.log(tid, "REQUEST_SENT"); // TODO: rm identifier
+			record.log(tid, "REQUEST_SENT"); // TODO: rm identifier
 			
 			// Execute voteRequest with a timeout
 			ExecutorService executor = Executors.newCachedThreadPool();
@@ -213,11 +215,11 @@ public class TransactionManager {
 			}
 			
 			if(!decision){
-				MasterRecord.log(tid, "REQUEST_RESPONSE_NO"); // TODO: rm identifier
+				record.log(tid, "REQUEST_RESPONSE_NO"); // TODO: rm identifier
 				break;
 			}
 			else{
-				MasterRecord.log(tid, "REQUEST_RESPONSE_YES"); // TODO: rm identifier
+				record.log(tid, "REQUEST_RESPONSE_YES"); // TODO: rm identifier
 			}
 		}
 		return decision;

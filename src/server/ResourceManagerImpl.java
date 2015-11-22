@@ -7,41 +7,91 @@ package server;
 
 import java.util.*;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+
 import javax.jws.WebService;
+
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
 
 import middle.MasterRecord;
 
 @WebService(endpointInterface = "server.ws.ResourceManager")
-public class ResourceManagerImpl implements server.ws.ResourceManager {
-    
-    protected RMHashtable m_itemHT = new RMHashtable();
-    
+public class ResourceManagerImpl implements server.ws.ResourceManager
+{
+	String rmName;
+	
+	protected RMHashtable m_itemHT = new RMHashtable();
+	MasterRecord record;
+	    
 	CrashPoint crashPoint;
 	boolean commitReply = true;
     
+	public ResourceManagerImpl()
+	{
+		// get name of this RM
+		try {
+			Context env = (Context) new InitialContext().lookup("java:comp/env");
+			rmName = env.lookup("rm-name");
+		} catch(NamingException e) {
+			System.out.println(e);
+			return;
+		}
+				
+		// load hashtable record into class var.
+		System.out.println("Loading hashtable data.");
+		try {
+			FileInputStream fis_ht = new FileInputStream(new File(rmName+"_committed.ht"));
+            ObjectInputStream ois = new ObjectInputStream(fis_ht);
+			m_itemHT = (RMHashtable) ois.readObject();
+			fis_ht.close();
+		} catch (IOException e) {
+			System.out.println("No hashtable data found on disk - creating new copy.");
+			saveChanges();
+		}
+		
+		// check for master record
+		record = MasterRecord.loadLog(rmName);
+		if (!record.isEmpty())
+			recover();
+	}
+	
+	private void recover()
+	{ // check master record for any deviation from norm
+		
+	}
+	
     // Basic operations on RMItem //
     
     // Read a data item.
     private RMItem readData(int id, String key) {
-   //     synchronized(m_itemHT) {
-            return (RMItem) m_itemHT.get(key);
-   //     }
+		return (RMItem) m_itemHT.get(key);
     }
 
     // Write a data item.
     private void writeData(int id, String key, RMItem value) {
-   //     synchronized(m_itemHT) {
-            m_itemHT.put(key, value);
-   //     }
+		m_itemHT.put(key, value);
+		saveChanges(true);
     }
     
     // Remove the item out of storage.
     protected RMItem removeData(int id, String key) {
-  //      synchronized(m_itemHT) {
-            return (RMItem) m_itemHT.remove(key);
-   //     }
+		RMItem removed = (RMItem) m_itemHT.remove(key);
+		saveChanges(true);
+		return removed;
     }
-    
+	
+	private synchronized void saveChanges(boolean dirty)
+	{
+		String name = "";
+		FileOutputStream fos = new FileOutputStream(dirty ? rmName+"_uncommitted.ht" : rmName+"_committed.ht");
+		ObjectOutputStream oos = new ObjectOutputStream(fos);
+		oos.writeObject(m_itemHT);
+		oos.close();
+	}
     
     // Basic operations on ReservableItem //
     
@@ -525,7 +575,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager {
 
 	@Override
 	public boolean commit(int tid) {
-		// DO NOTHING: implemented on MW.
+		saveChanges(false);
 		return false;
 	}
 

@@ -16,10 +16,12 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
 @WebService(endpointInterface = "server.ws.ResourceManager")
-public class ResourceManagerImplMW implements server.ws.ResourceManager {
-    
+public class ResourceManagerImplMW implements server.ws.ResourceManager
+{    
     protected RMHashtable m_itemHT = new RMHashtable();
     protected TransactionManager txnMgr = new TransactionManager();
+	
+	MasterRecord record;
     	
 	CrashPoint crashPoint;
 	boolean commitReply = true;
@@ -46,8 +48,30 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
 		} catch(NamingException e) {
 			System.out.println(e);
 		}
+		
+		// load hashtable record into class var.
+		System.out.println("Loading hashtable data.");
+		try {
+			FileInputStream fis_ht = new FileInputStream(new File("mw_committed.ht"));
+            ObjectInputStream ois = new ObjectInputStream(fis_ht);
+			m_itemHT = (RMHashtable) ois.readObject();
+			fis_ht.close();
+		} catch (IOException e) {
+			System.out.println("No hashtable data found on disk - creating new copy.");
+			saveChanges();
+		}
+		
+		// check for master record
+		record = MasterRecord.loadLog("mw");
+		if (!record.isEmpty())
+			recover();
 	}
-
+	
+	private void recover()
+	{ // check master record for any deviation from norm
+		
+	}
+	
     // Basic operations on RMItem //
     
     // Read a data item.
@@ -59,14 +83,24 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager {
     private void writeData(int id, String key, RMItem value) {
 		Object curVal = m_itemHT.get(key);
     	m_itemHT.put(key, value);
+		saveChanges(true);
     }
     
     // Remove the item out of storage.
     protected RMItem removeData(int id, String key) {
 		Object curVal = m_itemHT.get(key);
-    	return (RMItem) m_itemHT.remove(key);
+		RMItem removed = (RMItem) m_itemHT.remove(key);
+		saveChanges(true);
+		return removed;
     }
-    
+	
+	private synchronized void saveChanges(boolean dirty)
+	{
+		FileOutputStream fos = new FileOutputStream(dirty ? "mw_uncommitted.ht" : "mw_committed.ht");
+		ObjectOutputStream oos = new ObjectOutputStream(fos);
+		oos.writeObject(m_itemHT);
+		oos.close();
+	}
     
     // Basic operations on ReservableItem //
 

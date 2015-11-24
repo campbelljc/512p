@@ -51,8 +51,7 @@ public class MasterRecord implements Serializable
 		RM_FLIGHT,
 		RM_HOTEL,
 		RM_CAR,
-		TM,
-		NULL
+		TM
 	}
 	
 	public MasterRecord(ServerName identifier)
@@ -69,12 +68,10 @@ public class MasterRecord implements Serializable
 	}
 
 	public void log(int tID, Message msg, ServerName sName)
-	public void log(int tID, Message msg, ServerName... sName)
 	{
 		tIDs.add(tID);
 		messages.add(msg);
 		serverNames.add(sName);
-		serverNames.add(sName.length == 0 ? ServerName.NULL : sName[0]);
 		saveLog();
 	}
 	

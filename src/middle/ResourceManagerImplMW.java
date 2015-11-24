@@ -15,8 +15,8 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
-//import middle.MasterRecord.Message;
-//import middle.MasterRecord.ServerName;
+import middle.MasterRecord.Message;
+import middle.MasterRecord.ServerName;
 import server.CrashPoint;
 
 @WebService(endpointInterface = "server.ws.ResourceManager")

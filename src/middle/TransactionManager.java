@@ -82,7 +82,7 @@ public class TransactionManager {
 			// all resource managers said YES to vote request.
 			record.log(tid, "DECISION_YES");
 			for(WSClient rm : resourceManagers){
-				record.log(tid, "COMMIT_SENT"); // TODO: rm identifier
+				record.log(tid, "COMMIT_SENT " + rm.proxy.getName()); // TODO: rm identifier
 				rm.proxy.commit();
 			}
 			// TODO: call commit2 on MW
@@ -114,7 +114,7 @@ public class TransactionManager {
 		record.log(tid, "CLIENT_ABORT");
 		
 		for(WSClient rm : resourceManagers){
-			record.log(tid, "ABORT_SENT"); // TODO: rm identifier
+			record.log(tid, "ABORT_SENT " + rm.proxy.getName()); // TODO: rm identifier
 			rm.proxy.abort();
 		}
 		// TODO: abort2 on MW.

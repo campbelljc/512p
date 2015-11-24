@@ -206,4 +206,7 @@ public interface ResourceManager {
 	
 	@WebMethod
 	public void setVoteReply(String which, boolean commit_);
+	
+	@WebMethod
+	public String getName();
 }

@@ -51,6 +51,11 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 			recover();
 	}
 	
+	public String getName()
+	{
+		return rmName;
+	}
+	
 	private void recover()
 	{ // check master record for any deviation from norm
 		

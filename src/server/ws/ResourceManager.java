@@ -213,4 +213,7 @@ public interface ResourceManager {
 	
 	@WebMethod
 	public ServerName getName();
+	
+	@WebMethod
+	public void setName(ServerName sName_);
 }

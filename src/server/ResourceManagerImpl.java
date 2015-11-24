@@ -28,16 +28,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 	boolean commitReply = true;
     
 	public ResourceManagerImpl()
-	{
-		// get name of this RM
-		try {
-			Context env = (Context) new InitialContext().lookup("java:comp/env");
-			sName = ServerName.valueOf((String)env.lookup("rm-name"));
-		} catch(NamingException e) {
-			System.out.println(e);
-			return;
-		}
-				
+	{				
 		// load hashtable record into class var.
 		System.out.println("Loading hashtable data.");
 		m_itemHT.load(sName, true); // load last committed version of data.
@@ -46,6 +37,12 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 		record = MasterRecord.loadLog(sName);
 		if (!record.isEmpty())
 			recover();
+	}
+	
+	@Override
+	public void setName(ServerName sName_)
+	{
+		sName = sName_;
 	}
 	
 	@Override

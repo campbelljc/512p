@@ -49,7 +49,11 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 			System.out.println("*** Setting up clients ***");
 		 	flightClient = new middle.WSClient("rm", (String) env.lookup("flight-service-host"), (Integer) env.lookup("flight-service-port")); // name, host, port
 		 	carClient = new middle.WSClient("rm", (String) env.lookup("car-service-host"), (Integer) env.lookup("car-service-port")); // name, host, port
-		 	roomClient = new middle.WSClient("rm", (String) env.lookup("room-service-host"), (Integer) env.lookup("room-service-port")); // name, host, port			
+		 	roomClient = new middle.WSClient("rm", (String) env.lookup("room-service-host"), (Integer) env.lookup("room-service-port")); // name, host, port
+			
+			flightClient.proxy.setName(ServerName.RM_FLIGHT);
+			carClient.proxy.setName(ServerName.RM_CAR);
+			roomClient.proxy.setName(ServerName.RM_HOTEL);
 		} catch(NamingException e) {
 			System.out.println(e);
 		}
@@ -787,5 +791,11 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 	@Override
 	public ServerName getName() {
 		return ServerName.MW;
+	}
+	
+	@Override
+	public void setName(ServerName sName_)
+	{
+		System.out.println("WARNING-DO NOT CALL AGAIN");
 	}
 }

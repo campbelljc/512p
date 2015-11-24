@@ -15,10 +15,13 @@ import javax.naming.NamingException;
 import middle.MasterRecord;
 import middle.Message;
 import middle.ServerName;
+import middle.CrashPoint;
 
 @WebService(endpointInterface = "server.ws.ResourceManager")
 public class ResourceManagerImpl implements server.ws.ResourceManager
 {
+	
+	
 	ServerName sName;
 	
 	protected RMHashtable m_itemHT = new RMHashtable();
@@ -630,11 +633,11 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 	}
 		
 	@Override
-	public void checkForCrash(CrashPoint pt)
+	public void checkForCrash(middle.CrashPoint pt)
 	{
 		if (crashPoint == pt)
 		{ // crash now
-			selfDestruct(CrashPoint.IMMEDIATE);
+			selfDestruct(middle.CrashPoint.IMMEDIATE);
 		}
 	}
 	

@@ -21,7 +21,7 @@ import java.util.*;
 import javax.jws.WebService;
 import javax.jws.WebMethod;
 
-import server.CrashPoint;
+import middle.CrashPoint;
 
 import middle.MasterRecord;
 import middle.ServerName;
@@ -195,16 +195,16 @@ public interface ResourceManager {
 	public boolean voteRequest(int tid);
 	
 	@WebMethod
-	public void crashAtPoint(String which, CrashPoint pt);
+	public void crashAtPoint(String which, middle.CrashPoint pt);
 	
 	@WebMethod
 	public void crash(String which);
 	
 	@WebMethod
-	public void selfDestruct(CrashPoint pt);
+	public void selfDestruct(middle.CrashPoint pt);
 	
 	@WebMethod
-	public void checkForCrash(CrashPoint pt);
+	public void checkForCrash(middle.CrashPoint pt);
 	
 	@WebMethod
 	public void setVoteReply2(boolean commit_);

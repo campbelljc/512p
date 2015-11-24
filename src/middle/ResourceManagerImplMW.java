@@ -10,6 +10,7 @@ import java.util.*;
 import javax.jws.WebService;
 
 import server.*;
+import middle.CrashPoint;
 
 import middle.ServerName;
 import middle.Message;
@@ -25,7 +26,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 	
 	MasterRecord record;
     	
-	CrashPoint crashPoint;
+	middle.CrashPoint crashPoint;
 	boolean commitReply = true;
 	
 	WSClient flightClient;
@@ -716,7 +717,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 	}
 	
 	@Override
-	public void crashAtPoint(String which, CrashPoint pt)
+	public void crashAtPoint(String which, middle.CrashPoint pt)
 	{
 		switch(which) {
 			case "FLIGHT":
@@ -737,23 +738,23 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 	@Override
 	public void crash(String which)
 	{
-		crashAtPoint(which, CrashPoint.IMMEDIATE);
+		crashAtPoint(which, middle.CrashPoint.IMMEDIATE);
 	}
 	
 	@Override
-	public void selfDestruct(CrashPoint pt)
+	public void selfDestruct(middle.CrashPoint pt)
 	{
 		crashPoint = pt;
-		if (crashPoint == CrashPoint.IMMEDIATE)
+		if (crashPoint == middle.CrashPoint.IMMEDIATE)
 			System.exit(0);
 	}
 		
 	@Override
-	public void checkForCrash(CrashPoint pt)
+	public void checkForCrash(middle.CrashPoint pt)
 	{
 		if (crashPoint == pt)
 		{ // crash now
-			selfDestruct(CrashPoint.IMMEDIATE);
+			selfDestruct(middle.CrashPoint.IMMEDIATE);
 		}
 	}
 	

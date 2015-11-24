@@ -781,13 +781,11 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 
 	@Override
 	public boolean voteRequest(int tid) {
-		
 		return true;
 	}
 
 	@Override
 	public ServerName getName() {
-		// TODO Auto-generated method stub
 		return ServerName.MW;
 	}
 }

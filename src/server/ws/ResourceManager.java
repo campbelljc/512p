@@ -24,6 +24,7 @@ import javax.jws.WebMethod;
 import server.CrashPoint;
 
 import middle.MasterRecord;
+import middle.ServerName;
 
 @WebService
 public interface ResourceManager {

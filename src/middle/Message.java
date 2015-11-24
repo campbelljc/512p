@@ -1,3 +1,5 @@
+package middle;
+
 public enum Message {
 	RM_RCV_COMMIT_REQUEST,
 	RM_RCV_ABORT_REQUEST,

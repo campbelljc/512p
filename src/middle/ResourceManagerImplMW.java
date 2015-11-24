@@ -11,16 +11,12 @@ import javax.jws.WebService;
 
 import server.*;
 
-import server.CrashPoint;
-
 import middle.ServerName;
 import middle.Message;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-
-import server.CrashPoint;
 
 @WebService(endpointInterface = "server.ws.ResourceManager")
 public class ResourceManagerImplMW implements server.ws.ResourceManager

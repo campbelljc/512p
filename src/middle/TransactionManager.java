@@ -89,10 +89,10 @@ public class TransactionManager {
 			record.log(tid, Message.TM_DECISION_YES);
 			for(WSClient rm : resourceManagers){
 				record.log(tid, Message.TM_COMMIT_SENT_RM, rm.proxy.getName()); 
-				rm.proxy.commit();
+				rm.proxy.commit(tid);
 			}
 		record.log(tid, Message.TM_COMMIT_SENT_RM, ServerName.MW);
-			mw.commit2();
+			mw.commit2(tid);
 			
 			record.log(tid, Message.TM_COMMITS_SENT);
 			txnMap.remove(tid);
@@ -125,9 +125,9 @@ public class TransactionManager {
 		
 		for(WSClient rm : resourceManagers){
 			record.log(tid, Message.TM_ABORT_SENT_RM, rm.proxy.getName());
-			rm.proxy.abort();
+			rm.proxy.abort(tid);
 		}
-		mw.abort2();
+		mw.abort2(tid);
 		
 		record.log(tid, Message.TM_ABORTS_SENT);
 		txnMap.remove(tid);
@@ -213,7 +213,7 @@ public class TransactionManager {
 			ExecutorService executor = Executors.newCachedThreadPool();
 			Callable<Boolean> task = new Callable<Boolean>() {
 			   public Boolean call() {
-				   return rm.proxy.voteRequest();
+				   return rm.proxy.voteRequest(tid);
 			   }
 			};
 			Future<Boolean> future = executor.submit(task);

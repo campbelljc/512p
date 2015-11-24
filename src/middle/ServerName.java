@@ -1,3 +1,5 @@
+package middle;
+
 public enum ServerName {
 	MW,
 	RM_FLIGHT,

@@ -15,6 +15,7 @@ import server.Trace;
 import LockManager.DeadlockException;
 import LockManager.LockManager;
 import middle.MasterRecord.Message;
+import middle.MasterRecord.ServerName;
 import middle.ResourceManagerImplMW.DType;
 
 /**
@@ -24,19 +25,20 @@ public class TransactionManager {
 	
 	private static final int TTL_CHECK_INTERVAL = 25; // seconds
 	private static final int VOTE_REQUEST_TIMEOUT = 10; // seconds
-	private static final String LOG_NAME = "TXN_MGR";
 	
 	private LockManager lockMgr = new LockManager();
 	private HashMap<Integer, Transaction> txnMap = new HashMap<Integer, Transaction>();
 	private AtomicInteger nextID = new AtomicInteger(0);
 	private WSClient[] resourceManagers;
 	private MasterRecord record;
+	private ResourceManagerImplMW mw;
 	
 	private boolean isShutdown = false;
 	
-	public TransactionManager(WSClient[] resourceManagers){ 
+	public TransactionManager(WSClient[] resourceManagers, ResourceManagerImplMW mw){ 
 		this.resourceManagers = resourceManagers;
-		this.record = MasterRecord.loadLog(LOG_NAME);
+		this.record = MasterRecord.loadLog(ServerName.TM);
+		this.mw = mw;
 	}
 	
 	/**
@@ -86,11 +88,13 @@ public class TransactionManager {
 			// all resource managers said YES to vote request.
 			record.log(tid, Message.TM_DECISION_YES);
 			for(WSClient rm : resourceManagers){
-				record.log(tid, Message.TM_COMMIT_SENT_RM, rm.proxy.getName()); // TODO: rm identifier
+				record.log(tid, Message.TM_COMMIT_SENT_RM, rm.proxy.getName()); 
 				rm.proxy.commit();
 			}
-			// TODO: call commit2 on MW
-			record.log(tid, Message.TM_COMMIT_SENT_RM); // TODO: mw id
+		record.log(tid, Message.TM_COMMIT_SENT_RM, ServerName.MW);
+			mw.commit2();
+			
+			record.log(tid, Message.TM_COMMITS_SENT);
 			txnMap.remove(tid);
 			lockMgr.UnlockAll(tid);
 			commitSuccess = true;
@@ -120,10 +124,10 @@ public class TransactionManager {
 		txnMap.get(tid).undo();
 		
 		for(WSClient rm : resourceManagers){
-			record.log(tid, Message.TM_ABORT_SENT_RM, rm.proxy.getName()); // TODO: rm identifier
+			record.log(tid, Message.TM_ABORT_SENT_RM, rm.proxy.getName());
 			rm.proxy.abort();
 		}
-		// TODO: abort2 on MW.
+		mw.abort2();
 		
 		record.log(tid, Message.TM_ABORTS_SENT);
 		txnMap.remove(tid);

@@ -18,11 +18,12 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
 import middle.MasterRecord;
+import middle.MasterRecord.ServerName;
 
 @WebService(endpointInterface = "server.ws.ResourceManager")
 public class ResourceManagerImpl implements server.ws.ResourceManager
 {
-	String rmName;
+	ServerName sName;
 	
 	protected RMHashtable m_itemHT = new RMHashtable();
 	MasterRecord record;
@@ -35,7 +36,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 		// get name of this RM
 		try {
 			Context env = (Context) new InitialContext().lookup("java:comp/env");
-			rmName = env.lookup("rm-name");
+			rmName = ServerName.valueOf(env.lookup("rm-name"));
 		} catch(NamingException e) {
 			System.out.println(e);
 			return;
@@ -51,7 +52,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 			recover();
 	}
 	
-	public String getName()
+	@Override
+	public ServerName getName()
 	{
 		return rmName;
 	}
@@ -573,6 +575,10 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 	public boolean abort(int tid) {
 		record.log(tid, Message.RM_RCV_ABORT_REQUEST);
 		// TODO: Delete uncommitted version on disk? Is that necessary though?
+		
+		// load committed version
+		m_itemHT.load(rmName, true);
+		
 		record.log(tid, Message.RM_COMMIT_ABORTED);
 		return true;
 	}

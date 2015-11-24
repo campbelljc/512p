@@ -23,6 +23,7 @@ import javax.jws.WebMethod;
 
 import server.CrashPoint;
 
+import middle.MasterRecord.ServerName;
 
 @WebService
 public interface ResourceManager {
@@ -211,5 +212,5 @@ public interface ResourceManager {
 	public void setVoteReply(String which, boolean commit_);
 	
 	@WebMethod
-	public String getName();
+	public ServerName getName();
 }

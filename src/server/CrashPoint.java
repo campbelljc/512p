@@ -1,4 +1,6 @@
-enum CrashPoint {
+package server;
+
+public enum CrashPoint {
 	IMMEDIATE,
 	
 	MW_BEFORE_SND_VOTE_REQ,

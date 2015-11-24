@@ -1,69 +1,74 @@
 package middle;
 
 import java.util.ArrayList;
-
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 
-public enum Message {
-	RM_RCV_COMMIT_REQUEST,
-	RM_RCV_ABORT_REQUEST,
-	RM_COMMIT_SUCCESS,
-	RM_COMMIT_ABORTED
-}
 
 public class MasterRecord implements Serializable
 {
 	String identifier;
-	List<Integer> tIDs = new ArrayList();
-	List<Message> msgs = new ArrayList();
+	ArrayList<Integer> txnIds = new ArrayList<Integer>();
+	ArrayList<Message> messages = new ArrayList<Message>();
 	
-	public MasterRecord(String identifier_)
-	{
-		identifier = identifier_;
+	public enum Message {
+		RM_RCV_COMMIT_REQUEST,
+		RM_RCV_ABORT_REQUEST,
+		RM_COMMIT_SUCCESS,
+		RM_COMMIT_ABORTED
 	}
 	
-	public void log(int tid, String message)
+	public MasterRecord(String identifier)
 	{
-		System.out.println("Do not use this method, it's not even finished yet and it will never be!!! It's just here to stop compiler errors.");
+		this.identifier = identifier;
 	}
 	
 	public void log(int tid, Message msg)
 	{
-		tIDs.add(tid);
-		msgs.add(msg);
+		txnIds.add(tid);
+		messages.add(msg);
 		saveLog();
 	}
 	
 	public void saveLog()
 	{
-		FileOutputStream fos = new FileOutputStream(identifier + "_record.log");
-		ObjectOutputStream oos = new ObjectOutputStream(fos);
-		oos.writeObject(this);
-		oos.close();
+		try {
+			FileOutputStream fos = new FileOutputStream(identifier + "_record.log");
+			ObjectOutputStream oos = new ObjectOutputStream(fos);
+			oos.writeObject(this);
+			oos.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	public boolean isEmpty()
 	{
-		return msgs.size() == 0;
+		return messages.isEmpty();
 	}
-	
+
 	public static MasterRecord loadLog(String rmName)
 	{
 		System.out.println("Loading master record.");
 		MasterRecord record = new MasterRecord(rmName);
 		try {			
-			// ref : http://www.mkyong.com/java/how-to-read-file-in-java-fileinputstream/
 			FileInputStream fis = new FileInputStream(new File(rmName+"_record.log"));
-			
+
 			// load master record into class var.
-			// ref : http://www.tutorialspoint.com/java/io/objectinputstream_readobject.htm
-            ObjectInputStream ois = new ObjectInputStream(fis);
-			record = (MasterRecord) ois.readObject();
+			ObjectInputStream ois = new ObjectInputStream(fis);
+			try {
+				record = (MasterRecord) ois.readObject();
+			} catch (ClassNotFoundException e) {
+				e.printStackTrace();
+			}
 			fis.close();			
-		} catch (IOException e)
-		{ // does not exist, so create.
+		} catch (IOException e) { 
+			// does not exist, so create.
 			System.out.println("No master record found on disk - creating new file.");
 			record.saveLog();
 		}

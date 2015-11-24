@@ -28,11 +28,13 @@ public class TransactionManager {
 	private HashMap<Integer, Transaction> txnMap = new HashMap<Integer, Transaction>();
 	private AtomicInteger nextID = new AtomicInteger(0);
 	private WSClient[] resourceManagers;
+	private ResourceManagerImplMW mw;
 	
 	private boolean isShutdown = false;
 	
-	public TransactionManager(WSClient[] resourceManagers){ 
+	public TransactionManager(WSClient[] resourceManagers, ResourceManagerImplMW mw){ 
 		this.resourceManagers = resourceManagers;
+		this.mw = mw;
 	}
 	
 	/**
@@ -82,10 +84,11 @@ public class TransactionManager {
 			// all resource managers said YES to vote request.
 			record.log(tid, "DECISION_YES");
 			for(WSClient rm : resourceManagers){
-				record.log(tid, "COMMIT_SENT " + rm.proxy.getName()); // TODO: rm identifier
+				record.log(tid, "COMMIT_SENT", rm.proxy.getName()); // TODO: rm identifier
 				rm.proxy.commit();
 			}
-			// TODO: call commit2 on MW
+			mw.commit2();
+			
 			record.log(tid, "ALL_COMMITS_SENT");
 			txnMap.remove(tid);
 			lockMgr.UnlockAll(tid);
@@ -114,10 +117,10 @@ public class TransactionManager {
 		record.log(tid, "CLIENT_ABORT");
 		
 		for(WSClient rm : resourceManagers){
-			record.log(tid, "ABORT_SENT " + rm.proxy.getName()); // TODO: rm identifier
+			record.log(tid, "ABORT_SENT", rm.proxy.getName()); // TODO: rm identifier
 			rm.proxy.abort();
 		}
-		// TODO: abort2 on MW.
+		mw.abort2();
 		
 		record.log(tid, "ALL_ABORTS_SENT");
 		txnMap.get(tid).undo(); // TODO: do we still need to undo, and if so, where? should anything be logged?

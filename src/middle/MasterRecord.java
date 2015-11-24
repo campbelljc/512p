@@ -12,9 +12,10 @@ import java.io.Serializable;
 
 public class MasterRecord implements Serializable
 {
-	String identifier;
-	ArrayList<Integer> txnIds = new ArrayList<Integer>();
+	ServerName identifier;
+	ArrayList<Integer> tIDs = new ArrayList<Integer>();
 	ArrayList<Message> messages = new ArrayList<Message>();
+	ArrayList<ServerName> serverNames = new ArrayList<ServerName>();
 	
 	public enum Message {
 		RM_RCV_COMMIT_REQUEST,
@@ -23,22 +24,32 @@ public class MasterRecord implements Serializable
 		RM_COMMIT_ABORTED
 	}
 	
-	public MasterRecord(String identifier)
+	public enum ServerName {
+		NULL,
+		MW,
+		RM_FLIGHT,
+		RM_HOTEL,
+		RM_CAR,
+		TM
+	}
+	
+	public MasterRecord(ServerName identifier)
 	{
 		this.identifier = identifier;
 	}
 	
-	public void log(int tid, Message msg)
+	public void log(int tID, Message msg, ServerName sName = ServerName.NULL)
 	{
-		txnIds.add(tid);
+		tIDs.add(tID);
 		messages.add(msg);
+		serverNames.add(sName);
 		saveLog();
 	}
 	
 	public void saveLog()
 	{
 		try {
-			FileOutputStream fos = new FileOutputStream(identifier + "_record.log");
+			FileOutputStream fos = new FileOutputStream(identifier.name() + "_record.log");
 			ObjectOutputStream oos = new ObjectOutputStream(fos);
 			oos.writeObject(this);
 			oos.close();
@@ -52,12 +63,12 @@ public class MasterRecord implements Serializable
 		return messages.isEmpty();
 	}
 
-	public static MasterRecord loadLog(String rmName)
+	public static MasterRecord loadLog(ServerName rmName)
 	{
 		System.out.println("Loading master record.");
 		MasterRecord record = new MasterRecord(rmName);
-		try {			
-			FileInputStream fis = new FileInputStream(new File(rmName+"_record.log"));
+		try {
+			FileInputStream fis = new FileInputStream(new File(rmName.name()+"_record.log"));
 
 			// load master record into class var.
 			ObjectInputStream ois = new ObjectInputStream(fis);

@@ -19,7 +19,6 @@ import javax.naming.NamingException;
 public class ResourceManagerImplMW implements server.ws.ResourceManager
 {    
     protected RMHashtable m_itemHT = new RMHashtable();
-    protected TransactionManager txnMgr = new TransactionManager();
 	
 	MasterRecord record;
     	
@@ -30,6 +29,8 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 	WSClient carClient;
 	WSClient roomClient;
 	
+    protected TransactionManager txnMgr = new TransactionManager(new WSClient[] { flightClient, carClient, roomClient }, this);
+
 	enum DType {
 		CUSTOMER,
 		FLIGHT,

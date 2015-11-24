@@ -46,6 +46,7 @@ public class Client extends WSClient {
         int numRooms;
         int numCars;
         String location;
+		String whichRM;
 
         String command = "";
         Vector arguments = new Vector();
@@ -765,11 +766,11 @@ public class Client extends WSClient {
 					break;
 				}
 				System.out.println("Setting crash point.");
-				String whichRM = getString(arguments.elementAt(1));
-				CrashPoint pt = CrashPoint.IMMEDIATE;
-				if (arguments.size() == 3)
-					pt = CrashPoint.values()[getInt(arguments.elementAt(2))];
 				try {
+					whichRM = getString(arguments.elementAt(1));
+					CrashPoint pt = CrashPoint.IMMEDIATE;
+					if (arguments.size() == 3)
+						pt = CrashPoint.values()[getInt(arguments.elementAt(2))];
 					proxy.crashAtPoint(whichRM, pt);
 				} catch(Exception e) {
 					e.printStackTrace();
@@ -783,9 +784,9 @@ public class Client extends WSClient {
 					break;
 				}
 				System.out.println("Setting vote reply...");
-				String whichRM = getString(arguments.elementAt(1));
-				boolean voteReply = getBoolean(arguments.elementAt(2));
 				try {
+					whichRM = getString(arguments.elementAt(1));
+					boolean voteReply = getBoolean(arguments.elementAt(2));
 					proxy.setVoteReply(whichRM, voteReply);
 				} catch(Exception e) {
 					e.printStackTrace();

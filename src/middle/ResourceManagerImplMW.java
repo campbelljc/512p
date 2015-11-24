@@ -15,6 +15,10 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
+import middle.MasterRecord.Message;
+import middle.MasterRecord.ServerName;
+import server.CrashPoint;
+
 @WebService(endpointInterface = "server.ws.ResourceManager")
 public class ResourceManagerImplMW implements server.ws.ResourceManager
 {    
@@ -52,10 +56,10 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 			
 		// load hashtable record into class var.
 		System.out.println("Loading hashtable data.");
-		m_itemHT.load("mw", true); // load last committed version of data.
+		m_itemHT.load(ServerName.MW, true); // load last committed version of data.
 		
 		// check for master record
-		record = MasterRecord.loadLog("mw");
+		record = MasterRecord.loadLog(ServerName.MW);
 		if (!record.isEmpty())
 			recover();
 	}
@@ -76,14 +80,14 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
     private void writeData(int id, String key, RMItem value) {
 		Object curVal = m_itemHT.get(key);
     	m_itemHT.put(key, value);
-		m_itemHT.save("mw", false); // save dirty changes
+		m_itemHT.save(ServerName.MW, false); // save dirty changes
     }
     
     // Remove the item out of storage.
     protected RMItem removeData(int id, String key) {
 		Object curVal = m_itemHT.get(key);
 		RMItem removed = (RMItem) m_itemHT.remove(key);
-		m_itemHT.save("mw", false); // save dirty changes
+		m_itemHT.save(ServerName.MW, false); // save dirty changes
 		return removed;
     }
     
@@ -664,7 +668,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 
 	public boolean commit2(int tid) { // Different from above.
 		record.log(tid, Message.RM_RCV_COMMIT_REQUEST);
-		m_itemHT.save(rmName, true); // save committed changes
+		m_itemHT.save(sName, true); // save committed changes
 		record.log(tid, Message.RM_COMMIT_SUCCESS);
 		return true;
 	}

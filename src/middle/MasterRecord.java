@@ -38,11 +38,11 @@ public class MasterRecord implements Serializable
 		this.identifier = identifier;
 	}
 	
-	public void log(int tID, Message msg, ServerName sName = ServerName.NULL)
+	public void log(int tID, Message msg, ServerName... sName)
 	{
 		tIDs.add(tID);
 		messages.add(msg);
-		serverNames.add(sName);
+		serverNames.add(sName.size() == 0 ? ServerName.NULL : sName[0]);
 		saveLog();
 	}
 	

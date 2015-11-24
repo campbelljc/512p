@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import server.Trace;
 import LockManager.DeadlockException;
 import LockManager.LockManager;
+import middle.MasterRecord.Message;
 import middle.ResourceManagerImplMW.DType;
 
 /**
@@ -23,16 +24,19 @@ public class TransactionManager {
 	
 	private static final int TTL_CHECK_INTERVAL = 25; // seconds
 	private static final int VOTE_REQUEST_TIMEOUT = 10; // seconds
+	private static final String LOG_NAME = "TXN_MGR";
 	
 	private LockManager lockMgr = new LockManager();
 	private HashMap<Integer, Transaction> txnMap = new HashMap<Integer, Transaction>();
 	private AtomicInteger nextID = new AtomicInteger(0);
 	private WSClient[] resourceManagers;
+	private MasterRecord record;
 	
 	private boolean isShutdown = false;
 	
 	public TransactionManager(WSClient[] resourceManagers){ 
 		this.resourceManagers = resourceManagers;
+		this.record = MasterRecord.loadLog(LOG_NAME);
 	}
 	
 	/**
@@ -71,30 +75,30 @@ public class TransactionManager {
 		if (txnMap.get(tid) == null)
 		{
 			// txn doesn't exist, or was already comitted/aborted. Ignore this commit request.
-			record.log(tid, "INVALID_TXN_COMMIT");
+			record.log(tid, Message.TM_INVALID_COMMIT);
 			return false;
 		}
 		
-		record.log(tid, "CLIENT_COMMIT");
+		record.log(tid, Message.TM_START_COMMIT);
 		boolean commitSuccess = false;
 		
 		if (prepare(tid)){
 			// all resource managers said YES to vote request.
-			record.log(tid, "DECISION_YES");
+			record.log(tid, Message.TM_DECISION_YES);
 			for(WSClient rm : resourceManagers){
-				record.log(tid, "COMMIT_SENT " + rm.proxy.getName()); // TODO: rm identifier
+				record.log(tid, Message.TM_COMMIT_SENT_RM, rm.proxy.getName()); // TODO: rm identifier
 				rm.proxy.commit();
 			}
 			// TODO: call commit2 on MW
-			record.log(tid, "ALL_COMMITS_SENT");
+			record.log(tid, Message.TM_COMMIT_SENT_RM); // TODO: mw id
 			txnMap.remove(tid);
 			lockMgr.UnlockAll(tid);
 			commitSuccess = true;
-			record.log(tid, "TXN_COMPLETE");
+			record.log(tid, Message.TM_TXN_COMPLETE);
 		}
 		else{
 			// at least one resource manager did not say YES to the vote request.
-			record.log(tid, "DECISION_NO");
+			record.log(tid, Message.TM_DECISION_NO);
 			abort(tid);
 		}
 		return commitSuccess;
@@ -108,22 +112,23 @@ public class TransactionManager {
 		if (txnMap.get(tid) == null)
 		{
 			// txn doesn't exist, or was already comitted/aborted. Ignore this abort request.
-			record.log(tid, "INVALID_TXN_ABORT");
+			record.log(tid, Message.TM_INVALID_ABORT);
 			return false;
 		}
-		record.log(tid, "CLIENT_ABORT");
+		
+		record.log(tid, Message.TM_START_ABORT);
+		txnMap.get(tid).undo();
 		
 		for(WSClient rm : resourceManagers){
-			record.log(tid, "ABORT_SENT " + rm.proxy.getName()); // TODO: rm identifier
+			record.log(tid, Message.TM_ABORT_SENT_RM, rm.proxy.getName()); // TODO: rm identifier
 			rm.proxy.abort();
 		}
 		// TODO: abort2 on MW.
 		
-		record.log(tid, "ALL_ABORTS_SENT");
-		txnMap.get(tid).undo(); // TODO: do we still need to undo, and if so, where? should anything be logged?
+		record.log(tid, Message.TM_ABORTS_SENT);
 		txnMap.remove(tid);
 		lockMgr.UnlockAll(tid);
-		record.log(tid, "TXN_COMPLETE");
+		record.log(tid, Message.TM_TXN_COMPLETE);
 		
 		return true;
 	}

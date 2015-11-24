@@ -12,6 +12,10 @@ import java.io.Serializable;
 
 public class MasterRecord implements Serializable
 {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	ServerName identifier;
 	ArrayList<Integer> tIDs = new ArrayList<Integer>();
 	ArrayList<Message> messages = new ArrayList<Message>();
@@ -36,7 +40,10 @@ public class MasterRecord implements Serializable
 		TM_PREPARE, 
 		TM_SENT_REQUEST_RM, 
 		TM_REQUEST_RESPONSE_NO_RM, 
-		TM_REQUEST_RESPONSE_YES_RM
+		TM_REQUEST_RESPONSE_YES_RM, 
+		RM_VOTE_YES, 
+		RM_VOTE_REQUEST_RCV, 
+		RM_VOTE_NO
 	}
 	
 	public enum ServerName {

@@ -15,6 +15,8 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
+import middle.MasterRecord.ServerName;
+
 @WebService(endpointInterface = "server.ws.ResourceManager")
 public class ResourceManagerImplMW implements server.ws.ResourceManager
 {    
@@ -708,32 +710,32 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 		return txnMgr.checkTransaction(tid);
 	}
 	
-	@WebMethod
+	@Override
 	public void crashAtPoint(String which, CrashPoint pt)
 	{
 		switch(which) {
-			case 'FLIGHT':
+			case "FLIGHT":
 				flightClient.proxy.selfDestruct(pt);
 				break;
-			case 'CAR':
+			case "CAR":
 				carClient.proxy.selfDestruct(pt);
 				break;
-			case 'ROOM':
+			case "ROOM":
 				roomClient.proxy.selfDestruct(pt);
 				break;
-			case 'MW':
+			case "MW":
 				selfDestruct(pt);
 				break;
 		}
 	}
 	
-	@WebMethod
+	@Override
 	public void crash(String which)
 	{
 		crashAtPoint(which, CrashPoint.IMMEDIATE);
 	}
 	
-	@WebMethod
+	@Override
 	public void selfDestruct(CrashPoint pt)
 	{
 		crashPoint = pt;
@@ -741,8 +743,8 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 			System.exit(0);
 	}
 		
-	@WebMethod
-	private void checkForCrash(CrashPoint pt)
+	@Override
+	public void checkForCrash(CrashPoint pt)
 	{
 		if (crashPoint == pt)
 		{ // crash now
@@ -750,28 +752,40 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 		}
 	}
 	
-	@WebMethod
+	@Override
 	public void setVoteReply(boolean commit_)
 	{
 		commitReply = commit_;
 	}
 	
-	@WebMethod
+	@Override
 	public void setVoteReply(String which, boolean commit_)
 	{
 		switch(which) {
-			case 'FLIGHT':
+			case "FLIGHT":
 				flightClient.proxy.setVoteReply(commit_);
 				break;
-			case 'CAR':
+			case "CAR":
 				carClient.proxy.setVoteReply(commit_);
 				break;
-			case 'ROOM':
+			case "ROOM":
 				roomClient.proxy.setVoteReply(commit_);
 				break;
-			case 'MW':
+			case "MW":
 				setVoteReply(commit_);
 				break;
 		}
+	}
+
+	@Override
+	public boolean voteRequest(int tid) {
+		
+		return true;
+	}
+
+	@Override
+	public ServerName getName() {
+		// TODO Auto-generated method stub
+		return ServerName.MW;
 	}
 }

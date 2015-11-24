@@ -14,8 +14,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import server.Trace;
 import LockManager.DeadlockException;
 import LockManager.LockManager;
-import middle.MasterRecord.Message;
-import middle.MasterRecord.ServerName;
+import middle.Message;
+import middle.ServerName;
 import middle.ResourceManagerImplMW.DType;
 
 /**

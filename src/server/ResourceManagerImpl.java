@@ -13,8 +13,8 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
 import middle.MasterRecord;
-import middle.MasterRecord.Message;
-import middle.MasterRecord.ServerName;
+import middle.Message;
+import middle.ServerName;
 
 @WebService(endpointInterface = "server.ws.ResourceManager")
 public class ResourceManagerImpl implements server.ws.ResourceManager

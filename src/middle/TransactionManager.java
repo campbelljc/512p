@@ -204,10 +204,10 @@ public class TransactionManager {
 	}
 	
 	private boolean prepare(int tid){
-		record.log(tid, "PREPARE");
+		record.log(tid, Message.TM_PREPARE);
 		boolean decision = true;
 		for(WSClient rm : resourceManagers){
-			record.log(tid, "REQUEST_SENT"); // TODO: rm identifier
+			record.log(tid, Message.TM_SENT_REQUEST_RM, rm.proxy.getName()); // TODO: rm identifier
 			
 			// Execute voteRequest with a timeout
 			ExecutorService executor = Executors.newCachedThreadPool();
@@ -224,11 +224,11 @@ public class TransactionManager {
 			}
 			
 			if(!decision){
-				record.log(tid, "REQUEST_RESPONSE_NO"); // TODO: rm identifier
+				record.log(tid, Message.TM_REQUEST_RESPONSE_NO_RM, rm.proxy.getName()); // TODO: rm identifier
 				break;
 			}
 			else{
-				record.log(tid, "REQUEST_RESPONSE_YES"); // TODO: rm identifier
+				record.log(tid, Message.TM_REQUEST_RESPONSE_YES_RM, rm.proxy.getName()); // TODO: rm identifier
 			}
 		}
 		return decision;

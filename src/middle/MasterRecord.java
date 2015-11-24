@@ -12,6 +12,10 @@ import java.io.Serializable;
 
 public class MasterRecord implements Serializable
 {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	ServerName identifier;
 	ArrayList<Integer> tIDs = new ArrayList<Integer>();
 	ArrayList<Message> messages = new ArrayList<Message>();
@@ -21,16 +25,34 @@ public class MasterRecord implements Serializable
 		RM_RCV_COMMIT_REQUEST,
 		RM_RCV_ABORT_REQUEST,
 		RM_COMMIT_SUCCESS,
-		RM_COMMIT_ABORTED
+		RM_COMMIT_ABORTED, 
+		TM_TXN_COMPLETE, 
+		TM_COMMITS_SENT, 
+		TM_DECISION_YES, 
+		TM_COMMIT_SENT_RM, 
+		TM_DECISION_NO, 
+		TM_START_COMMIT, 
+		TM_INVALID_COMMIT, 
+		TM_INVALID_ABORT, 
+		TM_START_ABORT, 
+		TM_ABORT_SENT_RM, 
+		TM_ABORTS_SENT, 
+		TM_PREPARE, 
+		TM_SENT_REQUEST_RM, 
+		TM_REQUEST_RESPONSE_NO_RM, 
+		TM_REQUEST_RESPONSE_YES_RM, 
+		RM_VOTE_YES, 
+		RM_VOTE_REQUEST_RCV, 
+		RM_VOTE_NO
 	}
 	
 	public enum ServerName {
-		NULL,
 		MW,
 		RM_FLIGHT,
 		RM_HOTEL,
 		RM_CAR,
-		TM
+		TM,
+		NULL
 	}
 	
 	public MasterRecord(ServerName identifier)
@@ -38,11 +60,21 @@ public class MasterRecord implements Serializable
 		this.identifier = identifier;
 	}
 	
+	public void log(int tID, Message msg)
+	{
+		tIDs.add(tID);
+		messages.add(msg);
+		serverNames.add(null);
+		saveLog();
+	}
+
+	public void log(int tID, Message msg, ServerName sName)
 	public void log(int tID, Message msg, ServerName... sName)
 	{
 		tIDs.add(tID);
 		messages.add(msg);
-		serverNames.add(sName.size() == 0 ? ServerName.NULL : sName[0]);
+		serverNames.add(sName);
+		serverNames.add(sName.length == 0 ? ServerName.NULL : sName[0]);
 		saveLog();
 	}
 	

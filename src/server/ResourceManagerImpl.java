@@ -7,17 +7,13 @@ package server;
 
 import java.util.*;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-
 import javax.jws.WebService;
-
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
 import middle.MasterRecord;
+import middle.MasterRecord.Message;
 import middle.MasterRecord.ServerName;
 
 @WebService(endpointInterface = "server.ws.ResourceManager")
@@ -36,7 +32,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 		// get name of this RM
 		try {
 			Context env = (Context) new InitialContext().lookup("java:comp/env");
-			rmName = ServerName.valueOf(env.lookup("rm-name"));
+			sName = ServerName.valueOf((String)env.lookup("rm-name"));
 		} catch(NamingException e) {
 			System.out.println(e);
 			return;
@@ -44,10 +40,10 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 				
 		// load hashtable record into class var.
 		System.out.println("Loading hashtable data.");
-		m_itemHT.load(rmName, true); // load last committed version of data.
+		m_itemHT.load(sName, true); // load last committed version of data.
 				
 		// check for master record
-		record = MasterRecord.loadLog(rmName);
+		record = MasterRecord.loadLog(sName);
 		if (!record.isEmpty())
 			recover();
 	}
@@ -55,7 +51,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 	@Override
 	public ServerName getName()
 	{
-		return rmName;
+		return sName;
 	}
 	
 	private void recover()
@@ -73,13 +69,13 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
     // Write a data item.
     private void writeData(int id, String key, RMItem value) {
 		m_itemHT.put(key, value);
-		m_itemHT.save(rmName, false); // save dirty changes
+		m_itemHT.save(sName, false); // save dirty changes
     }
     
     // Remove the item out of storage.
     protected RMItem removeData(int id, String key) {
 		RMItem removed = (RMItem) m_itemHT.remove(key);
-		m_itemHT.save(rmName, false); // save dirty changes
+		m_itemHT.save(sName, false); // save dirty changes
 		return removed;
     }
     
@@ -566,7 +562,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 	@Override
 	public boolean commit(int tid) {
 		record.log(tid, Message.RM_RCV_COMMIT_REQUEST);
-		m_itemHT.save(rmName, true); // save committed changes
+		m_itemHT.save(sName, true); // save committed changes
 		record.log(tid, Message.RM_COMMIT_SUCCESS);
 		return true;
 	}
@@ -577,7 +573,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 		// TODO: Delete uncommitted version on disk? Is that necessary though?
 		
 		// load committed version
-		m_itemHT.load(rmName, true);
+		m_itemHT.load(sName, true);
 		
 		record.log(tid, Message.RM_COMMIT_ABORTED);
 		return true;
@@ -609,17 +605,23 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 	@Override
 	public boolean voteRequest(int tid) {
 		// TODO: if already aborted??
-		record.log(tid, "VOTED_YES");
-		return true;
+		record.log(tid, Message.RM_VOTE_REQUEST_RCV);
+		if(commitReply){
+			record.log(tid, Message.RM_VOTE_YES);
+		}
+		else{
+			record.log(tid, Message.RM_VOTE_NO);
+		}
+		return commitReply;
 	}
 
-	@WebMethod // MW only method
+	@Override // MW only method
 	public void crashAtPoint(String which, CrashPoint pt) { }
 
-	@WebMethod // MW only method
+	@Override // MW only method
 	public void crash(String which) { }
 	
-	@WebMethod
+	@Override
 	public void selfDestruct(CrashPoint pt)
 	{
 		crashPoint = pt;
@@ -627,8 +629,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 			System.exit(0);
 	}
 		
-	@WebMethod
-	private void checkForCrash(CrashPoint pt)
+	@Override
+	public void checkForCrash(CrashPoint pt)
 	{
 		if (crashPoint == pt)
 		{ // crash now
@@ -636,12 +638,12 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 		}
 	}
 	
-	@WebMethod
+	@Override
 	public void setVoteReply(boolean commit_)
 	{
 		commitReply = commit_;
 	}
 	
-	@WebMethod
+	@Override
 	public void setVoteReply(String which, boolean commit_) { }
 }

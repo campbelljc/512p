@@ -15,8 +15,8 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
-import middle.MasterRecord.Message;
-import middle.MasterRecord.ServerName;
+//import middle.MasterRecord.Message;
+//import middle.MasterRecord.ServerName;
 import server.CrashPoint;
 
 @WebService(endpointInterface = "server.ws.ResourceManager")
@@ -759,7 +759,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 	}
 	
 	@Override
-	public void setVoteReply(boolean commit_)
+	public void setVoteReply2(boolean commit_)
 	{
 		commitReply = commit_;
 	}
@@ -769,16 +769,16 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 	{
 		switch(which) {
 			case "FLIGHT":
-				flightClient.proxy.setVoteReply(commit_);
+				flightClient.proxy.setVoteReply2(commit_);
 				break;
 			case "CAR":
-				carClient.proxy.setVoteReply(commit_);
+				carClient.proxy.setVoteReply2(commit_);
 				break;
 			case "ROOM":
-				roomClient.proxy.setVoteReply(commit_);
+				roomClient.proxy.setVoteReply2(commit_);
 				break;
 			case "MW":
-				setVoteReply(commit_);
+				setVoteReply2(commit_);
 				break;
 		}
 	}

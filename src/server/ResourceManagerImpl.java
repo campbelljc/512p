@@ -29,6 +29,15 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
     
 	public ResourceManagerImpl()
 	{				
+
+	}
+	
+	@Override
+	public void setName(ServerName sName_)
+	{
+		System.out.println(" *** DO NOT CALL AGAIN *** ");
+		sName = sName_;
+		
 		// load hashtable record into class var.
 		System.out.println("Loading hashtable data.");
 		m_itemHT.load(sName, true); // load last committed version of data.
@@ -37,12 +46,6 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 		record = MasterRecord.loadLog(sName);
 		if (!record.isEmpty())
 			recover();
-	}
-	
-	@Override
-	public void setName(ServerName sName_)
-	{
-		sName = sName_;
 	}
 	
 	@Override
@@ -636,7 +639,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 	}
 	
 	@Override
-	public void setVoteReply(boolean commit_)
+	public void setVoteReply2(boolean commit_)
 	{
 		commitReply = commit_;
 	}

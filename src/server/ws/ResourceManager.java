@@ -206,7 +206,7 @@ public interface ResourceManager {
 	public void checkForCrash(CrashPoint pt);
 	
 	@WebMethod
-	public void setVoteReply(boolean commit_);
+	public void setVoteReply2(boolean commit_);
 	
 	@WebMethod
 	public void setVoteReply(String which, boolean commit_);

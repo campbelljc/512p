@@ -17,8 +17,11 @@
 package server.ws;
 
 import java.util.*;
+
 import javax.jws.WebService;
 import javax.jws.WebMethod;
+
+import server.CrashPoint;
 
 
 @WebService
@@ -199,7 +202,7 @@ public interface ResourceManager {
 	public void selfDestruct(CrashPoint pt);
 	
 	@WebMethod
-	private void checkForCrash(CrashPoint pt);
+	public void checkForCrash(CrashPoint pt);
 	
 	@WebMethod
 	public void setVoteReply(boolean commit_);

@@ -600,6 +600,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 	@Override
 	public boolean commit(int tid) {
 		record.log(tid, Message.RM_RCV_COMMIT_REQUEST);
+		checkForCrash(CrashPoint.RM_AFTER_RCV_VOTE_DECISION);
+		
 		m_itemHT.save(sName, true); // save committed changes
 		record.log(tid, Message.RM_COMMIT_SUCCESS);
 		return true;
@@ -608,6 +610,8 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 	@Override
 	public boolean abort(int tid) {
 		record.log(tid, Message.RM_RCV_ABORT_REQUEST);
+		checkForCrash(CrashPoint.RM_AFTER_RCV_VOTE_DECISION);
+		
 		// TODO: Delete uncommitted version on disk? Is that necessary though?
 		
 		// load committed version
@@ -619,16 +623,13 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 
 	@Override
 	public boolean shutdown() {
-		Thread t = new Thread(new Runnable(){
-			@Override
-			public void run() {
-				try {
-					Thread.sleep(100);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-				System.exit(0);
+		Thread t = new Thread(() -> {
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
 			}
+			System.exit(0);
 		});
 		t.start();
 		return true; // never reach here, doesnt matter.
@@ -644,12 +645,25 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 	public boolean voteRequest(int tid) {
 		// TODO: if already aborted??
 		record.log(tid, Message.RM_RCV_VOTE_REQUEST);
+		checkForCrash(CrashPoint.RM_AFTER_RCV_VOTE_REQ);
 		if(commitReply){
 			record.log(tid, Message.RM_VOTED_YES);
 		}
 		else{
 			record.log(tid, Message.RM_VOTED_NO);
 		}
+		
+		// Check for crash after sending the answer.
+		Thread t = new Thread(() -> {
+			try {
+				Thread.sleep(200);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			checkForCrash(CrashPoint.RM_AFTER_SND_VOTE_REPLY);
+		});
+		t.start();
+		
 		return commitReply;
 	}
 

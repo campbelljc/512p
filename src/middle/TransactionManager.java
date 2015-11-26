@@ -33,7 +33,7 @@ public class TransactionManager {
 	private LockManager lockMgr = new LockManager();
 	private HashMap<Integer, Transaction> txnMap = new HashMap<Integer, Transaction>();
 	private AtomicInteger nextID = new AtomicInteger(0);
-	private WSClient[] resourceManagers; // [flight, car, room]
+	private WSClient[] resourceManagers; // [flight, car, hotel]
 	private MasterRecord record;
 	private ResourceManagerImplMW mw;
 
@@ -53,8 +53,8 @@ public class TransactionManager {
 		for(Entry<Integer,ArrayList<NamedMessage>> e : logEntries){
 			Integer tid = e.getKey();
 			ArrayList<NamedMessage> messages = e.getValue();
-			Message lastMessage = messages.get(messages.size() - 1).msg;
-			switch(lastMessage)
+			NamedMessage lastMessage = messages.get(messages.size() - 1);
+			switch(lastMessage.msg)
 				{
 				case TM_ABORTED:
 				{
@@ -76,11 +76,42 @@ public class TransactionManager {
 				}
 				case TM_NO_VOTE:
 				{
+					record.log(tid, Message.TM_PREPARED, null);
+					abort(tid);
 					break;
 				}
 				case TM_YES_VOTE:
 				{
-					break;
+					if(lastMessage.name == ServerName.RM_HOTEL){
+						record.log(tid, Message.TM_PREPARED, null);
+						doCommit(tid);
+						
+					}
+					else if(lastMessage.name == ServerName.RM_CAR){
+						// still need to ask hotel
+						boolean decision = sendVoteRequest(tid, resourceManagers[2]);
+						record.log(tid, Message.TM_PREPARED, null);
+						if(decision){
+							doCommit(tid);
+						}
+						else{
+							abort(tid);
+						}
+					}
+					else{
+						// still need to ask hotel and car
+						boolean decision = sendVoteRequest(tid, resourceManagers[1]);
+						if(decision){
+							decision = sendVoteRequest(tid, resourceManagers[1]);
+						}
+						record.log(tid, Message.TM_PREPARED, null);
+						if(decision){
+							doCommit(tid);
+						}
+						else{
+							abort(tid);
+						}
+					}
 				}
 				case TM_PREPARED:
 				{
@@ -89,23 +120,47 @@ public class TransactionManager {
 						abort(tid);
 					}
 					else{
-						// send commit to RMs
-						sendRMCommit(tid, resourceManagers);
-	
-						// send commit to MW
-						sendMWCommit(tid);
-	
-						// remove and release locks
-						completeCommit(tid);
+						doCommit(tid);
 					}
 					break;
 				}
 				case TM_SENT_ABORT:
 				{
-	
+					if(lastMessage.name == ServerName.RM_HOTEL){						
+						sendMWAbort(tid);						
+						completeAbort(tid);
+					}
+					else if(lastMessage.name == ServerName.RM_CAR){
+						// still need to send an abort to hotel
+						sendRMAbort(tid, new WSClient[]{ resourceManagers[2] });
+						sendMWAbort(tid);
+						completeAbort(tid);
+					}
+					else{
+						// still need to send an abort to hotel and car
+						sendRMAbort(tid, new WSClient[]{ resourceManagers[1], resourceManagers[2] });
+						sendMWAbort(tid);
+						completeAbort(tid);
+					}
 				}
 				case TM_SENT_COMMIT:
 				{
+					if(lastMessage.name == ServerName.RM_HOTEL){						
+						sendMWCommit(tid);						
+						completeCommit(tid);
+					}
+					else if(lastMessage.name == ServerName.RM_CAR){
+						// still need to send an abort to hotel
+						sendRMCommit(tid, new WSClient[]{ resourceManagers[2] });
+						sendMWCommit(tid);
+						completeCommit(tid);
+					}
+					else{
+						// still need to send an abort to hotel and car
+						sendRMCommit(tid, new WSClient[]{ resourceManagers[1], resourceManagers[2] });
+						sendMWCommit(tid);
+						completeCommit(tid);
+					}
 	
 				}			
 				default:
@@ -159,15 +214,7 @@ public class TransactionManager {
 		
 		boolean commitSuccess = false;
 		if (prepare(tid)){			
-			// send commit to RMs
-			sendRMCommit(tid, resourceManagers);
-			
-			// send commit to MW
-			sendMWCommit(tid);
-			
-			// remove and release locks
-			completeCommit(tid);
-			
+			doCommit(tid);
 			commitSuccess = true;
 		}
 		else{
@@ -199,6 +246,17 @@ public class TransactionManager {
 		completeAbort(tid);
 		
 		return true;
+	}
+	
+	private void doCommit(int tid){
+		// send commit to RMs
+		sendRMCommit(tid, resourceManagers);
+
+		// send commit to MW
+		sendMWCommit(tid);
+
+		// remove and release locks
+		completeCommit(tid);
 	}
 	
 	private void sendRMCommit(int tid, WSClient[] rms){
@@ -241,29 +299,37 @@ public class TransactionManager {
 	private boolean prepare(int tid){
 		boolean decision = true;
 		for(WSClient rm : resourceManagers){			
-			// Execute voteRequest with a timeout
-			ExecutorService executor = Executors.newCachedThreadPool();
-			Callable<Boolean> task = new Callable<Boolean>() {
-			   public Boolean call() {
-				   return rm.proxy.voteRequest(tid);
-			   }
-			};
-			Future<Boolean> future = executor.submit(task);
-			try {
-			   decision = future.get(VOTE_REQUEST_TIMEOUT, TimeUnit.SECONDS); 
-			} catch (TimeoutException | InterruptedException | ExecutionException e) {
-			   decision = false;
-			}
+			decision = sendVoteRequest(tid, rm);
 			
-			if(decision){
-				record.log(tid, Message.TM_YES_VOTE, rm.proxy.getName());
-			}
-			else{
-				record.log(tid, Message.TM_NO_VOTE, rm.proxy.getName());
+			if(!decision){
 				break;
 			}
 		}
 		record.log(tid, Message.TM_PREPARED, null);
+		return decision;
+	}
+	
+	private boolean sendVoteRequest(int tid, WSClient rm){
+		// Execute voteRequest with a timeout
+		ExecutorService executor = Executors.newCachedThreadPool();
+		Callable<Boolean> task = new Callable<Boolean>() {
+			public Boolean call() {
+				return rm.proxy.voteRequest(tid);
+			}
+		};
+		Future<Boolean> future = executor.submit(task);
+		boolean decision = true;
+		try {
+			decision = future.get(VOTE_REQUEST_TIMEOUT, TimeUnit.SECONDS); 
+		} catch (TimeoutException | InterruptedException | ExecutionException e) {
+			decision = false;
+		}
+		if(decision){
+			record.log(tid, Message.TM_YES_VOTE, rm.proxy.getName());
+		}
+		else{
+			record.log(tid, Message.TM_NO_VOTE, rm.proxy.getName());
+		}
 		return decision;
 	}
 	

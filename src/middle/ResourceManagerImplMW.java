@@ -33,7 +33,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 	WSClient carClient;
 	WSClient roomClient;
 	
-    protected TransactionManager txnMgr = new TransactionManager(new WSClient[] { flightClient, carClient, roomClient }, this);
+    protected TransactionManager txnMgr;
 
 	enum DType {
 		CUSTOMER,
@@ -66,11 +66,13 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 		record = MasterRecord.loadLog(ServerName.MW);
 		if (!record.isEmpty())
 			recover();
+		
+		txnMgr = new TransactionManager(new WSClient[] { flightClient, carClient, roomClient }, this); // will load its own log and recover if necessary
 	}
 	
 	private void recover()
 	{ // check master record for any deviation from norm
-		
+		// same code as server rm. (TODO: copy here when done)
 	}
 	
     // Basic operations on RMItem //

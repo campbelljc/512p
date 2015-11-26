@@ -21,7 +21,7 @@ public class MasterRecord implements Serializable
 	ArrayList<Message> messages = new ArrayList<Message>();
 	ArrayList<ServerName> serverNames = new ArrayList<ServerName>();
 	
-	public MasterRecord(ServerName identifier)
+	private MasterRecord(ServerName identifier)
 	{
 		this.identifier = identifier;
 	}
@@ -57,6 +57,15 @@ public class MasterRecord implements Serializable
 	public boolean isEmpty()
 	{
 		return messages.isEmpty();
+	}
+	
+	public Message getLastMessage()
+	{
+		return messages.get(messages.size() - 1);
+	}
+	
+	public int getLastTID() {
+		return tIDs.get(tIDs.size() - 1);
 	}
 
 	public static MasterRecord loadLog(ServerName rmName)

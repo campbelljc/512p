@@ -37,8 +37,72 @@ public class TransactionManager {
 	
 	public TransactionManager(WSClient[] resourceManagers, ResourceManagerImplMW mw){ 
 		this.resourceManagers = resourceManagers;
-		this.record = MasterRecord.loadLog(ServerName.TM);
 		this.mw = mw;
+		
+		this.record = MasterRecord.loadLog(ServerName.TM);
+		if (!record.isEmpty())
+			recover();
+	}
+	
+	private synchronized void recover()
+	{
+		Message lastMessage = record.getLastMessage();
+		switch(lastMessage)
+		{
+			case TM_TXN_COMPLETED:
+			{ // nothing to do
+				break;
+			}
+			case TM_START_PREPARE:
+			{ // crash before sending vote request.
+				// then abort
+				abort(record.getLastTID());
+				break;
+			}
+			case TM_SENT_VOTE_REQUEST:
+			{ // crash after sending vote request
+				// TODO: we didn't receive the answer to this request, so must resend it, and send others after it.
+			}
+			case TM_RCV_VOTE_NO:
+			{ // crash after receiving some replies but not all
+				// TODO: we know here that the txn will abort, right?
+				abort(record.getLastTID());
+				break;
+			}
+			case TM_RCV_VOTE_YES:
+			{ // crash after receiving some replies but not all
+				// TODO: send out remaining vote requests
+			}
+			case TM_DECIDED_YES:
+			{ // crash after deciding but before sending decision
+				// TODO: send commit requests
+			}
+			case TM_DECIDED_NO:
+			{ // crash after deciding but before sending decision
+				// TODO: send abort requests
+			}
+			case TM_SENT_COMMIT_REQUEST:
+			{ // sent some commit reqs but not all
+				// TODO: send remaining commit reqs
+			}
+			case TM_SENT_ABORT_REQUEST:
+			{ // sent some abort reqs but not all
+				// TODO: send remaining abort reqs
+			}
+			case TM_SENT_ALL_COMMIT_REQUESTS:
+			{ // crash after sent all decisions
+				// TODO: perform final tidying up
+			}
+			case TM_SENT_ALL_ABORT_REQUESTS:
+			{ // crash after sent all decisions
+				// TODO: perform final tidying up
+			}
+			
+			default:
+			{
+				System.out.println("Error - we did not expect this log entry: " + lastMessage.name());
+			}
+		}
 	}
 	
 	/**
@@ -77,7 +141,8 @@ public class TransactionManager {
 		if (txnMap.get(tid) == null)
 		{
 			// txn doesn't exist, or was already comitted/aborted. Ignore this commit request.
-			record.log(tid, Message.TM_INVALID_COMMIT);
+	//		record.log(tid, Message.TM_INVALID_COMMIT);
+	//Is this necessary?
 			return false;
 		}
 		
@@ -86,23 +151,23 @@ public class TransactionManager {
 		
 		if (prepare(tid)){
 			// all resource managers said YES to vote request.
-			record.log(tid, Message.TM_DECISION_YES);
+			record.log(tid, Message.TM_DECIDED_YES);
 			for(WSClient rm : resourceManagers){
-				record.log(tid, Message.TM_COMMIT_SENT_RM, rm.proxy.getName()); 
+				record.log(tid, Message.TM_SENT_COMMIT_REQUEST, rm.proxy.getName()); 
 				rm.proxy.commit(tid);
 			}
-		record.log(tid, Message.TM_COMMIT_SENT_RM, ServerName.MW);
+			record.log(tid, Message.TM_SENT_COMMIT_REQUEST, ServerName.MW);
 			mw.commit2(tid);
 			
-			record.log(tid, Message.TM_COMMITS_SENT);
+			record.log(tid, Message.TM_SENT_ALL_COMMIT_REQUESTS);
 			txnMap.remove(tid);
 			lockMgr.UnlockAll(tid);
 			commitSuccess = true;
-			record.log(tid, Message.TM_TXN_COMPLETE);
+			record.log(tid, Message.TM_TXN_COMPLETED);
 		}
 		else{
 			// at least one resource manager did not say YES to the vote request.
-			record.log(tid, Message.TM_DECISION_NO);
+			record.log(tid, Message.TM_DECIDED_NO);
 			abort(tid);
 		}
 		return commitSuccess;
@@ -116,7 +181,7 @@ public class TransactionManager {
 		if (txnMap.get(tid) == null)
 		{
 			// txn doesn't exist, or was already comitted/aborted. Ignore this abort request.
-			record.log(tid, Message.TM_INVALID_ABORT);
+	//		record.log(tid, Message.TM_INVALID_ABORT);
 			return false;
 		}
 		
@@ -124,15 +189,15 @@ public class TransactionManager {
 		txnMap.get(tid).undo();
 		
 		for(WSClient rm : resourceManagers){
-			record.log(tid, Message.TM_ABORT_SENT_RM, rm.proxy.getName());
+			record.log(tid, Message.TM_SENT_ABORT_REQUEST, rm.proxy.getName());
 			rm.proxy.abort(tid);
 		}
 		mw.abort2(tid);
 		
-		record.log(tid, Message.TM_ABORTS_SENT);
+		record.log(tid, Message.TM_SENT_ALL_ABORT_REQUESTS);
 		txnMap.remove(tid);
 		lockMgr.UnlockAll(tid);
-		record.log(tid, Message.TM_TXN_COMPLETE);
+		record.log(tid, Message.TM_TXN_COMPLETED);
 		
 		return true;
 	}
@@ -204,10 +269,10 @@ public class TransactionManager {
 	}
 	
 	private boolean prepare(int tid){
-		record.log(tid, Message.TM_PREPARE);
+		record.log(tid, Message.TM_START_PREPARE);
 		boolean decision = true;
 		for(WSClient rm : resourceManagers){
-			record.log(tid, Message.TM_SENT_REQUEST_RM, rm.proxy.getName()); // TODO: rm identifier
+			record.log(tid, Message.TM_SENT_VOTE_REQUEST, rm.proxy.getName()); // TODO: rm identifier
 			
 			// Execute voteRequest with a timeout
 			ExecutorService executor = Executors.newCachedThreadPool();
@@ -224,11 +289,11 @@ public class TransactionManager {
 			}
 			
 			if(!decision){
-				record.log(tid, Message.TM_REQUEST_RESPONSE_NO_RM, rm.proxy.getName()); // TODO: rm identifier
+				record.log(tid, Message.TM_RCV_VOTE_NO, rm.proxy.getName());
 				break;
 			}
 			else{
-				record.log(tid, Message.TM_REQUEST_RESPONSE_YES_RM, rm.proxy.getName()); // TODO: rm identifier
+				record.log(tid, Message.TM_RCV_VOTE_YES, rm.proxy.getName());
 			}
 		}
 		return decision;

@@ -5,5 +5,6 @@ public enum ServerName {
 	RM_FLIGHT,
 	RM_HOTEL,
 	RM_CAR,
-	TM
+	TM,
+	Null
 }

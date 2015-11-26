@@ -72,6 +72,12 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 		txnMgr = new TransactionManager(new WSClient[] { flightClient, carClient, roomClient }, this); // will load its own log and recover if necessary
 	}
 	
+	@Override
+	public boolean getDecision(int tid)
+	{
+		
+	}
+	
 	private void recover()
 	{ // check master record for any deviation from norm
 		// same code as server rm. (TODO: copy here when done)

@@ -217,4 +217,7 @@ public interface ResourceManager {
 	
 	@WebMethod
 	public void setName(ServerName sName_);
+	
+	@WebMethod
+	public boolean getDecision(int tid);
 }

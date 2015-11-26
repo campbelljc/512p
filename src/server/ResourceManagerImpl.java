@@ -9,6 +9,10 @@ import java.util.*;
 
 import javax.jws.WebService;
 
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+
 import middle.MasterRecord;
 import middle.Message;
 import middle.ServerName;
@@ -24,18 +28,35 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 	    
 	CrashPoint crashPoint;
 	boolean commitReply = true;
-    
-/*	public ResourceManagerImpl()
-	{				
-
-	} */
 	
+	String mwHost;
+	Integer mwPort;
+    
+	public ResourceManagerImpl()
+	{
+		try {
+			System.out.println("*** Setting up client for middleware connection ***");
+			Context env = (Context) new InitialContext().lookup("java:comp/env");
+			mwHost = (String)env.lookup("mw-host");
+			mwPort = (Integer)env.lookup("mw-port");
+		} catch(NamingException e) {
+			System.out.println(e);
+		}
+		setName(ServerName.Null);
+	}
+	
+	private WSClient middleware()
+	{
+	 	return new server.WSClient("mw", mwHost, mwPort);
+	}
+		
 	@Override
 	public void setName(ServerName sName_)
 	{
 		System.out.println(" *** DO NOT CALL AGAIN *** ");
-		sName = sName_;
-		
+		System.out.println("Setting name to " + sName_.name());
+		//sName = sName_;
+		sName = ServerName.Null;
 		// load hashtable record into class var.
 		System.out.println("Loading hashtable data.");
 		m_itemHT.load(sName, true); // load last committed version of data.
@@ -51,6 +72,9 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 	{
 		return sName;
 	}
+	
+	@Override
+	public boolean getDecision(int tid) { System.out.println("Do not call!!!"); return false; }
 	
 	private void recover()
 	{ // check master record for any deviation from norm
@@ -70,6 +94,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 			}
 			case RM_VOTED_YES:
 			{ // crash after sending yes answer to middleware.
+				boolean answer = middleware().getDecision(tid);
 				// TODO:
 				// block indefinitely until middleware gives answer...?
 			}

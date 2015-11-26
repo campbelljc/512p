@@ -75,7 +75,11 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 	@Override
 	public boolean getDecision(int tid)
 	{
-		
+		ArrayList<NamedMessage> entries = record.getEntriesForTxn(tid);
+		NamedMessage lastMsg = entries.get(entries.size() - 1);
+		if (lastMsg == Message.TM_COMMITTED)
+			return true;
+		else return false;
 	}
 	
 	private void recover()

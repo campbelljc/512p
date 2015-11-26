@@ -27,7 +27,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 	MasterRecord record;
 	    
 	CrashPoint crashPoint;
-	boolean commitReply = true;
+	Boolean commitReply;
 	
 	String mwHost;
 	Integer mwPort;
@@ -42,6 +42,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 		} catch(NamingException e) {
 			System.out.println(e);
 		}
+		loadVoteReply();
 		setName(ServerName.Null);
 	}
 	
@@ -79,45 +80,57 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 	private void recover()
 	{ // check master record for any deviation from norm
 		// We loaded the master record and it is not empty.
-		Message lastMessage = record.getLastMessage();
-		switch(lastMessage)
+		Set<Entry<Integer,ArrayList<NamedMessage>>> logEntries = record.getEntrySet();
+		for(Entry<Integer,ArrayList<NamedMessage>> e : logEntries)
 		{
-			case RM_COMMIT_SUCCESS:
-			case RM_ABORT_REQUEST:
-			{ // transaction finished, so no recovery to be performed!
-				break;
-			}
-			case RM_RCV_VOTE_REQUEST:
-			{ // vote request received, but crashed before sending answer back to middleware.
-				// TODO:
-				// we have to save the commitReply variable so that the value can be loaded after crash and decision made based on that...
-			}
-			case RM_VOTED_YES:
-			{ // crash after sending yes answer to middleware.
-				boolean answer = middleware().getDecision(tid);
-				// TODO:
-				// block indefinitely until middleware gives answer...?
-			}
-			case RM_VOTED_NO:
-			{ // crash after sending no answer to middleware.
-				// we know that the middleware will abort, so we can abort right away.
-				abort(record.getLastTID());
-				break;
-			}
-			case RM_RCV_COMMIT_REQUEST:
-			{ // crash after receiving request to commit, but before doing so.
-				m_itemHT.load(sName, false); // load uncommitted data back into main memory
-				commit(record.getLastTID()); // finish committing
-				break;
-			}
-			case RM_RCV_ABORT_REQUEST:
-			{ // crash after receiving request to abort, but before doing so.
-				abort(record.getLastTID()); // finish aborting.
-				break;
-			}
-			default:
+			Integer tid = e.getKey();
+			ArrayList<NamedMessage> messages = e.getValue();
+			Message lastMessage = messages.get(messages.size() - 1).msg;
+			switch(lastMessage)		
 			{
-				System.out.println("Error - we did not expect this log entry: " + lastMessage.name());
+				case RM_COMMIT_SUCCESS:
+				case RM_ABORT_REQUEST:
+				{ // transaction finished, so no recovery to be performed!
+					break;
+				}
+				case RM_RCV_VOTE_REQUEST:
+				{ // vote request received, but crashed before sending answer back to middleware.
+					// do nothing - we will eventually receive the voteRequest() method call again from the middleware,
+					// and our commitReply Yes/No vote will have already been loaded in by our constructor (loading bool value from disk)
+					break;
+				}
+				case RM_VOTED_YES:
+				{ // crash after sending yes answer to middleware.
+					boolean answer = middleware().getDecision(tid);
+					if (answer)
+					{
+						m_itemHT.load(sName, false); // load uncommitted data back into main memory
+						commit(tid);
+					}
+					else abort(tid);
+					break;
+				}
+				case RM_VOTED_NO:
+				{ // crash after sending no answer to middleware.
+					// we know that the middleware will abort, so we can abort right away.
+					abort(record.getLastTID());
+					break;
+				}
+				case RM_RCV_COMMIT_REQUEST:
+				{ // crash after receiving request to commit, but before doing so.
+					m_itemHT.load(sName, false); // load uncommitted data back into main memory
+					commit(record.getLastTID()); // finish committing
+					break;
+				}
+				case RM_RCV_ABORT_REQUEST:
+				{ // crash after receiving request to abort, but before doing so.
+					abort(record.getLastTID()); // finish aborting.
+					break;
+				}
+				default:
+				{
+					System.out.println("Error - we did not expect this log entry: " + lastMessage.name());
+				}
 			}
 		}
 	}
@@ -671,7 +684,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 		// TODO: if already aborted??
 		record.log(tid, Message.RM_RCV_VOTE_REQUEST);
 		checkForCrash(CrashPoint.RM_AFTER_RCV_VOTE_REQ);
-		if(commitReply){
+		if(commitReply == Boolean.TRUE){
 			record.log(tid, Message.RM_VOTED_YES);
 		}
 		else{
@@ -689,7 +702,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 		});
 		t.start();
 		
-		return commitReply;
+		return commitReply.booleanValue();
 	}
 
 	@Override // MW only method
@@ -718,7 +731,39 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 	@Override
 	public void setVoteReply2(boolean commit_)
 	{
-		commitReply = commit_;
+		commitReply = new Boolean(commit_);
+		
+		saveVoteReply();
+	}
+	
+	private void loadVoteReply()
+	{
+		try {
+			FileInputStream fis = new FileInputStream(new File(sName + "_commitreply.bool"));
+			ObjectInputStream ois = new ObjectInputStream(fis);
+			try {
+				commitReply = (Boolean) ois.readObject();
+			} catch (ClassNotFoundException e) {
+				e.printStackTrace();
+			}
+			fis.close();			
+		} catch (IOException e) { 
+			// does not exist, so create.
+			System.out.println("No cr found on disk.");
+			commitReply = new Boolean(true);
+		}
+	}
+	
+	private void saveVoteReply()
+	{
+		try {
+			FileOutputStream fos = new FileOutputStream(sName + "_commitreply.bool");
+			ObjectOutputStream oos = new ObjectOutputStream(fos);
+			oos.writeObject(commitReply);
+			oos.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	@Override

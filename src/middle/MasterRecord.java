@@ -65,6 +65,11 @@ public class MasterRecord implements Serializable
 		return messageLog.entrySet();
 	}
 	
+	public ArrayList<NamedMessage> getEntriesForTxn(int tid)
+	{
+		return messageLog.get(tid);
+	}
+	
 	public boolean isEmpty()
 	{
 		return messageLog.isEmpty();

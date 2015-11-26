@@ -33,7 +33,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 	WSClient carClient;
 	WSClient roomClient;
 	
-    protected TransactionManager txnMgr = new TransactionManager(new WSClient[] { flightClient, carClient, roomClient }, this);
+    protected TransactionManager txnMgr;
 
 	enum DType {
 		CUSTOMER,
@@ -54,6 +54,8 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 			flightClient.proxy.setName(ServerName.RM_FLIGHT);
 			carClient.proxy.setName(ServerName.RM_CAR);
 			roomClient.proxy.setName(ServerName.RM_HOTEL);
+			
+			txnMgr = new TransactionManager(new WSClient[] { flightClient, carClient, roomClient }, this);
 		} catch(NamingException e) {
 			System.out.println(e);
 		}

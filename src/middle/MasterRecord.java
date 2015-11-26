@@ -1,6 +1,9 @@
 package middle;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -12,33 +15,37 @@ import java.io.Serializable;
 
 public class MasterRecord implements Serializable
 {
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
+	
 	ServerName identifier;
-	ArrayList<Integer> tIDs = new ArrayList<Integer>();
-	ArrayList<Message> messages = new ArrayList<Message>();
-	ArrayList<ServerName> serverNames = new ArrayList<ServerName>();
+	
+	class NamedMessage{
+		Message msg;
+		ServerName name;
+		public NamedMessage(Message msg, ServerName name) {
+			this.msg = msg;
+			this.name = name;
+		}
+	}
+	
+	HashMap<Integer, ArrayList<NamedMessage>> messageLog = new HashMap<Integer, ArrayList<NamedMessage>>();
 	
 	private MasterRecord(ServerName identifier)
 	{
 		this.identifier = identifier;
 	}
 	
-	public void log(int tID, Message msg)
+	public void log(int tid, Message msg, ServerName sName)
 	{
-		tIDs.add(tID);
-		messages.add(msg);
-		serverNames.add(null);
-		saveLog();
-	}
-
-	public void log(int tID, Message msg, ServerName sName)
-	{
-		tIDs.add(tID);
-		messages.add(msg);
-		serverNames.add(sName);
+		ArrayList<NamedMessage> messages = messageLog.get(tid);
+		if(messages == null){
+			messages = new ArrayList<NamedMessage>();
+			messages.add(new NamedMessage(msg, null));
+			messageLog.put(tid, messages);
+		}
+		else{
+			messages.add(new NamedMessage(msg, null));
+		}
 		saveLog();
 	}
 	
@@ -54,20 +61,15 @@ public class MasterRecord implements Serializable
 		}
 	}
 	
+	public Set<Entry<Integer, ArrayList<NamedMessage>>> getEntrySet(){
+		return messageLog.entrySet();
+	}
+	
 	public boolean isEmpty()
 	{
-		return messages.isEmpty();
+		return messageLog.isEmpty();
 	}
 	
-	public Message getLastMessage()
-	{
-		return messages.get(messages.size() - 1);
-	}
-	
-	public int getLastTID() {
-		return tIDs.get(tIDs.size() - 1);
-	}
-
 	public static MasterRecord loadLog(ServerName rmName)
 	{
 		System.out.println("Loading master record.");

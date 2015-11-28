@@ -21,6 +21,7 @@ import middle.MasterRecord.NamedMessage;
 import middle.Message;
 import middle.ServerName;
 import middle.ResourceManagerImplMW.DType;
+import middle.CrashPoint;
 
 /**
  * Transaction manager existing locally on the middleware.
@@ -243,6 +244,8 @@ public class TransactionManager {
 		// send abort to MW
 		sendMWAbort(tid);
 		
+		mw.checkForCrash(CrashPoint.MW_AFTER_SND_ALL_DECISION);
+		
 		completeAbort(tid);
 		
 		return true;
@@ -255,6 +258,8 @@ public class TransactionManager {
 		// send commit to MW
 		sendMWCommit(tid);
 
+		mw.checkForCrash(CrashPoint.MW_AFTER_SND_ALL_DECISION);
+
 		// remove and release locks
 		completeCommit(tid);
 	}
@@ -262,7 +267,8 @@ public class TransactionManager {
 	private void sendRMCommit(int tid, WSClient[] rms){
 		for(WSClient rm : rms){
 			rm.proxy.commit(tid); // TODO: do we need a timeout?
-			record.log(tid, Message.TM_SENT_COMMIT, rm.proxy.getName()); 	
+			record.log(tid, Message.TM_SENT_COMMIT, rm.proxy.getName()); 
+			mw.checkForCrash(CrashPoint.MW_AFTER_SND_SOME_DECISION);	
 		}
 	}
 	
@@ -270,6 +276,7 @@ public class TransactionManager {
 		for(WSClient rm : rms){
 			rm.proxy.abort(tid); // TODO: do we need a timeout?
 			record.log(tid, Message.TM_SENT_COMMIT, rm.proxy.getName()); 	
+			mw.checkForCrash(CrashPoint.MW_AFTER_SND_SOME_DECISION);
 		}
 	}
 	
@@ -298,14 +305,17 @@ public class TransactionManager {
 	
 	private boolean prepare(int tid){
 		boolean decision = true;
-		for(WSClient rm : resourceManagers){			
+		for(WSClient rm : resourceManagers){
 			decision = sendVoteRequest(tid, rm);
+			mw.checkForCrash(CrashPoint.MW_AFTER_SND_SOME_VOTE_REQ);
 			
 			if(!decision){
 				break;
 			}
 		}
+		mw.checkForCrash(CrashPoint.MW_AFTER_RCV_ALL_VOTE_REPLY);
 		record.log(tid, Message.TM_PREPARED, null);
+		mw.checkForCrash(CrashPoint.MW_AFTER_VOTE_DECISION);
 		return decision;
 	}
 	

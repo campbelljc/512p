@@ -10,10 +10,11 @@ import java.util.*;
 import javax.jws.WebService;
 
 import server.*;
-import middle.CrashPoint;
 
+import middle.CrashPoint;
 import middle.ServerName;
 import middle.Message;
+import middle.MasterRecord.NamedMessage;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -77,7 +78,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 	{
 		ArrayList<NamedMessage> entries = record.getEntriesForTxn(tid);
 		NamedMessage lastMsg = entries.get(entries.size() - 1);
-		if (lastMsg == Message.TM_COMMITTED)
+		if (lastMsg.msg == Message.TM_COMMITTED)
 			return true;
 		else return false;
 	}
@@ -685,9 +686,9 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 	}
 
 	public boolean commit2(int tid) { // Different from above.
-		record.log(tid, Message.RM_RCV_COMMIT_REQUEST);
+		record.log(tid, Message.RM_RCV_COMMIT_REQUEST, ServerName.MW);
 		m_itemHT.save(ServerName.MW, true); // save committed changes
-		record.log(tid, Message.RM_COMMIT_SUCCESS);
+		record.log(tid, Message.RM_COMMIT_SUCCESS, ServerName.MW);
 		return true;
 	}
 
@@ -697,9 +698,9 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 	}
 	
 	public boolean abort2(int tid) {
-		record.log(tid, Message.RM_RCV_ABORT_REQUEST);
+		record.log(tid, Message.RM_RCV_ABORT_REQUEST, ServerName.MW);
 		// TODO: Delete uncommitted version on disk? Is that necessary though?
-		record.log(tid, Message.RM_COMMIT_ABORTED);
+		record.log(tid, Message.RM_COMMIT_ABORTED, ServerName.MW);
 		return true;
 	}
 

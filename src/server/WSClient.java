@@ -5,9 +5,9 @@ import java.net.MalformedURLException;
 
 public class WSClient {
 
-    ResourceManagerImplMWService service;
+  //  ResourceManagerImplMWService service;
     
-    public ResourceManager proxy;
+    public server.ws.ResourceManager proxy;
     
     public WSClient(String serviceName, String serviceHost, int servicePort) 
  /*   throws MalformedURLException */ {
@@ -18,9 +18,9 @@ public class WSClient {
 			
 			System.out.println(wsdlLocation.toString());
             
-	        service = new ResourceManagerImplMWService(wsdlLocation);
+//	        service = new ResourceManagerImplMWService(wsdlLocation);
     
-	        proxy = service.getResourceManagerImplPort();
+	//        proxy = service.getResourceManagerImplMWPort();
 		} catch(Exception e) {
 			System.out.println("server.WSClient exception: " + e);
 		}

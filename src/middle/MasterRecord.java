@@ -19,9 +19,9 @@ public class MasterRecord implements Serializable
 	
 	ServerName identifier;
 	
-	class NamedMessage{
-		Message msg;
-		ServerName name;
+	public class NamedMessage{
+		public Message msg;
+		public ServerName name;
 		public NamedMessage(Message msg, ServerName name) {
 			this.msg = msg;
 			this.name = name;

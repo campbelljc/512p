@@ -6,6 +6,7 @@
 package server;
 
 import java.util.*;
+import java.util.Map.Entry;
 
 import javax.jws.WebService;
 
@@ -15,8 +16,16 @@ import javax.naming.NamingException;
 
 import middle.MasterRecord;
 import middle.Message;
+import middle.MasterRecord.NamedMessage;
 import middle.ServerName;
 import middle.CrashPoint;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.IOException;
 
 @WebService(endpointInterface = "server.ws.ResourceManager")
 public class ResourceManagerImpl implements server.ws.ResourceManager
@@ -45,11 +54,11 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 		loadVoteReply();
 		setName(ServerName.Null);
 	}
-	
-	private WSClient middleware()
-	{
-	 	return new server.WSClient("mw", mwHost, mwPort);
-	}
+// Uncomment this function on second compilation.	
+//	private WSClient middleware()
+//	{
+//	 	return new server.WSClient("mw", mwHost, mwPort);
+//	}
 		
 	@Override
 	public void setName(ServerName sName_)
@@ -85,11 +94,11 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 		{
 			Integer tid = e.getKey();
 			ArrayList<NamedMessage> messages = e.getValue();
-			Message lastMessage = messages.get(messages.size() - 1).msg;
-			switch(lastMessage)		
+			NamedMessage lastMessage = messages.get(messages.size() - 1);
+			switch(lastMessage.msg)
 			{
 				case RM_COMMIT_SUCCESS:
-				case RM_ABORT_REQUEST:
+				case RM_COMMIT_ABORTED:
 				{ // transaction finished, so no recovery to be performed!
 					break;
 				}
@@ -101,7 +110,9 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 				}
 				case RM_VOTED_YES:
 				{ // crash after sending yes answer to middleware.
-					boolean answer = middleware().getDecision(tid);
+					boolean answer = false;
+					// UNCOMMENT this line on second compilation
+				//	boolean answer = middleware().proxy.getDecision(tid);
 					if (answer)
 					{
 						m_itemHT.load(sName, false); // load uncommitted data back into main memory
@@ -113,23 +124,23 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 				case RM_VOTED_NO:
 				{ // crash after sending no answer to middleware.
 					// we know that the middleware will abort, so we can abort right away.
-					abort(record.getLastTID());
+					abort(tid);
 					break;
 				}
 				case RM_RCV_COMMIT_REQUEST:
 				{ // crash after receiving request to commit, but before doing so.
 					m_itemHT.load(sName, false); // load uncommitted data back into main memory
-					commit(record.getLastTID()); // finish committing
+					commit(tid); // finish committing
 					break;
 				}
 				case RM_RCV_ABORT_REQUEST:
 				{ // crash after receiving request to abort, but before doing so.
-					abort(record.getLastTID()); // finish aborting.
+					abort(tid); // finish aborting.
 					break;
 				}
 				default:
 				{
-					System.out.println("Error - we did not expect this log entry: " + lastMessage.name());
+					System.out.println("Error - we did not expect this log entry: " + lastMessage.name);
 				}
 			}
 		}
@@ -637,17 +648,17 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 
 	@Override
 	public boolean commit(int tid) {
-		record.log(tid, Message.RM_RCV_COMMIT_REQUEST);
+		record.log(tid, Message.RM_RCV_COMMIT_REQUEST, sName);
 		checkForCrash(CrashPoint.RM_AFTER_RCV_VOTE_DECISION);
 		
 		m_itemHT.save(sName, true); // save committed changes
-		record.log(tid, Message.RM_COMMIT_SUCCESS);
+		record.log(tid, Message.RM_COMMIT_SUCCESS, sName);
 		return true;
 	}
 
 	@Override
 	public boolean abort(int tid) {
-		record.log(tid, Message.RM_RCV_ABORT_REQUEST);
+		record.log(tid, Message.RM_RCV_ABORT_REQUEST, sName);
 		checkForCrash(CrashPoint.RM_AFTER_RCV_VOTE_DECISION);
 		
 		// TODO: Delete uncommitted version on disk? Is that necessary though?
@@ -655,7 +666,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 		// load committed version
 		m_itemHT.load(sName, true);
 		
-		record.log(tid, Message.RM_COMMIT_ABORTED);
+		record.log(tid, Message.RM_COMMIT_ABORTED, sName);
 		return true;
 	}
 
@@ -682,13 +693,13 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 	@Override
 	public boolean voteRequest(int tid) {
 		// TODO: if already aborted??
-		record.log(tid, Message.RM_RCV_VOTE_REQUEST);
+		record.log(tid, Message.RM_RCV_VOTE_REQUEST, sName);
 		checkForCrash(CrashPoint.RM_AFTER_RCV_VOTE_REQ);
 		if(commitReply == Boolean.TRUE){
-			record.log(tid, Message.RM_VOTED_YES);
+			record.log(tid, Message.RM_VOTED_YES, sName);
 		}
 		else{
-			record.log(tid, Message.RM_VOTED_NO);
+			record.log(tid, Message.RM_VOTED_NO, sName);
 		}
 		
 		// Check for crash after sending the answer.

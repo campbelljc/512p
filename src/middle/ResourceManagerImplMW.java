@@ -56,22 +56,22 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 			carClient.proxy.setName(ServerName.RM_CAR);
 			roomClient.proxy.setName(ServerName.RM_HOTEL);
 			
+			System.out.println("Loading hashtable data.");
+			m_itemHT = RMHashtable.load(ServerName.MW, true); // load last committed version of data.
+			
+			// check for master record
+			record = MasterRecord.loadLog(ServerName.MW);
+			if (!record.isEmpty()){
+				recover();
+			}
+			
 			txnMgr = new TransactionManager(new WSClient[] { flightClient, carClient, roomClient }, this);
 		} catch(NamingException e) {
 			System.out.println(e);
 		}
-			
-		// load hashtable record into class var.
-		System.out.println("Loading hashtable data.");
-		m_itemHT.load(ServerName.MW, true); // load last committed version of data.
-		
-		// check for master record
-		record = MasterRecord.loadLog(ServerName.MW);
-		if (!record.isEmpty())
-			recover();
-		
-		txnMgr = new TransactionManager(new WSClient[] { flightClient, carClient, roomClient }, this); // will load its own log and recover if necessary
 	}
+			
+
 	
 	@Override
 	public boolean getDecision(int tid)

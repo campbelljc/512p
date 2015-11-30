@@ -15,11 +15,10 @@ import java.io.Serializable;
 
 public class MasterRecord implements Serializable
 {
-	private static final long serialVersionUID = 1L;
-	
-	ServerName identifier;
-	
-	public class NamedMessage{
+	private static final long serialVersionUID = 6527548573305769186L;
+
+	public class NamedMessage implements Serializable{
+		private static final long serialVersionUID = 2696865163488157540L;
 		public Message msg;
 		public ServerName name;
 		public NamedMessage(Message msg, ServerName name) {
@@ -28,11 +27,13 @@ public class MasterRecord implements Serializable
 		}
 	}
 	
-	HashMap<Integer, ArrayList<NamedMessage>> messageLog = new HashMap<Integer, ArrayList<NamedMessage>>();
+	ServerName identifier;
+	HashMap<Integer, ArrayList<NamedMessage>> messageLog;
 	
 	private MasterRecord(ServerName identifier)
 	{
 		this.identifier = identifier;
+		messageLog = new HashMap<Integer, ArrayList<NamedMessage>>();
 	}
 	
 	public void log(int tid, Message msg, ServerName sName)

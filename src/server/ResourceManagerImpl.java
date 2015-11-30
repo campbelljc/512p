@@ -69,7 +69,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 		sName = ServerName.Null;
 		// load hashtable record into class var.
 		System.out.println("Loading hashtable data.");
-		m_itemHT.load(sName, true); // load last committed version of data.
+		m_itemHT = RMHashtable.load(sName, true); // load last committed version of data.
 				
 		// check for master record
 		record = MasterRecord.loadLog(sName);

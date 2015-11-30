@@ -61,6 +61,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 		// check for master record
 		record = MasterRecord.loadLog(sName);
 		if (!record.isEmpty()){
+			m_itemHT.load(sName, false);
 			recover();
 		}
 	}

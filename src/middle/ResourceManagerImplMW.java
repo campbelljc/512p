@@ -6,6 +6,7 @@
 package middle;
 
 import java.util.*;
+import java.util.Map.Entry;
 
 import javax.jws.WebService;
 
@@ -58,6 +59,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 			// check for master record
 			record = MasterRecord.loadLog(ServerName.MW);
 			if (!record.isEmpty()){
+				m_itemHT.load(ServerName.MW, false);
 				recover();
 			}
 			
@@ -81,7 +83,61 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 	
 	private void recover()
 	{ // check master record for any deviation from norm
-		// same code as server rm. (TODO: copy here when done)
+		Set<Entry<Integer,ArrayList<NamedMessage>>> logEntries = record.getEntrySet();
+		for(Entry<Integer,ArrayList<NamedMessage>> e : logEntries)
+		{
+			Integer tid = e.getKey();
+			ArrayList<NamedMessage> messages = e.getValue();
+			NamedMessage lastMessage = messages.get(messages.size() - 1);
+			switch(lastMessage.msg)
+			{
+				case RM_COMMIT_SUCCESS:
+				case RM_COMMIT_ABORTED:
+				{ // transaction finished, so no recovery to be performed!
+					break;
+				}
+				case RM_RCV_VOTE_REQUEST:
+				{ // vote request received, but crashed before sending answer back to middleware.
+					// do nothing - we will eventually receive the voteRequest() method call again from the middleware,
+					// and our commitReply Yes/No vote will have already been loaded in by our constructor (loading bool value from disk)
+					break;
+				}
+				case RM_VOTED_YES:
+				{ // crash after sending yes answer to middleware.
+					boolean answer = false;
+					// UNCOMMENT this line on second compilation
+				//	boolean answer = middleware().proxy.getDecision(tid);
+					if (answer)
+					{
+						m_itemHT.load(ServerName.MW, false); // load uncommitted data back into main memory
+						commit(tid);
+					}
+					else abort(tid);
+					break;
+				}
+				case RM_VOTED_NO:
+				{ // crash after sending no answer to middleware.
+					// we know that the middleware will abort, so we can abort right away.
+					abort(tid);
+					break;
+				}
+				case RM_RCV_COMMIT_REQUEST:
+				{ // crash after receiving request to commit, but before doing so.
+					m_itemHT.load(ServerName.MW, false); // load uncommitted data back into main memory
+					commit(tid); // finish committing
+					break;
+				}
+				case RM_RCV_ABORT_REQUEST:
+				{ // crash after receiving request to abort, but before doing so.
+					abort(tid); // finish aborting.
+					break;
+				}
+				default:
+				{
+					System.out.println("Error - we did not expect this log entry: " + lastMessage.name);
+				}
+			}
+		}
 	}
 	
     // Basic operations on RMItem //

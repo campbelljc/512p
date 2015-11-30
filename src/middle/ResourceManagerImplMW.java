@@ -804,9 +804,4 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 		return ServerName.MW;
 	}
 	
-	@Override
-	public void setName(ServerName sName_)
-	{
-		System.out.println("WARNING-DO NOT CALL AGAIN");
-	}
 }

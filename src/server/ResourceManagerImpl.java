@@ -48,7 +48,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 			Context env = (Context) new InitialContext().lookup("java:comp/env");
 			mwHost = (String)env.lookup("mw-host");
 			mwPort = (Integer)env.lookup("mw-port");
-			sName = ServerName.valueOf((String)env.lookup("rm-name"));
+			sName = ServerName.valueOf("RM_" + ((String)env.lookup("rm-name")).toUpperCase());
 		} catch(NamingException e) {
 			System.out.println(e);
 		}

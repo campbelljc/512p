@@ -1,10 +1,5 @@
 - Flights that do not exist should warn the client, not return 0 seats available. (just return -1)
 - After crashing, resource managers load up as Null, therefore they cannot load the correct record or hashtable
 - Bug from part 2 (???)
-- using a MW crashpoint throws a strace to the client after MW crashses (maybe an okay bug, but supressing seems good)
-- crashpoint recovery errors (straces in client and MW). commands to reproduce:
-	- crash,MW,0
-	- start
-	- newcustomer,1
-	- commit,1
-(unexpected message in log)
+- using a MW crashpoint throws a strace to the client after MW crashses (not a huge deal, but ideally we would catch this error and print a simple error message)
+- We cannot recover, because we do not save the updates made by the transaction.

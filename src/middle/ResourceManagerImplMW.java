@@ -20,8 +20,8 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
-@WebService(endpointInterface = "server.ws.ResourceManager")
-public class ResourceManagerImplMW implements server.ws.ResourceManager
+@WebService(endpointInterface = "master.ws.ResourceManager")
+public class ResourceManagerImplMW implements master.ws.ResourceManager
 {    
     protected RMHashtable m_itemHT = new RMHashtable();
 	
@@ -681,7 +681,6 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 
 	@Override
 	public boolean commit(int tid) {
-		// TODO - need to save customer data to disk using m_itemHT.save()... where to do it?
 		return txnMgr.commit(tid);
 	}
 

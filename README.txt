@@ -75,8 +75,8 @@ ant client -Dservice.port=9082 -Dservice.name=mw -Dservice.host=lab2-1.cs.mcgill
 ant client -Dservice.port=9082 -Dservice.name=mw -Dservice.host=lab2-1.cs.mcgill.ca
 
 Localhost:
-#ant server -Dservice.name=rm -Dservice.port=9083 -Dservice.port2=9082 -Dservice.name2=mw -Dservice.host2=localhost
-ant server -Dservice.name=rm -Dservice.port=9083
+ant master -Dservice.name=master -Dservice.port=9090
+ant server -Dservice.name=rm -Dservice.port=9083 -Dservice.name2=master -Dservice.host2=localhost -Dservice.port2=9090
 ant server -Dservice.name=rm -Dservice.port=9084
 ant server -Dservice.name=rm -Dservice.port=9085
 ant middle -Dservice.port2=9082 -Dservice.port=9083 -Dservice.name2=mw -Dservice.host=localhost

@@ -20,6 +20,8 @@ import middle.MasterRecord.NamedMessage;
 import middle.ServerName;
 import middle.CrashPoint;
 
+import master.ws.ResourceManager;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -27,8 +29,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.IOException;
 
-@WebService(endpointInterface = "server.ws.ResourceManager")
-public class ResourceManagerImpl implements server.ws.ResourceManager
+@WebService(endpointInterface = "master.ws.ResourceManager")
+public class ResourceManagerImpl implements master.ws.ResourceManager
 {
 	ServerName sName;
 	
@@ -54,11 +56,11 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 		loadVoteReply();
 		setName(ServerName.Null);
 	}
-// Uncomment this function on second compilation.	
-//	private WSClient middleware()
-//	{
-//	 	return new server.WSClient("mw", mwHost, mwPort);
-//	}
+
+	private WSClient middleware()
+	{
+	 	return new server.WSClient("mw", mwHost, mwPort);
+	}
 		
 	@Override
 	public void setName(ServerName sName_)
@@ -110,9 +112,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 				}
 				case RM_VOTED_YES:
 				{ // crash after sending yes answer to middleware.
-					boolean answer = false;
-					// UNCOMMENT this line on second compilation
-				//	boolean answer = middleware().proxy.getDecision(tid);
+					boolean answer = middleware().proxy.getDecision(tid);
 					if (answer)
 					{
 						m_itemHT.load(sName, false); // load uncommitted data back into main memory

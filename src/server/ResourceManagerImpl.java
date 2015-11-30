@@ -48,35 +48,23 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 			Context env = (Context) new InitialContext().lookup("java:comp/env");
 			mwHost = (String)env.lookup("mw-host");
 			mwPort = (Integer)env.lookup("mw-port");
+			sName = ServerName.valueOf((String)env.lookup("rm-name"));
 		} catch(NamingException e) {
 			System.out.println(e);
 		}
-		loadVoteReply();
-		setName(ServerName.Null);
-	}
-// Uncomment this function on second compilation.	
-//	private WSClient middleware()
-//	{
-//	 	return new server.WSClient("mw", mwHost, mwPort);
-//	}
 		
-	@Override
-	public void setName(ServerName sName_)
-	{
-		System.out.println(" *** DO NOT CALL AGAIN *** ");
-		System.out.println("Setting name to " + sName_.name());
-		//sName = sName_;
-		sName = ServerName.Null;
-		// load hashtable record into class var.
-		System.out.println("Loading hashtable data.");
-		m_itemHT = RMHashtable.load(sName, true); // load last committed version of data.
-				
+		loadVoteReply();
+		
+		// load last committed version of data.
+		m_itemHT = RMHashtable.load(sName, true); 
+		
 		// check for master record
 		record = MasterRecord.loadLog(sName);
-		if (!record.isEmpty())
+		if (!record.isEmpty()){
 			recover();
+		}
 	}
-	
+
 	@Override
 	public ServerName getName()
 	{

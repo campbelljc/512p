@@ -4,6 +4,7 @@
     <property name="service.name" value="rm"/>
     <property name="service.host" value="localhost"/>
     <property name="service.port" value="8080"/>
+	<property name="etc" value="etc"/>
 
     <path id="jaxws.classpath">
         <pathelement location="${java.home}/../lib/tools.jar"/>
@@ -68,10 +69,10 @@
     <target name="create-war">
         <war 
             warfile="${basedir}/build/war/${service.name}.war" 
-            webxml="etc/web.xml">
-            <webinf dir="${basedir}/etc" includes="sun-jaxws.xml"/>
+            webxml="{etc}/web.xml">
+            <webinf dir="${basedir}/{etc}" includes="sun-jaxws.xml"/>
             <zipfileset
-                    dir="${basedir}/etc"
+                    dir="${basedir}/{etc}"
                     includes="*.wsdl, *.xsd"
                     prefix="WEB-INF/wsdl"/>
             <classes dir="${basedir}/build/classes"/>
@@ -208,10 +209,10 @@
     <target name="create-war-middle">
         <war 
             warfile="${basedir}/build/war/${service.name2}.war" 
-            webxml="etc2/web.xml">
-            <webinf dir="${basedir}/etc2" includes="sun-jaxws.xml"/>
+            webxml="etc_mw/web.xml">
+            <webinf dir="${basedir}/etc_mw" includes="sun-jaxws.xml"/>
             <zipfileset
-                    dir="${basedir}/etc2"
+                    dir="${basedir}/etc_mw"
                     includes="*.wsdl, *.xsd"
                     prefix="WEB-INF/wsdl"/>
             <classes dir="${basedir}/build/classes"/>

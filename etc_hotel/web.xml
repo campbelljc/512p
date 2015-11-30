@@ -29,32 +29,17 @@ Inc.//DTD Web Application 2.3//EN"
     </session-config>
 
 	<env-entry>
-	    <env-entry-name>flight-service-host</env-entry-name>
+		<env-entry-name>rm-name</env-entry-name>
+	    <env-entry-value>hotel</env-entry-value>
+	    <env-entry-type>java.lang.String</env-entry-type>
+	</env-entry>
+	<env-entry>
+		<env-entry-name>rm-host</env-entry-name>
 	    <env-entry-value>localhost</env-entry-value>
 	    <env-entry-type>java.lang.String</env-entry-type>
 	</env-entry>
 	<env-entry>
-	    <env-entry-name>flight-service-port</env-entry-name>
-	    <env-entry-value>9083</env-entry-value>
-	    <env-entry-type>java.lang.Integer</env-entry-type>
-	</env-entry>
-	<env-entry>
-	    <env-entry-name>car-service-host</env-entry-name>
-	    <env-entry-value>localhost</env-entry-value>
-	    <env-entry-type>java.lang.String</env-entry-type>
-	</env-entry>
-	<env-entry>
-	    <env-entry-name>car-service-port</env-entry-name>
-	    <env-entry-value>9084</env-entry-value>
-	    <env-entry-type>java.lang.Integer</env-entry-type>
-	</env-entry>
-	<env-entry>
-	    <env-entry-name>room-service-host</env-entry-name>
-	    <env-entry-value>localhost</env-entry-value>
-	    <env-entry-type>java.lang.String</env-entry-type>
-	</env-entry>
-	<env-entry>
-	    <env-entry-name>room-service-port</env-entry-name>
+	    <env-entry-name>rm-port</env-entry-name>
 	    <env-entry-value>9085</env-entry-value>
 	    <env-entry-type>java.lang.Integer</env-entry-type>
 	</env-entry>

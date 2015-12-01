@@ -1,0 +1,45 @@
+start
+newcustomer, 1
+newflight, 1, 11, 5, 5
+newflight, 1, 11, 2, 2
+reserveflight, 1, custid, 11
+reserveflight, 1, custid, 11
+abort, 1
+start
+querycustomer, 2, custid
+queryflight, 2, 11
+
+-----
+
+start
+newcustomer, 1
+newflight, 1, 11, 5, 5
+newroom, 1, mtl, 10, 10
+newcar, 1, mtl, 10, 10
+itinerary, 1, custid, 11, mtl, true, true
+queryflight, 1, 11
+queryroom, 1, mtl
+querycar, 1, mtl
+commit, 1
+
+start
+querycustomer, 2, custid
+deletecustomer, 2, custid
+querycustomer, 2, custid
+queryflight, 2, 11
+queryroom, 2, mtl
+querycar, 2, mtl
+abort, 2
+
+start
+querycustomer, 3, custid
+queryflight, 3, 11
+
+---
+
+start
+querycustomer, 4, custid
+newcustomer, 4
+
+start
+querycustomer, 5, custid

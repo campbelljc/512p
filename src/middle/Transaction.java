@@ -11,10 +11,12 @@ public class Transaction {
 	private static final long TTL_MAX = 60000000000L; // nanoseconds
 	private ArrayList<Runnable> undoOps;
 	private long ttl;
+	private boolean closed;
 	
 	public Transaction(){
 		ttl = System.nanoTime();
 		undoOps = new ArrayList<Runnable>();
+		closed = false;
 	}
 	
 	public void resetTTL(){
@@ -34,10 +36,18 @@ public class Transaction {
 	}
 	
 	public void undo() {
-		ArrayList<Runnable> curUndoOps = new ArrayList(undoOps);
+		ArrayList<Runnable> curUndoOps = new ArrayList<Runnable>(undoOps);
 		Collections.reverse(curUndoOps);
 		for(Runnable r : curUndoOps) {
 			r.run();
 		}
+	}
+	
+	public void close() { 
+		closed = true;
+	}
+	
+	public boolean isClosed(){
+		return closed;
 	}
 }

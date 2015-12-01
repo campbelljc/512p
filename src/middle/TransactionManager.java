@@ -206,16 +206,24 @@ public class TransactionManager {
 	 * @param tid the transaction ID.
 	 */
 	public boolean commit(int tid){
-		if (txnMap.get(tid) == null){
-			// txn doesn't exist. Ignore this commit request.
+		Transaction txn = txnMap.get(tid);
+		if ((txn == null) || txn.isClosed()){
+			// txn doesn't exist. Ignore this abort request.
 			return false;
 		}
+		txn.close();
 		
 		record.log(tid, Message.TM_START_COMMIT, null);
 		
 		boolean commitSuccess = false;
-		if (prepare(tid)){			
-			doCommit(tid);
+		if (prepare(tid)){
+			Thread t = new Thread(new Runnable() {
+				@Override
+				public void run() {
+					doCommit(tid);
+				}
+			});
+			t.start();
 			commitSuccess = true;
 		}
 		else{
@@ -230,24 +238,31 @@ public class TransactionManager {
 	 * @param tid the transaction ID.
 	 */
 	public boolean abort(int tid) {
-		if (txnMap.get(tid) == null){
+		Transaction txn = txnMap.get(tid);
+		if (txn == null){
 			// txn doesn't exist. Ignore this abort request.
 			return false;
 		}
+		txn.close();
 		
 		record.log(tid, Message.TM_START_ABORT, null);
-		txnMap.get(tid).undo();
-		
-		// send abort to RMs
-		sendRMAbort(tid, resourceManagers);
-		
-		// send abort to MW
-		sendMWAbort(tid);
-		
-		mw.checkForCrash(CrashPoint.MW_AFTER_SND_ALL_DECISION);
-		
-		completeAbort(tid);
-		
+		Thread t = new Thread(new Runnable() {
+			
+			@Override
+			public void run() {
+				txn.undo();
+				
+				// send abort to RMs
+				sendRMAbort(tid, resourceManagers);
+				
+				// send abort to MW
+				sendMWAbort(tid);
+				
+				mw.checkForCrash(CrashPoint.MW_AFTER_SND_ALL_DECISION);
+				completeAbort(tid);
+			}
+		});
+		t.start();
 		return true;
 	}
 	
@@ -349,12 +364,12 @@ public class TransactionManager {
 	 * @param type the data item to read.
 	 */
 	public boolean requestRead(int tid, DType type){
-		if (txnMap.get(tid) == null)
-		{
+		Transaction txn = txnMap.get(tid);
+		if ((txn == null) || txn.isClosed()){
 			return false;
 		}
 		System.out.println("Txn " + tid + " requesting read");
-		txnMap.get(tid).resetTTL();
+		txn.resetTTL();
 		try {
 			lockMgr.Lock(tid, Integer.toString(type.ordinal()), LockManager.READ);
 		} catch (DeadlockException e) {
@@ -372,12 +387,12 @@ public class TransactionManager {
 	 * @param undoFunction the inverse of the write operation.
 	 */
 	public boolean requestWrite(int tid, DType type, Runnable undoFunction){
-		if (txnMap.get(tid) == null)
-		{
+		Transaction txn = txnMap.get(tid);
+		if ((txn == null) || txn.isClosed()){
 			return false;
 		}
 		System.out.println("Txn " + tid + " requesting write");
-		txnMap.get(tid).resetTTL();
+		txn.resetTTL();
 		try {
 			lockMgr.Lock(tid, Integer.toString(type.ordinal()), LockManager.WRITE);
 		} catch (DeadlockException e) {
@@ -385,7 +400,7 @@ public class TransactionManager {
 			abort(tid);
 			return false;
 		}
-		txnMap.get(tid).addUndoOp(undoFunction);
+		txn.addUndoOp(undoFunction);
 		return true;
 	}
 	
@@ -406,6 +421,7 @@ public class TransactionManager {
 	
 	public boolean checkTransaction(int tid)
 	{
-		return !(txnMap.get(tid) == null);
+		Transaction txn = txnMap.get(tid);
+		return !((txn == null) || txn.isClosed());
 	}
 }

@@ -1,5 +1,5 @@
 TODO:
-- blocking (L)
+- blocking (L) √√√√√√√
 - recovery (L)
 - lock (J)
 - report (J)

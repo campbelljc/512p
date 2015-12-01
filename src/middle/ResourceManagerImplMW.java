@@ -74,6 +74,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 	@Override
 	public boolean getDecision(int tid)
 	{
+		System.out.println("MW - getDecision called.");
 		ArrayList<NamedMessage> entries = record.getEntriesForTxn(tid);
 		NamedMessage lastMsg = entries.get(entries.size() - 1);
 		if (lastMsg.msg == Message.TM_COMMITTED)
@@ -94,41 +95,26 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 				case RM_COMMIT_SUCCESS:
 				case RM_COMMIT_ABORTED:
 				{ // transaction finished, so no recovery to be performed!
+					System.out.println("Txn finished - no recovery to perform");
 					break;
 				}
 				case RM_RCV_VOTE_REQUEST:
 				{ // vote request received, but crashed before sending answer back to middleware.
 					// do nothing - we will eventually receive the voteRequest() method call again from the middleware,
 					// and our commitReply Yes/No vote will have already been loaded in by our constructor (loading bool value from disk)
-					break;
-				}
-				case RM_VOTED_YES:
-				{ // crash after sending yes answer to middleware.
-					boolean answer = false;
-					// UNCOMMENT this line on second compilation
-				//	boolean answer = middleware().proxy.getDecision(tid);
-					if (answer)
-					{
-						m_itemHT.load(ServerName.MW, false); // load uncommitted data back into main memory
-						commit(tid);
-					}
-					else abort(tid);
-					break;
-				}
-				case RM_VOTED_NO:
-				{ // crash after sending no answer to middleware.
-					// we know that the middleware will abort, so we can abort right away.
-					abort(tid);
+					System.out.println("Crashed after vote request - do nothing (wait for call)");
 					break;
 				}
 				case RM_RCV_COMMIT_REQUEST:
 				{ // crash after receiving request to commit, but before doing so.
+					System.out.println("Crashed after receiving commit request.");
 					m_itemHT.load(ServerName.MW, false); // load uncommitted data back into main memory
 					commit(tid); // finish committing
 					break;
 				}
 				case RM_RCV_ABORT_REQUEST:
 				{ // crash after receiving request to abort, but before doing so.
+					System.out.println("Crashed after receiving abort request.");
 					abort(tid); // finish aborting.
 					break;
 				}
@@ -728,16 +714,19 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 
 	@Override
 	public int start() {
+		System.out.println("MW - start");
 		return txnMgr.start();
 	}
 
 	@Override
 	public boolean commit(int tid) {
+		System.out.println("MW - commit");
 		// TODO - need to save customer data to disk using m_itemHT.save()... where to do it?
 		return txnMgr.commit(tid);
 	}
 
 	public boolean commit2(int tid) { // Different from above.
+		System.out.println("MW - commit2");
 		record.log(tid, Message.RM_RCV_COMMIT_REQUEST, ServerName.MW);
 		m_itemHT.save(ServerName.MW, true); // save committed changes
 		record.log(tid, Message.RM_COMMIT_SUCCESS, ServerName.MW);
@@ -746,10 +735,12 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 
 	@Override
 	public boolean abort(int tid) {
+		System.out.println("MW - abort");
 		return txnMgr.abort(tid);
 	}
 	
 	public boolean abort2(int tid) {
+		System.out.println("MW - abort2");
 		record.log(tid, Message.RM_RCV_ABORT_REQUEST, ServerName.MW);
 		// TODO: Delete uncommitted version on disk? Is that necessary though?
 		record.log(tid, Message.RM_COMMIT_ABORTED, ServerName.MW);
@@ -758,6 +749,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 
 	@Override
 	public boolean shutdown() {
+		System.out.println("MW - shutdown");
 		txnMgr.shutdown();
 		flightClient.proxy.shutdown();
 		carClient.proxy.shutdown();
@@ -826,10 +818,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 	}
 	
 	@Override
-	public void setVoteReply2(boolean commit_)
-	{
-		commitReply = commit_;
-	}
+	public void setVoteReply2(boolean commit_) { }
 	
 	@Override
 	public void setVoteReply(String which, boolean commit_)
@@ -843,9 +832,6 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 				break;
 			case "ROOM":
 				roomClient.proxy.setVoteReply2(commit_);
-				break;
-			case "MW":
-				setVoteReply2(commit_);
 				break;
 		}
 	}

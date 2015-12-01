@@ -41,6 +41,7 @@ public class TransactionManager {
 	private boolean isShutdown = false;
 
 	public TransactionManager(WSClient[] resourceManagers, ResourceManagerImplMW mw){ 
+		System.out.println("TM starting up");
 		this.resourceManagers = resourceManagers;
 		this.mw = mw;
 
@@ -56,40 +57,43 @@ public class TransactionManager {
 			ArrayList<NamedMessage> messages = e.getValue();
 			NamedMessage lastMessage = messages.get(messages.size() - 1);
 			switch(lastMessage.msg)
-				{
+			{
 				case TM_ABORTED:
-				{
-					break;
-				}
 				case TM_COMMITTED:
 				{
+					System.out.println("TM- Txn completed - no recovery");
 					break;
 				}
 				case TM_START_ABORT:
 				{
+					System.out.println("TM- Restarting abort");
 					abort(tid);
 					break;
 				}
 				case TM_START_COMMIT:
 				{
+					System.out.println("TM- Restarting commit");
 					commit(tid);
 					break;
 				}
 				case TM_NO_VOTE:
 				{
+					System.out.println("TM- Received no vote, so let's abort.");
 					record.log(tid, Message.TM_PREPARED, null);
 					abort(tid);
 					break;
 				}
 				case TM_YES_VOTE:
 				{
-					if(lastMessage.name == ServerName.RM_HOTEL){
+					System.out.println("TM- Received yes vote, so continue sending");
+					if (lastMessage.name == ServerName.RM_HOTEL) {
+						System.out.println("TM- Received all, so start commit");
 						record.log(tid, Message.TM_PREPARED, null);
 						doCommit(tid);
-						
 					}
-					else if(lastMessage.name == ServerName.RM_CAR){
+					else if(lastMessage.name == ServerName.RM_CAR) {
 						// still need to ask hotel
+						System.out.println("TM- Send to hotel");
 						boolean decision = sendVoteRequest(tid, resourceManagers[2]);
 						record.log(tid, Message.TM_PREPARED, null);
 						if(decision){
@@ -99,11 +103,12 @@ public class TransactionManager {
 							abort(tid);
 						}
 					}
-					else{
+					else {
 						// still need to ask hotel and car
+						System.out.println("Send to car and maybe hotel");
 						boolean decision = sendVoteRequest(tid, resourceManagers[1]);
 						if(decision){
-							decision = sendVoteRequest(tid, resourceManagers[1]);
+							decision = sendVoteRequest(tid, resourceManagers[2]);
 						}
 						record.log(tid, Message.TM_PREPARED, null);
 						if(decision){
@@ -116,6 +121,7 @@ public class TransactionManager {
 				}
 				case TM_PREPARED:
 				{
+					System.out.println("Crashed after decision made so get decision and commit/abort");
 					Message secondToLastMessage = messages.get(messages.size() - 2).msg;
 					if(secondToLastMessage == Message.TM_NO_VOTE){
 						abort(tid);
@@ -127,6 +133,7 @@ public class TransactionManager {
 				}
 				case TM_SENT_ABORT:
 				{
+					System.out.println("Crashed while sending abort messages");
 					if(lastMessage.name == ServerName.RM_HOTEL){						
 						sendMWAbort(tid);						
 						completeAbort(tid);
@@ -146,6 +153,7 @@ public class TransactionManager {
 				}
 				case TM_SENT_COMMIT:
 				{
+					System.out.println("Crashed while sending commit messages");
 					if(lastMessage.name == ServerName.RM_HOTEL){						
 						sendMWCommit(tid);						
 						completeCommit(tid);
@@ -211,6 +219,7 @@ public class TransactionManager {
 			// txn doesn't exist. Ignore this abort request.
 			return false;
 		}
+		System.out.println("Txn " + tid + " committing");
 		txn.close();
 		
 		record.log(tid, Message.TM_START_COMMIT, null);
@@ -243,6 +252,8 @@ public class TransactionManager {
 			// txn doesn't exist. Ignore this abort request.
 			return false;
 		}
+		System.out.println("Txn " + tid + " aborting");
+
 		txn.close();
 		
 		record.log(tid, Message.TM_START_ABORT, null);
@@ -267,6 +278,8 @@ public class TransactionManager {
 	}
 	
 	private void doCommit(int tid){
+		System.out.println("Txn " + tid + " DOCOMMIT (what does this do?)");
+		
 		// send commit to RMs
 		sendRMCommit(tid, resourceManagers);
 
@@ -281,6 +294,8 @@ public class TransactionManager {
 	
 	private void sendRMCommit(int tid, WSClient[] rms){
 		for(WSClient rm : rms){
+			System.out.println("Txn " + tid + " sending RM commit...");
+			
 			rm.proxy.commit(tid); // TODO: do we need a timeout?
 			record.log(tid, Message.TM_SENT_COMMIT, rm.proxy.getName()); 
 			mw.checkForCrash(CrashPoint.MW_AFTER_SND_SOME_DECISION);	
@@ -289,6 +304,8 @@ public class TransactionManager {
 	
 	private void sendRMAbort(int tid, WSClient[] rms){
 		for(WSClient rm : rms){
+			System.out.println("Txn " + tid + " sending RM abort...");
+			
 			rm.proxy.abort(tid); // TODO: do we need a timeout?
 			record.log(tid, Message.TM_SENT_COMMIT, rm.proxy.getName()); 	
 			mw.checkForCrash(CrashPoint.MW_AFTER_SND_SOME_DECISION);
@@ -306,12 +323,16 @@ public class TransactionManager {
 	}
 	
 	private void completeCommit(int tid){
+		System.out.println("Txn " + tid + " commit done");
+		
 		txnMap.remove(tid);
 		lockMgr.UnlockAll(tid);
 		record.log(tid, Message.TM_COMMITTED, null);
 	}
 	
 	private void completeAbort(int tid){
+		System.out.println("Txn " + tid + " abort done");
+		
 		txnMap.remove(tid);
 		lockMgr.UnlockAll(tid);
 		record.log(tid, Message.TM_ABORTED, null);
@@ -319,6 +340,8 @@ public class TransactionManager {
 
 	
 	private boolean prepare(int tid){
+		System.out.println("Txn " + tid + " preparing to commit");
+		
 		boolean decision = true;
 		for(WSClient rm : resourceManagers){
 			decision = sendVoteRequest(tid, rm);
@@ -335,6 +358,8 @@ public class TransactionManager {
 	}
 	
 	private boolean sendVoteRequest(int tid, WSClient rm){
+		System.out.println("Txn " + tid + " sending vote requests...");
+		
 		// Execute voteRequest with a timeout
 		ExecutorService executor = Executors.newCachedThreadPool();
 		Callable<Boolean> task = new Callable<Boolean>() {

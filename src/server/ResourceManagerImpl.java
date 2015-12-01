@@ -66,6 +66,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 			recover();
 		}
 	}
+	
 
 	@Override
 	public ServerName getName()

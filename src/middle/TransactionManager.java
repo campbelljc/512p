@@ -1,5 +1,6 @@
 package middle;
 
+import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
@@ -280,7 +281,14 @@ public class TransactionManager {
 	private void doCommit(int tid){
 		System.out.println("Txn " + tid + " DOCOMMIT (what does this do?)");
 		
-		// send commit to RMs
+		// send commit to RMs, delay if we are simulating an after vote reply crash
+		if(mw.getCrashPoint().equals(CrashPoint.RM_AFTER_SND_VOTE_REPLY)){
+			try {
+				Thread.sleep(500);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 		sendRMCommit(tid, resourceManagers);
 
 		// send commit to MW
@@ -295,8 +303,16 @@ public class TransactionManager {
 	private void sendRMCommit(int tid, WSClient[] rms){
 		for(WSClient rm : rms){
 			System.out.println("Txn " + tid + " sending RM commit...");
+			boolean received = false;
+			while(!received){
+				try{
+					rm.proxy.commit(tid);
+					received = true;
+				} catch(Exception e){
+					System.out.println("Cannot reach rm, trying again...");
+				}
+			}
 			
-			rm.proxy.commit(tid); // TODO: do we need a timeout?
 			record.log(tid, Message.TM_SENT_COMMIT, rm.proxy.getName()); 
 			mw.checkForCrash(CrashPoint.MW_AFTER_SND_SOME_DECISION);	
 		}
@@ -305,8 +321,15 @@ public class TransactionManager {
 	private void sendRMAbort(int tid, WSClient[] rms){
 		for(WSClient rm : rms){
 			System.out.println("Txn " + tid + " sending RM abort...");
-			
-			rm.proxy.abort(tid); // TODO: do we need a timeout?
+			boolean received = false;
+			while(!received){
+				try{
+					rm.proxy.abort(tid);
+					received = true;
+				} catch(Exception e){
+					System.out.println("Cannot reach rm, trying again...");
+				}
+			}
 			record.log(tid, Message.TM_SENT_COMMIT, rm.proxy.getName()); 	
 			mw.checkForCrash(CrashPoint.MW_AFTER_SND_SOME_DECISION);
 		}

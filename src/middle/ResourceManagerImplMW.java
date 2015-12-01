@@ -68,6 +68,10 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 			System.out.println(e);
 		}
 	}
+	
+	public CrashPoint getCrashPoint(){
+		return crashPoint;
+	}
 			
 
 	
@@ -778,6 +782,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 	@Override
 	public void crashAtPoint(String which, middle.CrashPoint pt)
 	{
+		crashPoint = pt;
 		switch(which) {
 			case "FLIGHT":
 				flightClient.proxy.selfDestruct(pt);

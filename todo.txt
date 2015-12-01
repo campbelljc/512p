@@ -1,7 +1,10 @@
 TODO:
-- blocking (L) √√√√√√√
 - recovery (L)
+- report performance analysis revision (L)
+- recovery testing (demo + report) (L)
+- recovery report (L)
+- 2PC report (J)
 - lock (J)
-- report (J)
+- report-merge (J)
 - slides (J)
 - client error message (J)

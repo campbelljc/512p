@@ -110,7 +110,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 				//	boolean answer = middleware().proxy.getDecision(tid);
 					if (answer)
 					{
-						m_itemHT.load(sName, false); // load uncommitted data back into main memory
+						m_itemHT = RMHashtable.load(sName, false); // load uncommitted data back into main memory
 						commit(tid);
 					}
 					else abort(tid);
@@ -126,7 +126,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 				case RM_RCV_COMMIT_REQUEST:
 				{ // crash after receiving request to commit, but before doing so.
 					System.out.println("Crashed after receiving commit request.");
-					m_itemHT.load(sName, false); // load uncommitted data back into main memory
+					m_itemHT = RMHashtable.load(sName, false); // load uncommitted data back into main memory
 					commit(tid); // finish committing
 					break;
 				}
@@ -660,11 +660,9 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 		System.out.println("RM Aborting");
 		record.log(tid, Message.RM_RCV_ABORT_REQUEST, sName);
 		checkForCrash(CrashPoint.RM_AFTER_RCV_VOTE_DECISION);
-		
-		// TODO: Delete uncommitted version on disk? Is that necessary though?
-		
+				
 		// load committed version
-		m_itemHT.load(sName, true);
+		m_itemHT = RMHashtable.load(sName, true);
 		
 		record.log(tid, Message.RM_COMMIT_ABORTED, sName);
 		return true;

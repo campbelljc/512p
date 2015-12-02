@@ -746,7 +746,8 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 	public boolean abort2(int tid) {
 		System.out.println("MW - abort2");
 		record.log(tid, Message.RM_RCV_ABORT_REQUEST, ServerName.MW);
-		// TODO: Delete uncommitted version on disk? Is that necessary though?
+		// load committed version
+		m_itemHT = RMHashtable.load(ServerName.MW, true);
 		record.log(tid, Message.RM_COMMIT_ABORTED, ServerName.MW);
 		return true;
 	}

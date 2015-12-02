@@ -1,13 +1,15 @@
 package middle;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 
 /**
  * Object representation of a transaction.
  */
-public class Transaction {
+public class Transaction implements Serializable{
 	
+	private static final long serialVersionUID = 4104749287936713660L;
 	private static final long TTL_MAX = 60000000000L; // nanoseconds
 	private ArrayList<Runnable> undoOps;
 	private long ttl;

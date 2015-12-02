@@ -22,4 +22,4 @@ I.e., a crash point is set on Flight RM to crash after receiving vote decision b
 
 2- When we call checkForCrash in the middle of the abort/commit on RM to check for crashpoint=RM_AFTER_RCV_VOTE_DECISION, if that crashpoint is set, then we return right away from commit/abort so that the Txn Mgr doesnt resend us the abort/commit msg, and the crash recovery can be performed on RM startup in the recover() method as usual.
 
-What do you think?
+What do you think? --- THIS IS NOT A BUG. We talked about this. We are allowed to block forever - recovery IS the act of receiving the message, its not like we aren't recovering.

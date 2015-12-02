@@ -796,6 +796,8 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 				selfDestruct(pt);
 				break;
 		}
+		// clear the crash point when its non-middle.
+		crashPoint = null;
 	}
 	
 	@Override

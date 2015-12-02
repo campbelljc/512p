@@ -47,8 +47,9 @@ public class TransactionManager {
 		this.mw = mw;
 
 		this.record = MasterRecord.loadLog(ServerName.TM);
-		if (!record.isEmpty())
+		if (!record.isEmpty()){
 			recover();
+		}
 	}
 
 	private void recover(){
@@ -472,4 +473,5 @@ public class TransactionManager {
 		Transaction txn = txnMap.get(tid);
 		return !((txn == null) || txn.isClosed());
 	}
+	
 }

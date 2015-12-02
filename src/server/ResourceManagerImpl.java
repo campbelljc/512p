@@ -55,15 +55,16 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 		
 		loadVoteReply();
 		
-		// load last committed version of data.
-		m_itemHT = RMHashtable.load(sName, true); 
-		
 		// check for master record
 		record = MasterRecord.loadLog(sName);
 		if (!record.isEmpty()){
 			System.out.println("Record not empty - recovering");
-			m_itemHT.load(sName, false);
+			m_itemHT = RMHashtable.load(sName, false);
 			recover();
+		}
+		else{
+			// load last committed version of data.
+			m_itemHT = RMHashtable.load(sName, true); 
 		}
 	}
 	

@@ -11,7 +11,6 @@ import java.util.Map.Entry;
 import javax.jws.WebService;
 
 import server.*;
-
 import middle.CrashPoint;
 import middle.ServerName;
 import middle.Message;
@@ -53,14 +52,16 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 		 	carClient = new middle.WSClient("rm", (String) env.lookup("car-service-host"), (Integer) env.lookup("car-service-port")); // name, host, port
 		 	roomClient = new middle.WSClient("rm", (String) env.lookup("room-service-host"), (Integer) env.lookup("room-service-port")); // name, host, port
 			
-			System.out.println("Loading hashtable data.");
-			m_itemHT = RMHashtable.load(ServerName.MW, true); // load last committed version of data.
-			
 			// check for master record
 			record = MasterRecord.loadLog(ServerName.MW);
 			if (!record.isEmpty()){
-				m_itemHT.load(ServerName.MW, false);
+				System.out.println("Record not empty - recovering");
+				m_itemHT = RMHashtable.load(ServerName.MW, false);
 				recover();
+			}
+			else{
+				// load last committed version of data.
+				m_itemHT = RMHashtable.load(ServerName.MW, true); 
 			}
 			
 			txnMgr = new TransactionManager(new WSClient[] { flightClient, carClient, roomClient }, this);
@@ -72,7 +73,6 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 	public CrashPoint getCrashPoint(){
 		return crashPoint;
 	}
-			
 
 	
 	@Override
@@ -112,7 +112,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 				case RM_RCV_COMMIT_REQUEST:
 				{ // crash after receiving request to commit, but before doing so.
 					System.out.println("Crashed after receiving commit request.");
-					m_itemHT.load(ServerName.MW, false); // load uncommitted data back into main memory
+					m_itemHT = RMHashtable.load(ServerName.MW, false); // load uncommitted data back into main memory
 					commit(tid); // finish committing
 					break;
 				}

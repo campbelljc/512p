@@ -60,41 +60,43 @@ public class TransactionManager {
 			switch(lastMessage.msg)
 			{
 				case TM_ABORTED:
+				{
+					System.out.println("TM- Txn " + tid.toString() + " aborted - no recovery.");
+					break;
+				}
 				case TM_COMMITTED:
 				{
-					System.out.println("TM- Txn completed - no recovery");
+					System.out.println("TM- Txn " + tid.toString() + " committed - no recovery.");
 					break;
 				}
 				case TM_START_ABORT:
 				{
-					System.out.println("TM- Restarting abort");
+					System.out.println("TM- Txn " + tid.toString() + " crashed after starting abort - aborting...");
 					abort(tid);
 					break;
 				}
 				case TM_START_COMMIT:
 				{
-					System.out.println("TM- Restarting commit");
+					System.out.println("TM- Txn " + tid.toString() + " crashed after starting commit - committing...");
 					commit(tid);
 					break;
 				}
 				case TM_NO_VOTE:
 				{
-					System.out.println("TM- Received no vote, so let's abort.");
+					System.out.println("TM- Txn " + tid.toString() + " crashed after a NO vote - aborting...");
 					record.log(tid, Message.TM_PREPARED, null);
 					abort(tid);
 					break;
 				}
 				case TM_YES_VOTE:
 				{
-					System.out.println("TM- Received yes vote, so continue sending");
+					System.out.println("TM- Txn " + tid.toString() + " crashed after receiving some YES votes - continuing commit...");
 					if (lastMessage.name == ServerName.RM_HOTEL) {
-						System.out.println("TM- Received all, so start commit");
 						record.log(tid, Message.TM_PREPARED, null);
 						doCommit(tid);
 					}
 					else if(lastMessage.name == ServerName.RM_CAR) {
 						// still need to ask hotel
-						System.out.println("TM- Send to hotel");
 						boolean decision = sendVoteRequest(tid, resourceManagers[2]);
 						record.log(tid, Message.TM_PREPARED, null);
 						if(decision){
@@ -106,7 +108,6 @@ public class TransactionManager {
 					}
 					else {
 						// still need to ask hotel and car
-						System.out.println("Send to car and maybe hotel");
 						boolean decision = sendVoteRequest(tid, resourceManagers[1]);
 						if(decision){
 							decision = sendVoteRequest(tid, resourceManagers[2]);
@@ -122,7 +123,7 @@ public class TransactionManager {
 				}
 				case TM_PREPARED:
 				{
-					System.out.println("Crashed after decision made so get decision and commit/abort");
+					System.out.println("TM- Txn " + tid.toString() + " crashed after preparing - retrieving decision...");
 					Message secondToLastMessage = messages.get(messages.size() - 2).msg;
 					if(secondToLastMessage == Message.TM_NO_VOTE){
 						abort(tid);
@@ -134,7 +135,7 @@ public class TransactionManager {
 				}
 				case TM_SENT_ABORT:
 				{
-					System.out.println("Crashed while sending abort messages");
+					System.out.println("TM- Txn " + tid.toString() + " crashed after sending some abort decisions - continuing abort...");
 					if(lastMessage.name == ServerName.RM_HOTEL){						
 						sendMWAbort(tid);						
 						completeAbort(tid);
@@ -154,7 +155,7 @@ public class TransactionManager {
 				}
 				case TM_SENT_COMMIT:
 				{
-					System.out.println("Crashed while sending commit messages");
+					System.out.println("TM- Txn " + tid.toString() + " crashed after sending some commit decisions - continuing commit...");
 					if(lastMessage.name == ServerName.RM_HOTEL){						
 						sendMWCommit(tid);						
 						completeCommit(tid);
@@ -175,7 +176,7 @@ public class TransactionManager {
 				}			
 				default:
 				{
-					System.out.println("UNEXPECTED MESSAGE IN LOG");
+					System.out.println("TM- Txn " + tid.toString() + "ERROR: UNEXPECTED MESSAGE IN TXN RECOVERY LOG");
 					break;
 				}
 			}
@@ -193,7 +194,7 @@ public class TransactionManager {
 		}
 		int tid = nextID.incrementAndGet();
 		txnMap.put(tid, new Transaction());
-		System.out.println("Txn " + tid + " starting");
+		System.out.println("TM- Txn " + Integer.toString(tid) + " starting");
 
 		// Spawn TTL checker
 		final ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor();
@@ -201,7 +202,7 @@ public class TransactionManager {
 			@Override
 			public void run(){
 				if(txnMap.get(tid).ttlExpired()){
-					System.out.println("Txn " + tid + " EXPIRED! Aborting...");
+					System.out.println("TM- Txn " + Integer.toString(tid) + " EXPIRED! Aborting...");
 					abort(tid);
 				}
 			}
@@ -217,10 +218,10 @@ public class TransactionManager {
 	public boolean commit(int tid){
 		Transaction txn = txnMap.get(tid);
 		if ((txn == null) || txn.isClosed()){
-			// txn doesn't exist. Ignore this abort request.
+			System.out.println("TM- Txn " + Integer.toString(tid) + " invalid commit attempt.");
 			return false;
 		}
-		System.out.println("Txn " + tid + " committing");
+		System.out.println("TM- Txn " + Integer.toString(tid) + " committing...");
 		txn.close();
 		
 		record.log(tid, Message.TM_START_COMMIT, null);
@@ -253,7 +254,7 @@ public class TransactionManager {
 			// txn doesn't exist. Ignore this abort request.
 			return false;
 		}
-		System.out.println("Txn " + tid + " aborting");
+		System.out.println("TM- Txn " + Integer.toString(tid) + " aborting...");
 
 		txn.close();
 		
@@ -278,11 +279,10 @@ public class TransactionManager {
 		return true;
 	}
 	
-	private void doCommit(int tid){
-		System.out.println("Txn " + tid + " DOCOMMIT (what does this do?)");
-		
+	private void doCommit(int tid){		
 		// send commit to RMs, delay if we are simulating an after vote reply crash
-		if(mw.getCrashPoint().equals(CrashPoint.RM_AFTER_SND_VOTE_REPLY)){
+		CrashPoint cp = mw.getCrashPoint();
+		if((cp != null) && cp.equals(CrashPoint.RM_AFTER_SND_VOTE_REPLY)){
 			try {
 				Thread.sleep(500);
 			} catch (InterruptedException e) {
@@ -302,14 +302,14 @@ public class TransactionManager {
 	
 	private void sendRMCommit(int tid, WSClient[] rms){
 		for(WSClient rm : rms){
-			System.out.println("Txn " + tid + " sending RM commit...");
+			System.out.println("TM- Txn " + Integer.toString(tid) + " sending RM commit...");
 			boolean received = false;
 			while(!received){
 				try{
 					rm.proxy.commit(tid);
 					received = true;
 				} catch(Exception e){
-					System.out.println("Cannot reach rm, trying again...");
+					System.out.println("TM- Txn " + Integer.toString(tid) + " cannot reach rm, trying again...");
 				}
 			}
 			
@@ -320,14 +320,14 @@ public class TransactionManager {
 	
 	private void sendRMAbort(int tid, WSClient[] rms){
 		for(WSClient rm : rms){
-			System.out.println("Txn " + tid + " sending RM abort...");
+			System.out.println("TM- Txn " + Integer.toString(tid) + " sending RM abort...");
 			boolean received = false;
 			while(!received){
 				try{
 					rm.proxy.abort(tid);
 					received = true;
 				} catch(Exception e){
-					System.out.println("Cannot reach rm, trying again...");
+					System.out.println("TM- Txn " + Integer.toString(tid) + " cannot reach rm, trying again...");
 				}
 			}
 			record.log(tid, Message.TM_SENT_COMMIT, rm.proxy.getName()); 	
@@ -336,7 +336,7 @@ public class TransactionManager {
 	}
 	
 	private void sendMWCommit(int tid){
-		mw.commit2(tid); // TODO: do we need a timeout?
+		mw.commit2(tid);
 		record.log(tid, Message.TM_SENT_COMMIT, ServerName.MW);
 	}
 	
@@ -346,7 +346,7 @@ public class TransactionManager {
 	}
 	
 	private void completeCommit(int tid){
-		System.out.println("Txn " + tid + " commit done");
+		System.out.println("TM- Txn " + Integer.toString(tid) + " commit completed!");
 		
 		txnMap.remove(tid);
 		lockMgr.UnlockAll(tid);
@@ -354,7 +354,7 @@ public class TransactionManager {
 	}
 	
 	private void completeAbort(int tid){
-		System.out.println("Txn " + tid + " abort done");
+		System.out.println("TM- Txn " + Integer.toString(tid) + " abort completed!");
 		
 		txnMap.remove(tid);
 		lockMgr.UnlockAll(tid);
@@ -363,7 +363,7 @@ public class TransactionManager {
 
 	
 	private boolean prepare(int tid){
-		System.out.println("Txn " + tid + " preparing to commit");
+		System.out.println("TM- Txn " + Integer.toString(tid) + " preparing to commit...");
 		
 		boolean decision = true;
 		for(WSClient rm : resourceManagers){
@@ -381,7 +381,7 @@ public class TransactionManager {
 	}
 	
 	private boolean sendVoteRequest(int tid, WSClient rm){
-		System.out.println("Txn " + tid + " sending vote requests...");
+		System.out.println("TM- Txn " + Integer.toString(tid) + " sending vote requests...");
 		
 		// Execute voteRequest with a timeout
 		ExecutorService executor = Executors.newCachedThreadPool();
@@ -416,12 +416,12 @@ public class TransactionManager {
 		if ((txn == null) || txn.isClosed()){
 			return false;
 		}
-		System.out.println("Txn " + tid + " requesting read");
+		System.out.println("TM- Txn " + Integer.toString(tid) + " requesting read...");
 		txn.resetTTL();
 		try {
 			lockMgr.Lock(tid, Integer.toString(type.ordinal()), LockManager.READ);
 		} catch (DeadlockException e) {
-			System.out.println("Txn " + tid + " encountered DEADLOCK after read request! Aborting...");
+			System.out.println("TM- Txn " + Integer.toString(tid) + " encountered DEADLOCK after read request! Aborting...");
 			abort(tid);
 			return false;
 		}
@@ -439,7 +439,7 @@ public class TransactionManager {
 		if ((txn == null) || txn.isClosed()){
 			return false;
 		}
-		System.out.println("Txn " + tid + " requesting write");
+		System.out.println("TM- Txn " + Integer.toString(tid) + " requesting write...");
 		txn.resetTTL();
 		try {
 			lockMgr.Lock(tid, Integer.toString(type.ordinal()), LockManager.WRITE);
@@ -453,7 +453,7 @@ public class TransactionManager {
 	}
 	
 	public void removeLastUndoOp(int tid){
-		System.out.println("Txn " + tid + " removing last undo op.");
+		System.out.println("TM- Txn " + Integer.toString(tid) + " removing last undo op...");
 		txnMap.get(tid).removeLastUndoOp();
 	}
 		
@@ -462,7 +462,7 @@ public class TransactionManager {
 	 * @return true if there are active transactions, false otherwise
 	 */
 	public synchronized void shutdown(){
-		System.out.println("Txn mgr shutting down");
+		System.out.println("TM shutting down...");
 		while(!txnMap.isEmpty()){}
 		isShutdown = true;
 	}

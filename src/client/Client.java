@@ -717,6 +717,7 @@ public class Client extends WSClient {
 						System.out.println("Committed!");
 					else System.out.println("Failed");
 				} catch(Exception e) {
+					System.out.println("Exception!");
 					//e.printStackTrace();
 				}
 				break;

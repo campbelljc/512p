@@ -95,11 +95,12 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 					System.out.println("Txn finished - no recovery to perform");
 					break;
 				}
-				case RM_RCV_VOTE_REQUEST:
+				case RM_RCV_VOTE_REQUEST: // crash : RM_AFTER_RCV_VOTE_REQ (6)
 				{ // vote request received, but crashed before sending answer back to middleware.
 					// do nothing - we will eventually receive the voteRequest() method call again from the middleware,
 					// and our commitReply Yes/No vote will have already been loaded in by our constructor (loading bool value from disk)
-					System.out.println("Crashed after vote request - do nothing (wait for call)");
+					System.out.println("Crashed after vote request - assume txn aborted");
+					abort(tid);
 					break;
 				}
 				case RM_VOTED_YES:

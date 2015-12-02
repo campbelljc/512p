@@ -202,7 +202,7 @@ public class TransactionManager {
 		service.scheduleWithFixedDelay(new Runnable(){
 			@Override
 			public void run(){
-				if(txnMap.get(tid).ttlExpired()){
+				if(txnMap.get(tid).ttlExpired() && !txnMap.get(tid).isClosed()){
 					System.out.println("TM- Txn " + Integer.toString(tid) + " EXPIRED! Aborting...");
 					abort(tid);
 				}
@@ -242,6 +242,7 @@ public class TransactionManager {
 			// at least one resource manager did not say YES to the vote request.
 			abort(tid);
 		}
+		System.out.println("Returning now to client...");
 		return commitSuccess;
 	}
 	
@@ -264,7 +265,8 @@ public class TransactionManager {
 			
 			@Override
 			public void run() {
-				txn.undo();
+				System.out.println("Running undo and sending abort messages to RMs now.");
+			//	txn.undo();
 				
 				// send abort to RMs
 				sendRMAbort(tid, resourceManagers);
@@ -384,6 +386,7 @@ public class TransactionManager {
 	private boolean sendVoteRequest(int tid, WSClient rm){
 		System.out.println("TM- Txn " + Integer.toString(tid) + " sending vote requests...");
 		
+		ServerName rmName = rm.proxy.getName();
 		// Execute voteRequest with a timeout
 		ExecutorService executor = Executors.newCachedThreadPool();
 		Callable<Boolean> task = new Callable<Boolean>() {
@@ -395,14 +398,17 @@ public class TransactionManager {
 		boolean decision = true;
 		try {
 			decision = future.get(VOTE_REQUEST_TIMEOUT, TimeUnit.SECONDS); 
-		} catch (TimeoutException | InterruptedException | ExecutionException e) {
+		} catch (Exception e) {
+			System.out.println("Something bad happened to our connection.");
 			decision = false;
 		}
 		if(decision){
-			record.log(tid, Message.TM_YES_VOTE, rm.proxy.getName());
+			System.out.println("Decided yes.");
+			record.log(tid, Message.TM_YES_VOTE, rmName);
 		}
 		else{
-			record.log(tid, Message.TM_NO_VOTE, rm.proxy.getName());
+			System.out.println("Decided no.");
+			record.log(tid, Message.TM_NO_VOTE, rmName);
 		}
 		return decision;
 	}

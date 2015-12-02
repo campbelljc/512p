@@ -324,7 +324,7 @@ public class TransactionManager {
 			boolean received = false;
 			while(!received){
 				try{
-					rm.proxy.commit(tid);
+					rm.proxy.commit2(tid);
 					received = true;
 				} catch(Exception e){
 					System.out.println("TM- Txn " + Integer.toString(tid) + " cannot reach rm, trying again...");
@@ -342,7 +342,7 @@ public class TransactionManager {
 			boolean received = false;
 			while(!received){
 				try{
-					rm.proxy.abort(tid);
+					rm.proxy.abort2(tid);
 					received = true;
 				} catch(Exception e){
 					System.out.println("TM- Txn " + Integer.toString(tid) + " cannot reach rm, trying again...");

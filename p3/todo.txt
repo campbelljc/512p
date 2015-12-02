@@ -11,6 +11,15 @@ DONE:
 - lock (J) ✓
 - client error message (J) (I just removed the print of the stack trace)
 - slides (J)
+- (most) testing of RM recovery + cases (J)
 
-- We should only tell the RMs to commit who were involved in the txn we are committing...
+- We should only tell the RMs to commit who were involved in the txn we are committing...Big error.
 - Remove crashPoint set on middleware after txn finishes?
+- How do we test the crash of RM_AFTER_RCV_VOTE_DECISION (crash after receive decision but before commit/abort) if we send the requests in synchronous order (I.e. we wait until response)?
+I.e., a crash point is set on Flight RM to crash after receiving vote decision but before actually committing/aborting. The txn mgr will try to send the commit() or abort() messages to the RM (lines 327/345 of Txn Mgr). If the RM crashes while still in the abort/commit methods, (after receive decision but before commit/abort), then the Txn Mgr will get an exception, and try to send abort/commit again. So as soon as the RM comes back up, it will receive the decision to commit or abort again. It wont have to perform any recovery. But does that show the case properly? I think we have 2 options:
+
+1- Let it stand as is and hope we don't lose any marks. (Although we don't really show the case properly)
+
+2- When we call checkForCrash in the middle of the abort/commit on RM to check for crashpoint=RM_AFTER_RCV_VOTE_DECISION, if that crashpoint is set, then we return right away from commit/abort so that the Txn Mgr doesnt resend us the abort/commit msg, and the crash recovery can be performed on RM startup in the recover() method as usual.
+
+What do you think?

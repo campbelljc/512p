@@ -33,3 +33,31 @@ queryflight, 2, 11
 commit, 2
 
 Expected result: all commit (flight exists on query)
+
+-> crash: RM_AFTER_RCV_VOTE_DECISION && VOTE_DECISION=YES
+
+crash, FLIGHT, 8
+setvotereply, FLIGHT, true
+start
+newflight, 1, 11, 1, 1
+commit, 1
+
+start
+queryflight, 2, 11
+commit, 2
+
+Expected result: Flight RM commits (flight exists on query)
+
+-> crash: RM_AFTER_RCV_VOTE_DECISION && VOTE_DECISION=NO
+
+crash, FLIGHT, 8
+setvotereply, FLIGHT, false
+start
+newflight, 1, 11, 1, 1
+commit, 1
+
+start
+queryflight, 2, 11
+commit, 2
+
+Expected result: Flight RM aborts

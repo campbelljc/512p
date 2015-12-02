@@ -98,7 +98,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 				case RM_RCV_VOTE_REQUEST: // crash : RM_AFTER_RCV_VOTE_REQ (6)
 				{ // vote request received, but crashed before sending answer back to middleware.
 					System.out.println("Crashed after vote request - assume txn aborted");
-					abort(tid);
+					abort2(tid);
 					break;
 				}
 				case RM_VOTED_YES: // crash : RM_AFTER_SND_VOTE_REPLY (7)
@@ -111,20 +111,20 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 				{ // crash after sending no answer to middleware.
 					// we know that the middleware will abort, so we can abort right away.
 					System.out.println("Crashed after sending no answer.");
-					abort(tid);
+					abort2(tid);
 					break;
 				}
-				case RM_RCV_COMMIT_REQUEST:
+				case RM_RCV_COMMIT_REQUEST: // crash : RM_AFTER_RCV_VOTE_DECISION (8)
 				{ // crash after receiving request to commit, but before doing so.
-					System.out.println("Crashed after receiving commit request.");
+					System.out.println("Crashed after receiving commit request - finish committing.");
 					m_itemHT = RMHashtable.load(sName, false); // load uncommitted data back into main memory
-					commit(tid); // finish committing
+					commit2(tid); // finish committing
 					break;
 				}
-				case RM_RCV_ABORT_REQUEST:
+				case RM_RCV_ABORT_REQUEST: // crash : RM_AFTER_RCV_VOTE_DECISION (8)
 				{ // crash after receiving request to abort, but before doing so.
-					System.out.println("Crashed after receiving abort request.");
-					abort(tid); // finish aborting.
+					System.out.println("Crashed after receiving abort request - finish aborting.");
+					abort2(tid); // finish aborting.
 					break;
 				}
 				default:
@@ -636,18 +636,23 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 	}
 
 	@Override
-	public boolean commit(int tid) {
+	public boolean commit(int tid) { System.out.println("Do not call 639"); return false; }
+	
+	@Override
+	public void commit2(int tid) {
 		System.out.println("RM Commiting");
 		record.log(tid, Message.RM_RCV_COMMIT_REQUEST, sName);
 		checkForCrash(CrashPoint.RM_AFTER_RCV_VOTE_DECISION);
 		
 		m_itemHT.save(sName, true); // save committed changes
 		record.log(tid, Message.RM_COMMIT_SUCCESS, sName);
-		return true;
 	}
 
 	@Override
-	public boolean abort(int tid) {
+	public boolean abort(int tid) { System.out.println("Do not call 652"); return false; }
+	
+	@Override
+	public void abort2(int tid) {
 		System.out.println("RM Aborting");
 		record.log(tid, Message.RM_RCV_ABORT_REQUEST, sName);
 		checkForCrash(CrashPoint.RM_AFTER_RCV_VOTE_DECISION);
@@ -656,7 +661,6 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 		m_itemHT = RMHashtable.load(sName, true);
 		
 		record.log(tid, Message.RM_COMMIT_ABORTED, sName);
-		return true;
 	}
 
 	@Override

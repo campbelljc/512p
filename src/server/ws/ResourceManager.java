@@ -167,6 +167,12 @@ public interface ResourceManager {
      * @param tid transaction id.
      */
     public boolean commit(int tid);
+	
+	@WebMethod
+	public void commit2(int tid);
+	
+	@WebMethod
+	public void abort2(int tid);
     
     @WebMethod
     /**

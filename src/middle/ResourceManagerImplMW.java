@@ -104,22 +104,21 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 				}
 				case RM_RCV_VOTE_REQUEST:
 				{ // vote request received, but crashed before sending answer back to middleware.
-					// do nothing - we will eventually receive the voteRequest() method call again from the middleware,
-					// and our commitReply Yes/No vote will have already been loaded in by our constructor (loading bool value from disk)
-					System.out.println("Crashed after vote request - do nothing (wait for call)");
+					System.out.println("Crashed after vote request - assume txn aborted");
+					abort2(tid);
 					break;
 				}
 				case RM_RCV_COMMIT_REQUEST:
 				{ // crash after receiving request to commit, but before doing so.
-					System.out.println("Crashed after receiving commit request.");
+					System.out.println("Crashed after receiving commit request - finish committing.");
 					m_itemHT = RMHashtable.load(ServerName.MW, false); // load uncommitted data back into main memory
-					commit(tid); // finish committing
+					commit2(tid); // finish committing
 					break;
 				}
 				case RM_RCV_ABORT_REQUEST:
 				{ // crash after receiving request to abort, but before doing so.
-					System.out.println("Crashed after receiving abort request.");
-					abort(tid); // finish aborting.
+					System.out.println("Crashed after receiving abort request - finish aborting.");
+					abort2(tid); // finish aborting.
 					break;
 				}
 				default:
@@ -729,12 +728,11 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 		return txnMgr.commit(tid);
 	}
 
-	public boolean commit2(int tid) { // Different from above.
+	public void commit2(int tid) { // Different from above.
 		System.out.println("MW - commit2");
 		record.log(tid, Message.RM_RCV_COMMIT_REQUEST, ServerName.MW);
 		m_itemHT.save(ServerName.MW, true); // save committed changes
 		record.log(tid, Message.RM_COMMIT_SUCCESS, ServerName.MW);
-		return true;
 	}
 
 	@Override
@@ -743,13 +741,12 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 		return txnMgr.abort(tid);
 	}
 	
-	public boolean abort2(int tid) {
+	public void abort2(int tid) {
 		System.out.println("MW - abort2");
 		record.log(tid, Message.RM_RCV_ABORT_REQUEST, ServerName.MW);
 		// load committed version
 		m_itemHT = RMHashtable.load(ServerName.MW, true);
 		record.log(tid, Message.RM_COMMIT_ABORTED, ServerName.MW);
-		return true;
 	}
 
 	@Override

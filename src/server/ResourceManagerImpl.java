@@ -97,24 +97,14 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 				}
 				case RM_RCV_VOTE_REQUEST: // crash : RM_AFTER_RCV_VOTE_REQ (6)
 				{ // vote request received, but crashed before sending answer back to middleware.
-					// do nothing - we will eventually receive the voteRequest() method call again from the middleware,
-					// and our commitReply Yes/No vote will have already been loaded in by our constructor (loading bool value from disk)
 					System.out.println("Crashed after vote request - assume txn aborted");
 					abort(tid);
 					break;
 				}
 				case RM_VOTED_YES: // crash : RM_AFTER_SND_VOTE_REPLY (7)
 				{ // crash after sending yes answer to middleware.
-					boolean answer = false;
-					System.out.println("Crashed after sending yes answer.");
-					// UNCOMMENT this line on second compilation
-				//	boolean answer = middleware().proxy.getDecision(tid);
-					if (answer)
-					{
-						m_itemHT = RMHashtable.load(sName, false); // load uncommitted data back into main memory
-						commit(tid);
-					}
-					else abort(tid);
+					System.out.println("Crashed after sending yes answer - wait for response.");
+					m_itemHT = RMHashtable.load(sName, false); // load uncommitted data back into main memory
 					break;
 				}
 				case RM_VOTED_NO: // crash : RM_AFTER_SND_VOTE_REPLY (7)
@@ -696,10 +686,12 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 		System.out.println("Received vote request.");
 		record.log(tid, Message.RM_RCV_VOTE_REQUEST, sName);
 		checkForCrash(CrashPoint.RM_AFTER_RCV_VOTE_REQ);
-		if(commitReply == Boolean.TRUE){
+		if(commitReply.booleanValue()) {
+			System.out.println("Voting yes");
 			record.log(tid, Message.RM_VOTED_YES, sName);
 		}
 		else{
+			System.out.println("Voting no");
 			record.log(tid, Message.RM_VOTED_NO, sName);
 		}
 		

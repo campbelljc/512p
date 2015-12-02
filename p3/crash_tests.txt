@@ -19,3 +19,17 @@ newflight, 1, 11, 1, 1
 commit, 1
 
 Expected result: all abort
+
+-> crash : RM_AFTER_SND_VOTE_REPLY (7) && VOTED_YES
+
+crash, FLIGHT, 7
+setvotereply, FLIGHT, true
+start
+newflight, 1, 11, 1, 1
+commit, 1
+
+start
+queryflight, 2, 11
+commit, 2
+
+Expected result: all commit (flight exists on query)

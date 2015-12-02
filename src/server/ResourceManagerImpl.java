@@ -103,7 +103,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 					abort(tid);
 					break;
 				}
-				case RM_VOTED_YES:
+				case RM_VOTED_YES: // crash : RM_AFTER_SND_VOTE_REPLY (7)
 				{ // crash after sending yes answer to middleware.
 					boolean answer = false;
 					System.out.println("Crashed after sending yes answer.");
@@ -117,7 +117,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 					else abort(tid);
 					break;
 				}
-				case RM_VOTED_NO:
+				case RM_VOTED_NO: // crash : RM_AFTER_SND_VOTE_REPLY (7)
 				{ // crash after sending no answer to middleware.
 					// we know that the middleware will abort, so we can abort right away.
 					System.out.println("Crashed after sending no answer.");
@@ -706,6 +706,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 		// Check for crash after sending the answer.
 		Thread t = new Thread(() -> {
 			try {
+				System.out.println("Waiting to check for crash...");
 				Thread.sleep(200);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
@@ -743,6 +744,7 @@ public class ResourceManagerImpl implements server.ws.ResourceManager
 	@Override
 	public void setVoteReply2(boolean commit_)
 	{
+		System.out.println("Setting vote reply to " + (commit_ ? "true" : "false"));
 		commitReply = new Boolean(commit_);
 		
 		saveVoteReply();

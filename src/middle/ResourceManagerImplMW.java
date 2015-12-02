@@ -783,6 +783,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 	@Override
 	public void crashAtPoint(String which, middle.CrashPoint pt)
 	{
+		System.out.println("Setting crash point here...");
 		crashPoint = pt;
 		switch(which) {
 			case "FLIGHT":

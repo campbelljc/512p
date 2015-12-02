@@ -256,6 +256,17 @@ public class TransactionManager {
 			// txn doesn't exist. Ignore this abort request.
 			return false;
 		}
+
+		CrashPoint cp = mw.getCrashPoint();
+		if(cp != null && cp == CrashPoint.RM_AFTER_SND_VOTE_REPLY){
+			try {
+				System.out.println("Delaying...");
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+
 		System.out.println("TM- Txn " + Integer.toString(tid) + " aborting...");
 
 		txn.close();
@@ -284,14 +295,18 @@ public class TransactionManager {
 	
 	private void doCommit(int tid){		
 		// send commit to RMs, delay if we are simulating an after vote reply crash
+		System.out.println("In doCommit()");
+
 		CrashPoint cp = mw.getCrashPoint();
-		if((cp != null) && cp.equals(CrashPoint.RM_AFTER_SND_VOTE_REPLY)){
+		if(cp != null && cp == CrashPoint.RM_AFTER_SND_VOTE_REPLY){
 			try {
-				Thread.sleep(500);
+				System.out.println("Delaying...");
+				Thread.sleep(1000);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 		}
+		
 		sendRMCommit(tid, resourceManagers);
 
 		// send commit to MW

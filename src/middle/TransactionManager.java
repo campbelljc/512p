@@ -135,6 +135,7 @@ public class TransactionManager {
 							abort(tid);
 						}
 					}
+					break;
 				}
 				case TM_PREPARED:
 				{

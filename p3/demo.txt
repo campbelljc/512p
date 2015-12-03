@@ -22,8 +22,7 @@ crash, ROOM, 7
 C1: commit, 3
 
 C1: start
-C1: newflight, 4, 44, 4, 4
-C1: commit, 4
+C1: newflight, 4, 44, 4, 4    (blocked)
 
 (restart all RMs manually)
 C2: start
@@ -34,7 +33,7 @@ C2: commit, 5
 
 C1: start
 C1: itinerary, 6, custid, 11, 11, true, true
-setvotereply, HOTEL(?), false
+setvotereply, ROOM, false
 crash, MW, 1
 C1: commit, 6
 

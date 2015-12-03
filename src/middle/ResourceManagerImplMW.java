@@ -861,15 +861,15 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 	@Override
 	public boolean voteRequest(int tid) {
 		System.out.println("Received vote request.");
-		record.log(tid, Message.RM_RCV_VOTE_REQUEST, sName);
+		record.log(tid, Message.RM_RCV_VOTE_REQUEST, ServerName.MW);
 	//	checkForCrash(CrashPoint.RM_AFTER_RCV_VOTE_REQ);
 		if(commitReply.booleanValue()) {
 			System.out.println("Voting yes");
-			record.log(tid, Message.RM_VOTED_YES, sName);
+			record.log(tid, Message.RM_VOTED_YES, ServerName.MW);
 		}
 		else{
 			System.out.println("Voting no");
-			record.log(tid, Message.RM_VOTED_NO, sName);
+			record.log(tid, Message.RM_VOTED_NO, ServerName.MW);
 		}
 		
 		// Check for crash after sending the answer.

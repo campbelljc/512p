@@ -455,6 +455,16 @@ public class TransactionManager {
 			decision = sendVoteRequest(tid, resourceManagers[2]);
 			mw.checkForCrash(CrashPoint.MW_AFTER_SND_SOME_VOTE_REQ);
 		}
+		if(decision && dtypes.contains(DType.CUSTOMER)){
+			decision = mw.voteRequest(tid);
+			if(decision){
+				record.log(tid, Message.TM_YES_VOTE, ServerName.MW);
+			}
+			else{
+				record.log(tid, Message.TM_NO_VOTE, ServerName.MW);
+			}
+			mw.checkForCrash(CrashPoint.MW_AFTER_SND_SOME_VOTE_REQ);
+		}
 		mw.checkForCrash(CrashPoint.MW_AFTER_RCV_ALL_VOTE_REPLY);
 		record.log(tid, Message.TM_PREPARED, null);
 		mw.checkForCrash(CrashPoint.MW_AFTER_VOTE_DECISION);

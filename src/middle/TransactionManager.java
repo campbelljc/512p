@@ -412,11 +412,13 @@ public class TransactionManager {
 	private void sendMWCommit(int tid){
 		mw.commit2(tid);
 		record.log(tid, Message.TM_SENT_COMMIT, ServerName.MW);
+		mw.checkForCrash(CrashPoint.MW_AFTER_SND_SOME_DECISION);
 	}
 
 	private void sendMWAbort(int tid){
 		mw.abort2(tid);
 		record.log(tid, Message.TM_SENT_ABORT, ServerName.MW);
+		mw.checkForCrash(CrashPoint.MW_AFTER_SND_SOME_DECISION);
 	}
 
 	private void completeCommit(int tid){

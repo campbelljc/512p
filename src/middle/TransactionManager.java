@@ -98,6 +98,7 @@ public class TransactionManager {
 				}
 				case TM_YES_VOTE:
 				{
+					Set<DType> dtypes = txnMap.get(tid).getDTypes();
 					System.out.println("TM- Txn " + tid.toString() + " crashed after receiving some YES votes - continuing commit...");
 					if (lastMessage.name == ServerName.RM_HOTEL) {
 						record.log(tid, Message.TM_PREPARED, null);
@@ -105,7 +106,10 @@ public class TransactionManager {
 					}
 					else if(lastMessage.name == ServerName.RM_CAR) {
 						// still need to ask hotel
-						boolean decision = sendVoteRequest(tid, resourceManagers[2]);
+						boolean decision = true;
+						if(dtypes.contains(DType.ROOM)){
+							decision = sendVoteRequest(tid, resourceManagers[2]);
+						}
 						record.log(tid, Message.TM_PREPARED, null);
 						if(decision){
 							doCommit(tid);
@@ -116,8 +120,11 @@ public class TransactionManager {
 					}
 					else {
 						// still need to ask hotel and car
-						boolean decision = sendVoteRequest(tid, resourceManagers[1]);
-						if(decision){
+						boolean decision = true;
+						if(dtypes.contains(DType.CAR)){
+							decision = sendVoteRequest(tid, resourceManagers[1]);
+						}
+						if(decision && dtypes.contains(DType.ROOM)){
 							decision = sendVoteRequest(tid, resourceManagers[2]);
 						}
 						record.log(tid, Message.TM_PREPARED, null);
@@ -143,41 +150,69 @@ public class TransactionManager {
 				}
 				case TM_SENT_ABORT:
 				{
+					Set<DType> dtypes = txnMap.get(tid).getDTypes();
 					System.out.println("TM- Txn " + tid.toString() + " crashed after sending some abort decisions - continuing abort...");
-					if(lastMessage.name == ServerName.RM_HOTEL){						
-						sendMWAbort(tid);						
+					if(lastMessage.name == ServerName.RM_HOTEL){
+						if(dtypes.contains(DType.CUSTOMER)){
+							sendMWAbort(tid);			
+						}
 						completeAbort(tid);
 					}
 					else if(lastMessage.name == ServerName.RM_CAR){
 						// still need to send an abort to hotel
-						sendRMAbort(tid, new WSClient[]{ resourceManagers[2] });
-						sendMWAbort(tid);
+						if(dtypes.contains(DType.ROOM)){
+							sendRMAbort(tid, resourceManagers[2]);
+						}
+						if(dtypes.contains(DType.CUSTOMER)){
+							sendMWAbort(tid);			
+						}
 						completeAbort(tid);
 					}
 					else{
 						// still need to send an abort to hotel and car
-						sendRMAbort(tid, new WSClient[]{ resourceManagers[1], resourceManagers[2] });
-						sendMWAbort(tid);
+						if(dtypes.contains(DType.CAR)){
+							sendRMAbort(tid, resourceManagers[1]);
+						}
+						if(dtypes.contains(DType.ROOM)){
+							sendRMAbort(tid, resourceManagers[2]);
+						}
+						if(dtypes.contains(DType.CUSTOMER)){
+							sendMWAbort(tid);			
+						}
 						completeAbort(tid);
 					}
 				}
 				case TM_SENT_COMMIT:
 				{
+					Set<DType> dtypes = txnMap.get(tid).getDTypes();
 					System.out.println("TM- Txn " + tid.toString() + " crashed after sending some commit decisions - continuing commit...");
-					if(lastMessage.name == ServerName.RM_HOTEL){						
-						sendMWCommit(tid);						
+					if(lastMessage.name == ServerName.RM_HOTEL){
+						if(dtypes.contains(DType.CUSTOMER)){
+							sendMWCommit(tid);			
+						}
 						completeCommit(tid);
 					}
 					else if(lastMessage.name == ServerName.RM_CAR){
 						// still need to send an abort to hotel
-						sendRMCommit(tid, new WSClient[]{ resourceManagers[2] });
-						sendMWCommit(tid);
+						if(dtypes.contains(DType.ROOM)){
+							sendRMCommit(tid, resourceManagers[2]);
+						}
+						if(dtypes.contains(DType.CUSTOMER)){
+							sendMWCommit(tid);			
+						}
 						completeCommit(tid);
 					}
 					else{
 						// still need to send an abort to hotel and car
-						sendRMCommit(tid, new WSClient[]{ resourceManagers[1], resourceManagers[2] });
-						sendMWCommit(tid);
+						if(dtypes.contains(DType.CAR)){
+							sendRMCommit(tid, resourceManagers[1]);
+						}
+						if(dtypes.contains(DType.ROOM)){
+							sendRMCommit(tid, resourceManagers[2]);
+						}
+						if(dtypes.contains(DType.CUSTOMER)){
+							sendMWCommit(tid);			
+						}
 						completeCommit(tid);
 					}
 	
@@ -286,11 +321,19 @@ public class TransactionManager {
 				System.out.println("Running undo and sending abort messages to RMs now.");
 			//	txn.undo();
 				
-				// send abort to RMs
-				sendRMAbort(tid, resourceManagers);
-				
-				// send abort to MW
-				sendMWAbort(tid);
+				Set<DType> dtypes = txnMap.get(tid).getDTypes();
+				if(dtypes.contains(DType.FLIGHT)){
+					sendRMAbort(tid, resourceManagers[0]);
+				}
+				if(dtypes.contains(DType.CAR)){
+					sendRMAbort(tid, resourceManagers[1]);
+				}
+				if(dtypes.contains(DType.ROOM)){
+					sendRMAbort(tid, resourceManagers[2]);
+				}
+				if(dtypes.contains(DType.CUSTOMER)){
+					sendMWAbort(tid);
+				}
 				
 				mw.checkForCrash(CrashPoint.MW_AFTER_SND_ALL_DECISION);
 				completeAbort(tid);
@@ -313,63 +356,68 @@ public class TransactionManager {
 				e.printStackTrace();
 			}
 		}
+		Set<DType> dtypes = txnMap.get(tid).getDTypes();
+		if(dtypes.contains(DType.FLIGHT)){
+			sendRMCommit(tid, resourceManagers[0]);
+		}
+		if(dtypes.contains(DType.CAR)){
+			sendRMCommit(tid, resourceManagers[1]);
+		}
+		if(dtypes.contains(DType.ROOM)){
+			sendRMCommit(tid, resourceManagers[2]);
+		}
+		if(dtypes.contains(DType.CUSTOMER)){
+			sendMWCommit(tid);
+		}
 		
-		sendRMCommit(tid, resourceManagers);
-
-		// send commit to MW
-		sendMWCommit(tid);
 
 		mw.checkForCrash(CrashPoint.MW_AFTER_SND_ALL_DECISION);
 
 		// remove and release locks
 		completeCommit(tid);
 	}
-	
-	private void sendRMCommit(int tid, WSClient[] rms){
-		for(WSClient rm : rms){
-			System.out.println("TM- Txn " + Integer.toString(tid) + " sending RM commit...");
-			boolean received = false;
-			while(!received){
-				try{
-					rm.proxy.commit2(tid);
-					received = true;
-				} catch(Exception e){
-					System.out.println("TM- Txn " + Integer.toString(tid) + " cannot reach rm, trying again...");
-				}
+
+	private void sendRMCommit(int tid, WSClient rm){
+		System.out.println("TM- Txn " + Integer.toString(tid) + " sending RM commit...");
+		boolean received = false;
+		while(!received){
+			try{
+				rm.proxy.commit2(tid);
+				received = true;
+			} catch(Exception e){
+				System.out.println("TM- Txn " + Integer.toString(tid) + " cannot reach rm, trying again...");
 			}
-			
-			record.log(tid, Message.TM_SENT_COMMIT, rm.proxy.getName()); 
-			mw.checkForCrash(CrashPoint.MW_AFTER_SND_SOME_DECISION);	
 		}
+
+		record.log(tid, Message.TM_SENT_COMMIT, rm.proxy.getName()); 
+		mw.checkForCrash(CrashPoint.MW_AFTER_SND_SOME_DECISION);	
 	}
 	
-	private void sendRMAbort(int tid, WSClient[] rms){
-		for(WSClient rm : rms){
-			System.out.println("TM- Txn " + Integer.toString(tid) + " sending RM abort...");
-			boolean received = false;
-			while(!received){
-				try{
-					rm.proxy.abort2(tid);
-					received = true;
-				} catch(Exception e){
-					System.out.println("TM- Txn " + Integer.toString(tid) + " cannot reach rm, trying again...");
-				}
+	private void sendRMAbort(int tid, WSClient rm){
+		System.out.println("TM- Txn " + Integer.toString(tid) + " sending RM abort...");
+		boolean received = false;
+		while(!received){
+			try{
+				rm.proxy.abort2(tid);
+				received = true;
+			} catch(Exception e){
+				System.out.println("TM- Txn " + Integer.toString(tid) + " cannot reach rm, trying again...");
 			}
-			record.log(tid, Message.TM_SENT_COMMIT, rm.proxy.getName()); 	
-			mw.checkForCrash(CrashPoint.MW_AFTER_SND_SOME_DECISION);
 		}
+		record.log(tid, Message.TM_SENT_COMMIT, rm.proxy.getName()); 	
+		mw.checkForCrash(CrashPoint.MW_AFTER_SND_SOME_DECISION);
 	}
-	
+
 	private void sendMWCommit(int tid){
 		mw.commit2(tid);
 		record.log(tid, Message.TM_SENT_COMMIT, ServerName.MW);
 	}
-	
+
 	private void sendMWAbort(int tid){
 		mw.abort2(tid);
 		record.log(tid, Message.TM_SENT_ABORT, ServerName.MW);
 	}
-	
+
 	private void completeCommit(int tid){
 		System.out.println("TM- Txn " + Integer.toString(tid) + " commit completed!");
 		
@@ -393,13 +441,18 @@ public class TransactionManager {
 		System.out.println("TM- Txn " + Integer.toString(tid) + " preparing to commit...");
 		
 		boolean decision = true;
-		for(WSClient rm : resourceManagers){
-			decision = sendVoteRequest(tid, rm);
+		Set<DType> dtypes = txnMap.get(tid).getDTypes();
+		if(dtypes.contains(DType.FLIGHT)){
+			decision = sendVoteRequest(tid, resourceManagers[0]);
 			mw.checkForCrash(CrashPoint.MW_AFTER_SND_SOME_VOTE_REQ);
-			
-			if(!decision){
-				break;
-			}
+		}
+		if(decision && dtypes.contains(DType.CAR)){
+			decision = sendVoteRequest(tid, resourceManagers[1]);
+			mw.checkForCrash(CrashPoint.MW_AFTER_SND_SOME_VOTE_REQ);
+		}
+		if(decision && dtypes.contains(DType.ROOM)){
+			decision = sendVoteRequest(tid, resourceManagers[2]);
+			mw.checkForCrash(CrashPoint.MW_AFTER_SND_SOME_VOTE_REQ);
 		}
 		mw.checkForCrash(CrashPoint.MW_AFTER_RCV_ALL_VOTE_REPLY);
 		record.log(tid, Message.TM_PREPARED, null);
@@ -481,6 +534,7 @@ public class TransactionManager {
 			return false;
 		}
 		txn.addUndoOp(undoFunction);
+		txn.addDType(type);
 		saveTransactions();
 		return true;
 	}

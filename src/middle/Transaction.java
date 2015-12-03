@@ -1,9 +1,10 @@
 package middle;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
+
+import middle.ResourceManagerImplMW.DType;
 
 /**
  * Object representation of a transaction.
@@ -13,13 +14,14 @@ public class Transaction implements Serializable{
 	private static final long serialVersionUID = 4104749287936713660L;
 	private static final long TTL_MAX = 60000000000L; // nanoseconds
 //	private ArrayList<Runnable> undoOps;
-	private Set<ServerName> usedRMs;
+	private HashSet<DType> usedDTypes;
 	private long ttl;
 	private boolean closed;
 	
 	public Transaction(){
 		ttl = System.nanoTime();
 //		undoOps = new ArrayList<Runnable>();
+		usedDTypes = new HashSet<ResourceManagerImplMW.DType>();
 		closed = false;
 	}
 	
@@ -47,12 +49,12 @@ public class Transaction implements Serializable{
 		}*/
 	}
 	
-	public void addRM(ServerName rm){
-		usedRMs.add(rm);
+	public void addDType(DType dtype){
+		usedDTypes.add(dtype);
 	}
 	
-	public Set<ServerName> getRMs(){
-		return usedRMs;
+	public Set<DType> getDTypes(){
+		return usedDTypes;
 	}
 	
 	public void close() { 

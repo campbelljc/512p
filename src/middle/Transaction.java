@@ -12,14 +12,14 @@ public class Transaction implements Serializable{
 	
 	private static final long serialVersionUID = 4104749287936713660L;
 	private static final long TTL_MAX = 60000000000L; // nanoseconds
-	private ArrayList<Runnable> undoOps;
+//	private ArrayList<Runnable> undoOps;
 	private Set<ServerName> usedRMs;
 	private long ttl;
 	private boolean closed;
 	
 	public Transaction(){
 		ttl = System.nanoTime();
-		undoOps = new ArrayList<Runnable>();
+//		undoOps = new ArrayList<Runnable>();
 		closed = false;
 	}
 	
@@ -32,19 +32,19 @@ public class Transaction implements Serializable{
 	}
 	
 	public void addUndoOp(Runnable undoFunction){
-		undoOps.add(undoFunction);
+		//undoOps.add(undoFunction);
 	}
 	
 	public void removeLastUndoOp(){
-		undoOps.remove(undoOps.size()-1);
+		//undoOps.remove(undoOps.size()-1);
 	}
 	
 	public void undo() {
-		ArrayList<Runnable> curUndoOps = new ArrayList<Runnable>(undoOps);
+	/*	ArrayList<Runnable> curUndoOps = new ArrayList<Runnable>(undoOps);
 		Collections.reverse(curUndoOps);
 		for(Runnable r : curUndoOps) {
 			r.run();
-		}
+		}*/
 	}
 	
 	public void addRM(ServerName rm){

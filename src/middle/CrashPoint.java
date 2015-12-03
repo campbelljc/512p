@@ -1,5 +1,4 @@
 package middle;
-//	MW_BEFORE_SND_VOTE_REQ,
 
 public enum CrashPoint {
 	IMMEDIATE,						// 0
@@ -10,7 +9,7 @@ public enum CrashPoint {
 	MW_AFTER_SND_SOME_DECISION,		// 4
 	MW_AFTER_SND_ALL_DECISION,		// 5
 
-	RM_AFTER_RCV_VOTE_REQ,			// 6?
+	RM_AFTER_RCV_VOTE_REQ,			// 6
 	RM_AFTER_SND_VOTE_REPLY,		// 7
 	RM_AFTER_RCV_VOTE_DECISION		// 8
 }

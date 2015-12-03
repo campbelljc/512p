@@ -785,19 +785,21 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 		switch(which) {
 			case "FLIGHT":
 				flightClient.proxy.selfDestruct(pt);
+				crashPoint = null;
 				break;
 			case "CAR":
 				carClient.proxy.selfDestruct(pt);
+				crashPoint = null;
 				break;
 			case "ROOM":
 				roomClient.proxy.selfDestruct(pt);
+				crashPoint = null;
 				break;
 			case "MW":
 				selfDestruct(pt);
 				break;
 		}
 		// clear the crash point when its non-middle.
-		crashPoint = null;
 	}
 	
 	@Override

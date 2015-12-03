@@ -3,6 +3,7 @@ package middle;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Set;
 
 /**
  * Object representation of a transaction.
@@ -12,6 +13,7 @@ public class Transaction implements Serializable{
 	private static final long serialVersionUID = 4104749287936713660L;
 	private static final long TTL_MAX = 60000000000L; // nanoseconds
 	private ArrayList<Runnable> undoOps;
+	private Set<ServerName> usedRMs;
 	private long ttl;
 	private boolean closed;
 	
@@ -43,6 +45,14 @@ public class Transaction implements Serializable{
 		for(Runnable r : curUndoOps) {
 			r.run();
 		}
+	}
+	
+	public void addRM(ServerName rm){
+		usedRMs.add(rm);
+	}
+	
+	public Set<ServerName> getRMs(){
+		return usedRMs;
 	}
 	
 	public void close() { 

@@ -1,7 +1,14 @@
 package middle;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.ConnectException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -33,7 +40,7 @@ public class TransactionManager {
 	private static final int VOTE_REQUEST_TIMEOUT = 10; // seconds
 	
 	private LockManager lockMgr = new LockManager();
-	private HashMap<Integer, Transaction> txnMap = new HashMap<Integer, Transaction>();
+	private HashMap<Integer, Transaction> txnMap;
 	private AtomicInteger nextID = new AtomicInteger(0);
 	private WSClient[] resourceManagers; // [flight, car, hotel]
 	private MasterRecord record;
@@ -45,7 +52,7 @@ public class TransactionManager {
 		System.out.println("TM starting up");
 		this.resourceManagers = resourceManagers;
 		this.mw = mw;
-
+		loadTransactions();
 		this.record = MasterRecord.loadLog(ServerName.TM);
 		if (!record.isEmpty()){
 			recover();
@@ -208,7 +215,7 @@ public class TransactionManager {
 				}
 			}
 		}, 0, TTL_CHECK_INTERVAL, TimeUnit.SECONDS);
-
+		saveTransactions();
 		return tid;
 	}
 	
@@ -369,6 +376,7 @@ public class TransactionManager {
 		txnMap.remove(tid);
 		lockMgr.UnlockAll(tid);
 		record.log(tid, Message.TM_COMMITTED, null);
+		saveTransactions();
 	}
 	
 	private void completeAbort(int tid){
@@ -377,6 +385,7 @@ public class TransactionManager {
 		txnMap.remove(tid);
 		lockMgr.UnlockAll(tid);
 		record.log(tid, Message.TM_ABORTED, null);
+		saveTransactions();
 	}
 
 	
@@ -447,6 +456,7 @@ public class TransactionManager {
 			abort(tid);
 			return false;
 		}
+		saveTransactions();
 		return true;
 	}
 	
@@ -471,6 +481,7 @@ public class TransactionManager {
 			return false;
 		}
 		txn.addUndoOp(undoFunction);
+		saveTransactions();
 		return true;
 	}
 	
@@ -493,6 +504,44 @@ public class TransactionManager {
 	{
 		Transaction txn = txnMap.get(tid);
 		return !((txn == null) || txn.isClosed());
+	}
+	
+	private void loadTransactions(){
+		System.out.println("Loading transactions...");
+		try {
+			FileInputStream fis = new FileInputStream(new File("transactions.log"));
+
+			// load master record into class var.
+			ObjectInputStream ois = new ObjectInputStream(fis);
+			try {
+				txnMap = (HashMap<Integer, Transaction>) ois.readObject();
+				if (txnMap.isEmpty()){
+					nextID = new AtomicInteger(0);
+				}
+				else{
+					nextID = new AtomicInteger(Collections.max(txnMap.keySet()));
+				}
+			} catch (ClassNotFoundException e) {
+				e.printStackTrace();
+			}
+			fis.close();			
+		} catch (IOException e) { 
+			// does not exist, so create.
+			System.out.println("No master record found on disk - creating new file.");
+			txnMap = new HashMap<Integer, Transaction>();
+			saveTransactions();
+		}
+	}
+	
+	private void saveTransactions(){
+		try {
+			FileOutputStream fos = new FileOutputStream("transactions.log");
+			ObjectOutputStream oos = new ObjectOutputStream(fos);
+			oos.writeObject(txnMap);
+			oos.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 }

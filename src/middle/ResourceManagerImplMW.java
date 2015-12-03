@@ -28,7 +28,7 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 	MasterRecord record;
     	
 	middle.CrashPoint crashPoint;
-	boolean commitReply = true;
+	Boolean commitReply = new Boolean(true);
 	
 	WSClient flightClient;
 	WSClient carClient;
@@ -55,12 +55,13 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 			// check for master record
 			record = MasterRecord.loadLog(ServerName.MW);
 			if (!record.isEmpty()){
-				System.out.println("Record not empty - recovering");
+				System.out.println("MW - Record not empty - recovering");
 				m_itemHT = RMHashtable.load(ServerName.MW, false);
 				recover();
 			}
-			else{
-				// load last committed version of data.
+			else
+			{ // load last committed version of data.
+				System.out.println("MW - Record empty - not recovering.");
 				m_itemHT = RMHashtable.load(ServerName.MW, true); 
 			}
 			
@@ -105,6 +106,19 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 				case RM_RCV_VOTE_REQUEST:
 				{ // vote request received, but crashed before sending answer back to middleware.
 					System.out.println("Crashed after vote request - assume txn aborted");
+					abort2(tid);
+					break;
+				}
+				case RM_VOTED_YES: // crash : RM_AFTER_SND_VOTE_REPLY (7)
+				{ // crash after sending yes answer to middleware.
+					System.out.println("Crashed after sending yes answer - wait for response.");
+					m_itemHT = RMHashtable.load(ServerName.MW, false); // load uncommitted data back into main memory
+					break;
+				}
+				case RM_VOTED_NO: // crash : RM_AFTER_SND_VOTE_REPLY (7)
+				{ // crash after sending no answer to middleware.
+					// we know that the middleware will abort, so we can abort right away.
+					System.out.println("Crashed after sending no answer.");
 					abort2(tid);
 					break;
 				}
@@ -846,8 +860,33 @@ public class ResourceManagerImplMW implements server.ws.ResourceManager
 
 	@Override
 	public boolean voteRequest(int tid) {
-		return true;
+		System.out.println("Received vote request.");
+		record.log(tid, Message.RM_RCV_VOTE_REQUEST, sName);
+	//	checkForCrash(CrashPoint.RM_AFTER_RCV_VOTE_REQ);
+		if(commitReply.booleanValue()) {
+			System.out.println("Voting yes");
+			record.log(tid, Message.RM_VOTED_YES, sName);
+		}
+		else{
+			System.out.println("Voting no");
+			record.log(tid, Message.RM_VOTED_NO, sName);
+		}
+		
+		// Check for crash after sending the answer.
+	/*	Thread t = new Thread(() -> {
+			try {
+				System.out.println("Waiting to check for crash...");
+				Thread.sleep(200);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			checkForCrash(CrashPoint.RM_AFTER_SND_VOTE_REPLY);
+		});
+		t.start(); */
+		
+		return commitReply.booleanValue();
 	}
+
 
 	@Override
 	public ServerName getName() {

@@ -1,18 +1,18 @@
 \documentclass[11pt]{article}
-\usepackage{graphicx, float}
+\usepackage{graphicx, float, amsmath}
 \parindent=0in
 \parskip=8pt
 \begin{document}
 \title{COMP 512 - Final Project Report}
 \author{Luke Emery-Fertitta - Student ID: 260569374 \\ Jonathan Campbell - Student ID: 260481285}
-\date{2015 December 3}
+\date{2015 December 4}
 \maketitle
 
-\section*{General design & architecture}
+\section*{Architecture}
 
 To distribute load over several servers, we created a middleware to communicate between the client and resource manager (RM) servers. The middleware will receive requests from the client and forward them to the appropriate resource manager server, each server being responsible for one resource. The middleware is also responsible for customer data, since it is assumed that the most popular transactions performed will include modification or reading of customer data.  \par
 
-We also allow the use of transactions and strict two-phase locking via a transaction manager and lock manager at the middleware node. The two-phase commit protocol is used at the middleware in order to commit/abort transactions.
+We use of transactions to manage data operations. We use strict two-phase locking via a transaction manager and lock manager located at the middleware node. The locality of these managers guarantees a minimum in the number of network hops in order to perform the transactional management overhead. Finally, the two-phase commit protocol is used for committing and aborting transactions. \par
 
 \section*{Performance results}
 
@@ -46,15 +46,17 @@ Network RM & 0.1704 \\
 Network operations take roughly twice as long as local operations. RM transactions take roughly twice as long as their MW counterparts.\par
 
 \textbf{Single-Client Analysis:} \\
-There is network latency, and increased message hops for RM transactions. \par
+Network latency explains the difference the local and network versions. We can use the numbers to estimate that time for each message. For example, 
+\begin{align*}
+\frac{0.0915 - 0.0445}{6}
+\end{align*}
+estimates the network time for each message. Additionally, the increased time for RM transactions is explained by the increased number of hops between nodes. \par
 
 \textbf{Multi-Client Observation:}\\
 Initially, RM-only transactions have a longer average response time than MW-only transactions. This swaps near 40 tps. After that, both increase at steady exponential rate (due to the logarithmic $x$-axis scale) with MW-only transactions being a constant amount above RM. At 500 transactions per second these amounts converge, followed by a slight increase in the response time on the part of the middleware. Both converge and plateau at 5000 transactions per second. \par
 
 \textbf{Multi-Client Analysis:}\\
-Between 1 and 40 tps, the RM transactions take longer due to the message transfer overhead. This may be a bit extreme at 10 tps and could be slightly exaggerated by noise. After this, the limiting factor is the bottlenecking due to lock conflicts, which continues to become more severe. There may also be network congestion, contributing to the increase to a lesser degree. Finally, the plateau occurs due to the limitation on the Java client. We can only send so many transactions per second, so although we set the parameters for 10,000 tps, we are unable to actually achieve that number. Due to this insufficiency, we are capped in the number of transactions per second that can be tested.
-
-\section*{Data design}
+Between 1 and 40 tps, the RM transactions take longer due to the message transfer overhead. After this, the limiting factor is the bottlenecking due to lock conflicts, which continues to become more severe. At the time of this test, we used a 10 second deadlock detection, so our results are dominated by transactions that take 10 seconds. There may also be network congestion, contributing to the increase to a lesser degree. Finally, the plateau occurs due to the implementation of the Java client. The implementation is such that we are capped in the number of requests that can be actually sent, so despite the input parameters suggesting larger numbers of transactions per second, we are not actually increasing the number of requests per second.
 
 \section*{Implementation of features}
 
@@ -74,6 +76,8 @@ The lock manager is stored at the middleware server. It receives lock requests f
 
 The lock manager uses the strict 2PL locking scheme. Operations that read a data item will request a shared lock on the item. More than one transaction can receive a shared lock for the same data item. Operations that write a data item will request an exclusive lock on the item, which will only be given if there are no shared locks on that item, except for its own. If the transaction does have a shared lock and requests an exclusive lock, the lock is converted to exclusive if possible. If other transactions already have a shared lock on that item, then the requesting transaction will wait until those are released. Transactions will release all their locks only at commit or abort time. \par
 
+We chose to lock on entire resource managers. This was ultimately an oversimplification, and the issues with this assumption are discussed in greater depth in the ``Problems Encountered'' section of the report.\par
+
 \subsection*{Transaction Manager}
 
 The transaction manager is also contained entirely on the middleware server. Again, this design greatly simplifies the message passing requirements. Because the lock manager is local, the only message passing required after a request is received is the data access, which was already implemented in the first part of the project. Upon server initialization, a transaction manager is created. Then, we simply pass off the \texttt{start}, \texttt{abort}, and \texttt{commit} methods from the API directly to the transaction manager. \par
@@ -90,19 +94,37 @@ The \texttt{shutdown} method is an API call for a full-system, soft shutdown. If
 
 When a transaction commits or aborts, the transaction manager will ask the lock manager to release all locks held by the transaction, and remove the transaction from its transaction list. \par
 
----todo
+TODO (J)
 
 \subsection*{Recovery}
 
-\section*{Concurrency control}
+In order to implement recovery, we keep keep logs at each node. These logs specify which stages of 2PC have been completed. The transaction manager logs the following steps for each transaction:
+\begin{itemize}
+\item commit/abort has started
+\item no vote received
+\item yes vote received
+\item all votes received (prepared)
+\item commit/abort decision sent
+\item commit/abort complete
+\end{itemize}
+The resource managers log the following:
+\begin{itemize}
+\item vote request received
+\item vote request sent (yes/no)
+\item decision received
+\item commit/abort complete
+\end{itemize} 
+Upon startup of a node, we look through the last log messages of each transaction. If we encounter a transaction that seems to be only partially completed, we will take whatever steps are necessary to finish the transaction as if the node had never been down.\par 
 
----
+Each resource manager has an uncommited and committed data log stored on disk, so we use these logs to retrieve information in the case where we wish to finish commits upon recovery.\par
 
 \section*{Problems encountered}
 
 One problem that was encountered that originated from the centralized model was the management of undo functions. Since the middleware contains the transaction manager, it is also responsible for informing the TM of the undo operations to perform in case of abort, before the actual operation takes place. Therefore, the middleware will need to know the reverse of each operation, even when it is only forwarding the operation to a resource manager. The undo operations are hardcoded in the middleware, so knowledge about each operation must reside at both middleware and RMs, which breaks the pattern of functional isolation. Further, some undo operations are more complex, in cases where an operation (like addFlight) can have different effects based on data state (it can add a completely new flight, or edit details of a current flight), leading to a necessity for state analysis on the middleware and communication with the RM to determine which action will be performed, in order to record the correct undo operation. \par
 
 Concurrency was a concern due to the multithreaded request handling and asynchronus requirements of the transaction manager. We had to ensure that the transaction identifier was unique regardless of \texttt{start} execution order, and that once a shutdown request has been initiated, no client is able to start a new transaction. The former problem was solved with an \texttt{AtomicInteger} attribute, which allows for an atomic get and increment. The latter problem was solved by synchronizing the shutdown and start methods and adding an \texttt{isShutdown} attribute, such that once the shutdown has begun, threads will block at \texttt{start}, and after it finishes, transactions will fail to start. \par
+
+For the third part of the project, a major problem was our decision to lock an entire resource manager, instead of individual objects. This did not cause difficulties in succeeding at the various tests of the second part, but was shown to be an oversimplification for the third part of the project. This locking constraint is too strict, and fails to allow for clients to perform certain operations that would never cause data consistency issues. In the future, fixing this would be the top priority for remedying our current application,\par
 
 \section*{Testing}
 
@@ -127,8 +149,19 @@ Specific particularities of scheduling prevented by two-phase locking such as di
 
 With regards to testing of the transaction manager, sequences of commands were manually inputted into the client console with verification of results. Testing of undo operations was of particular focus, as well as concurrent modification situations (to verify correctness of locks).\par
 
-\subsection*{2PC}
+\subsection*{2PC and Recovery}
 
-----
+In order to test 2PC and Recovery, we used crash points and console logging. The console logging confirmed that the commit protocol followed all of the steps properly. The crash points were useful for testing recovery. Through the client interface, we could specify the following locations for the nodes to crash:
+\begin{itemize}
+\item immediately (equivalent to a keyboard interrupt)
+\item at the transaction manager, after sending some of the vote requests.
+\item at the transaction manager, after receiving all of the vote replies.
+\item at the transaction manager, after sending some of the commit/abort decisions.
+\item at the transaction manager, after sending all of the commit/abort decisions.
+\item at a resource manager, after receiving a vote requests.
+\item at a resource manager, after sending a vote.
+\item at a resource manager, after receiving a commit/abort decision.
+\end{itemize}
+For testing, we simply tried all of these crash points manually. Using the console logging and queries of information that should or should not be present, we were able to confirm the correctness of behavior for each case. We also added the ability to sent a nodes vote response. This allowed us to test scenarios where a node may have responded NO.\par
 
 \end{document}

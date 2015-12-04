@@ -12,13 +12,13 @@
 
 To distribute load over several servers, we created a middleware to communicate between the client and resource manager (RM) servers. The middleware will receive requests from the client and forward them to the appropriate resource manager server, each server being responsible for one resource. The middleware is also responsible for customer data, since it is assumed that the most popular transactions performed will include modification or reading of customer data.  \par
 
-We use of transactions to manage data operations. We use strict two-phase locking via a transaction manager and lock manager located at the middleware node. The locality of these managers guarantees a minimum in the number of network hops in order to perform the transactional management overhead. Finally, the two-phase commit protocol is used for committing and aborting transactions. \par
+We use transactions to manage data operations, and implement strict two-phase locking via a transaction manager and lock manager located at the middleware node. The locality of these managers guarantees a minimum in the number of network hops to perform the transactional management overhead. Finally, the two-phase commit protocol is used for committing and aborting of transactions. \par
 
 \section*{Performance results}
 
 \subsection*{Technique}
 
-For both parts, we use testing clients that repeatedly submit two transaction types. One is a middle-ware only transaction containing three customer read operations and three write operations. The other uses all three resource managers, performing a read and a write at each one. Each experiment can have the number of clients and delay between transactions varied, allowing us to control transactions per second.
+For both parts, we use testing clients that repeatedly submit two transaction types. One is a middleware-only transaction containing three customer read operations and three write operations. The other uses all three resource managers, performing a read and write at each one. In each experiment, the number of clients and delay between transactions can be specified (varied), allowing us to control the value of transactions per second.
 
 \subsection*{Results}
 
@@ -46,49 +46,49 @@ Network RM & 0.1704 \\
 Network operations take roughly twice as long as local operations. RM transactions take roughly twice as long as their MW counterparts.\par
 
 \textbf{Single-Client Analysis:} \\
-Network latency explains the difference the local and network versions. We can use the numbers to estimate that time for each message. For example, 
+Network latency explains the difference between the local and network versions. We can use the numbers to estimate that time for each message. For example, 
 \begin{align*}
 \frac{0.0915 - 0.0445}{6}
 \end{align*}
 estimates the network time for each message. Additionally, the increased time for RM transactions is explained by the increased number of hops between nodes. \par
 
 \textbf{Multi-Client Observation:}\\
-Initially, RM-only transactions have a longer average response time than MW-only transactions. This swaps near 40 tps. After that, both increase at steady exponential rate (due to the logarithmic $x$-axis scale) with MW-only transactions being a constant amount above RM. At 500 transactions per second these amounts converge, followed by a slight increase in the response time on the part of the middleware. Both converge and plateau at 5000 transactions per second. \par
+Initially, RM-only transactions have a longer average response time than MW-only transactions. This trend swaps near 40 TPS. After that, both increase at a steady exponential rate (due to the logarithmic $x$-axis scale) with MW-only transactions being a constant amount above RM. At 500 transactions per second these amounts converge, followed by a slight increase in the response time on the part of the middleware. Both converge and plateau at 5000 transactions per second. \par
 
 \textbf{Multi-Client Analysis:}\\
-Between 1 and 40 tps, the RM transactions take longer due to the message transfer overhead. After this, the limiting factor is the bottlenecking due to lock conflicts, which continues to become more severe. At the time of this test, we used a 10 second deadlock detection, so our results are dominated by transactions that take 10 seconds. There may also be network congestion, contributing to the increase to a lesser degree. Finally, the plateau occurs due to the implementation of the Java client. The implementation is such that we are capped in the number of requests that can be actually sent, so despite the input parameters suggesting larger numbers of transactions per second, we are not actually increasing the number of requests per second.
+Between 1 and 40 TPS, the RM transactions take longer due to the message transfer overhead. Afterwards, the limiting factor is the bottlenecking due to lock conflicts, which continues to become more severe. At the time of this test, we used a value of 10 seconds for deadlock detection (timeout), so our results are dominated by transactions that take 10 seconds. There may also be network congestion, contributing to the increase to a lesser degree. Finally, the plateau occurs due to the implementation of the Java client. The implementation is such that we are capped in the number of requests that can be actually sent, so despite the input parameters suggesting larger numbers of transactions per second, we are not actually reaching the target and the requests per second remain constant after a certain amount.
 
 \section*{Implementation of features}
 
 \subsection*{Middleware}
 
-The middleware system uses a new class that implements ResourceManager, and which maintains one WSClient for each resource manager server (flight, car, and room) for communication. Requests from the client are received through the Web Services interface. Each ResourceManager method involving flight, car, or room data will communicate with the appropriate Resource Manager using the relevant WSClient to invoke the smae method on that server.  \par
+The middleware system uses a new class that implements ResourceManager, and which maintains one WSClient for each resource manager server (flight, car, and room) for communication. Requests from the client are received through the Web Services interface. Each ResourceManager method involving flight, car, or room data will communicate with the appropriate Resource Manager using the relevant WSClient to invoke the same method on that server.  \par
 
-The middleware also maintains by itself all customer-related data in a hashtable. Methods that involve only customer data are processed directly at the middleware layer without any connection to an RM. Methods that involve both customer data and flight/car/room data, such as the reservation methods, or deleteCustomer, involve both processing by the middleware layer and communication with the appropriate resource managers.  \par
+The middleware also itself maintains all customer-related data in a hashtable. Methods that involve only customer data are processed directly at the middleware layer without any connection to an RM. Methods that involve both customer data and flight/car/room data, such as the reservation methods, or deleteCustomer, involve both processing by the middleware layer and communication with the appropriate resource managers.  \par
 
-Since the middleware and server use the same class interface, the client can acquire the WSDL file from either. We chose to get it from the middleware so that the client doesn't need to know any information about the RM servers themselves.  \par
+Since the middleware and server use the same class interface, the client can acquire the WSDL file from either. We chose to acquire it from the middleware so that the client does not need to know any information about the RM servers themselves.  \par
 
-The middleware receives information about the RM servers (port and hostname) on server startup, through environment variables in the web.xml file.  \par
+The middleware receives information about the RM servers (port and hostname) on server startup, through environment variables set in the web.xml file.  \par
 
 \subsection*{Lock Manager}
 
-The lock manager is stored at the middleware server. It receives lock requests from the transaction manager, which specifies the lock type (read or write), the data item to lock, and the ID of the transaction requesting the lock. It uses this centralized model so that the resource managers themselves need know nothing about locking. This approach also simplifies the process of waiting on a lock, since the middleware will know not to accept anymore operations from the same transaction until the lock is received (or a deadlock occurs), instead of having to be told by a resource manager who is waiting that it should wait as well. \par
+The lock manager is stored at the middleware server. It receives lock requests from the transaction manager, which specifies the lock type (read or write), the data item to lock, and the ID of the transaction requesting the lock. It uses this centralized model so that the resource managers themselves need know nothing about locking. This approach also simplifies the process of waiting on a lock, since the middleware will know not to accept any more operations from the same transaction until the lock is received (or a deadlock occurs), instead of having to be told by a resource manager who is waiting that it should wait as well. \par
 
-The lock manager uses the strict 2PL locking scheme. Operations that read a data item will request a shared lock on the item. More than one transaction can receive a shared lock for the same data item. Operations that write a data item will request an exclusive lock on the item, which will only be given if there are no shared locks on that item, except for its own. If the transaction does have a shared lock and requests an exclusive lock, the lock is converted to exclusive if possible. If other transactions already have a shared lock on that item, then the requesting transaction will wait until those are released. Transactions will release all their locks only at commit or abort time. \par
+The lock manager uses the strict two-phase locking scheme. Operations that read a data item will request a shared lock on the item. More than one transaction can receive a shared lock for the same data item. Operations that write a data item will request an exclusive lock on the item, which will only be given if there are no shared locks on that item, except for its own. If the transaction does have a shared lock and requests an exclusive lock, the lock is converted to exclusive if possible. If other transactions already have a shared or exclusive lock on an item, then the requesting transaction will wait until those locks are released. Transactions will release all their locks only at commit or abort time. \par
 
 We chose to lock on entire resource managers. This was ultimately an oversimplification, and the issues with this assumption are discussed in greater depth in the ``Problems Encountered'' section of the report.\par
 
 \subsection*{Transaction Manager}
 
-The transaction manager is also contained entirely on the middleware server. Again, this design greatly simplifies the message passing requirements. Because the lock manager is local, the only message passing required after a request is received is the data access, which was already implemented in the first part of the project. Upon server initialization, a transaction manager is created. Then, we simply pass off the \texttt{start}, \texttt{abort}, and \texttt{commit} methods from the API directly to the transaction manager. \par
+The transaction manager is also contained entirely on the middleware server. Again, this design greatly simplifies the message passing requirements. Because the lock manager is local, the only message passing required after an operation is received from the client is the access of data on involved RMs, which was already implemented in the first part of the project.  \par
 
-The \texttt{start} method initializes a transaction and provides the client with a transaction identifier to use with all other operations. This method atomically grabs the next available, unique transaction identifier integer, creates a \texttt{Transaction} object, and begins the TTL timer for the transaction. \par
+Upon initialization of the middleware, a transaction manager is created. Then, we simply pass off the \texttt{start}, \texttt{abort}, and \texttt{commit} methods from the API directly to the transaction manager. The \texttt{start} method initializes a transaction and provides the client with a transaction identifier to use with all other operations. This method atomically grabs the next available unique transaction identifier, creates a \texttt{Transaction} object, and begins the TTL timer for the transaction. \par
 
 When an operation is sent from the client to the middleware to be performed, the middleware will ask the transaction manager for the necessary locks and then perform the requested operation, forwarding it to a resource manager if appropriate. The transaction manager will also keep track of which data items are being locked, to be used later during the commit phase.
 
-The \texttt{abort} method is available as an API call. Additionally, aborts will automatically be performed upon deadlocks, as a form of deadlock resolution, and TTL expirations, as a form of client timeout handling. The TTL expiration is checked by a \texttt{ScheduledExecutorService}, which is simply a scheduled, concurrent operation that ensures the transaction has been used within a specified time period. In this case, ``used'' refers to any read or write operation which is called with the transaction identifier.  \par
+The \texttt{abort} method is available as an API call. Aborts will be performed when called by the transaction manager, by the client, or upon deadlocks, as a form of deadlock resolution, as well as on expiration of time-to-live timers, as a form of client timeout handling. The TTL expiration is checked by a \texttt{ScheduledExecutorService}, which is simply a scheduled, concurrent operation that ensures the transaction has been used within a specified time period. In this case, ``used'' refers to any read or write operation which is called with the transaction identifier.  \par
 
-The \texttt{shutdown} method is an API call for a full-system, soft shutdown. If the client requests a shutdown, the transaction manager will deny any future start transaction requests and wait for all running transactions to complete. After this, each of the resource managers is sent a shutdown request and the middleware terminates. The resource managers will exit gracefully upon receiving the shutdown message from the middleware. \par
+The \texttt{shutdown} method is an API call for a full-system soft shutdown. If the client requests a shutdown, the transaction manager will deny any future start transaction requests and wait for all running transactions to complete. After this, each of the resource managers is sent a shutdown request and the middleware terminates. The resource managers will exit gracefully upon receiving the shutdown message from the middleware. \par
 
 \subsection*{2PC}
 
@@ -100,16 +100,16 @@ Finally, once all resource managers have been informed, the TM will ask the lock
 
 \subsection*{Recovery}
 
-In order to implement recovery, we keep keep logs at each node. These logs specify which stages of 2PC have been completed. The transaction manager logs the following steps for each transaction:
+In order to implement recovery, we keep logs at each node. These logs specify which stages of the two-phase commit protocol have been completed. The transaction manager logs the following stages for each transaction:
 \begin{itemize}
-\item commit/abort has started
-\item no vote received
-\item yes vote received
-\item all votes received (prepared)
-\item commit/abort decision sent
+\item commit/abort phase started
+\item no vote received from a particular RM
+\item yes vote received from a particular RM
+\item all votes received
+\item commit/abort decision sent to a particular RM
 \item commit/abort complete
 \end{itemize}
-The resource managers log the following:
+The resource managers log the following stages:
 \begin{itemize}
 \item vote request received
 \item vote request sent (yes/no)
@@ -126,9 +126,9 @@ To persist information about transactions even if a crash occurs at the TM, tran
 
 One problem that was encountered that originated from the centralized model was the management of undo functions. Since the middleware contains the transaction manager, it is also responsible for informing the TM of the undo operations to perform in case of abort, before the actual operation takes place. Therefore, the middleware will need to know the reverse of each operation, even when it is only forwarding the operation to a resource manager. The undo operations are hardcoded in the middleware, so knowledge about each operation must reside at both middleware and RMs, which breaks the pattern of functional isolation. Further, some undo operations are more complex, in cases where an operation (like addFlight) can have different effects based on data state (it can add a completely new flight, or edit details of a current flight), leading to a necessity for state analysis on the middleware and communication with the RM to determine which action will be performed, in order to record the correct undo operation. \par
 
-Concurrency was a concern due to the multithreaded request handling and asynchronus requirements of the transaction manager. We had to ensure that the transaction identifier was unique regardless of \texttt{start} execution order, and that once a shutdown request has been initiated, no client is able to start a new transaction. The former problem was solved with an \texttt{AtomicInteger} attribute, which allows for an atomic get and increment. The latter problem was solved by synchronizing the shutdown and start methods and adding an \texttt{isShutdown} attribute, such that once the shutdown has begun, threads will block at \texttt{start}, and after it finishes, transactions will fail to start. \par
+Concurrency was a concern due to the multithreaded request handling and asynchronous requirements of the transaction manager. We had to ensure that the transaction identifier was unique regardless of \texttt{start} execution order, and that once a shutdown request was initiated, no client would be able to start a new transaction. The former problem was solved with an \texttt{AtomicInteger} attribute, which allows for an atomic get and increment. The latter problem was solved by synchronizing the shutdown and start methods and adding an \texttt{isShutdown} attribute, such that once the shutdown has begun, threads will block at \texttt{start}, and after completion, transactions will fail to start. \par
 
-For the third part of the project, a major problem was our decision to lock an entire resource manager, instead of individual objects. This did not cause difficulties in succeeding at the various tests of the second part, but was shown to be an oversimplification for the third part of the project. This locking constraint is too strict, and fails to allow for clients to perform certain operations that would never cause data consistency issues. In the future, fixing this would be the top priority for remedying our current application,\par
+For the third part of the project, a major problem (revealed during the demo) was our decision to lock an entire resource manager, instead of individual objects. This did not cause difficulties in succeeding at the various tests of the second part, but was shown to be an oversimplification for the third part of the project. This locking constraint is too strict, and fails to permit clients to perform certain operations that would never cause data consistency issues. In the future, fixing this would be the top priority for remedying our current application.\par
 
 \section*{Testing}
 
@@ -155,17 +155,17 @@ With regards to testing of the transaction manager, sequences of commands were m
 
 \subsection*{2PC and Recovery}
 
-In order to test 2PC and Recovery, we used crash points and console logging. The console logging confirmed that the commit protocol followed all of the steps properly. The crash points were useful for testing recovery. Through the client interface, we could specify the following locations for the nodes to crash:
+In order to test recovery of the two-phase commit protocol, we used crash points and console logging. The console logging would confirm that the commit protocol followed all of the steps properly. The crash points were useful for testing recovery. Through the client interface, we could specify the following locations for the nodes to crash:
 \begin{itemize}
 \item immediately (equivalent to a keyboard interrupt)
 \item at the transaction manager, after sending some of the vote requests.
 \item at the transaction manager, after receiving all of the vote replies.
 \item at the transaction manager, after sending some of the commit/abort decisions.
 \item at the transaction manager, after sending all of the commit/abort decisions.
-\item at a resource manager, after receiving a vote requests.
-\item at a resource manager, after sending a vote.
+\item at a resource manager, after receiving a vote request.
+\item at a resource manager, after sending a vote reply.
 \item at a resource manager, after receiving a commit/abort decision.
 \end{itemize}
-For testing, we simply tried all of these crash points manually. Using the console logging and queries of information that should or should not be present, we were able to confirm the correctness of behavior for each case. We also added the ability to sent a nodes vote response. This allowed us to test scenarios where a node may have responded NO.\par
+For testing, we simply tried all of these crash points manually. Using the console logging and queries of information that should or should not be present after the commit protocol had finished, we were able to confirm the correctness of behavior for each case. We also added the ability to set the vote reply that a node will send; this ability allowed us to test scenarios where a node may have responded NO to a vote request.\par
 
 \end{document}

@@ -1,6 +1,7 @@
 --> Shows middleware usage, console logging, locking, notification of waiting txns.
 
 C1: start
+C1: queryflight, 1, 11
 C1: newflight, 1, 11, 1, 1 (converts S to X)
 C1: newcar, 1, 11, 1, 1
 C1: newroom, 1, 11, 1, 1

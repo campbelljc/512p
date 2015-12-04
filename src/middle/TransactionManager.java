@@ -319,7 +319,7 @@ public class TransactionManager {
 			
 			@Override
 			public void run() {
-				System.out.println("Running undo and sending abort messages to RMs now.");
+				System.out.println("Sending abort messages to RMs now.");
 			//	txn.undo();
 				
 				Set<DType> dtypes = txnMap.get(tid).getDTypes();

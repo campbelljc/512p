@@ -12,6 +12,8 @@
 
 To distribute load over several servers, we created a middleware to communicate between the client and resource manager (RM) servers. The middleware will receive requests from the client and forward them to the appropriate resource manager server, each server being responsible for one resource. The middleware is also responsible for customer data, since it is assumed that the most popular transactions performed will include modification or reading of customer data.  \par
 
+We also allow the use of transactions and strict two-phase locking via a transaction manager and lock manager at the middleware node. The two-phase commit protocol is used at the middleware in order to commit/abort transactions.
+
 \section*{Performance results}
 
 \subsection*{Technique}
@@ -66,10 +68,35 @@ Since the middleware and server use the same class interface, the client can acq
 
 The middleware receives information about the RM servers (port and hostname) on server startup, through environment variables in the web.xml file.  \par
 
+\subsection*{Lock Manager}
 
-\section*{Special features}
+The lock manager is stored at the middleware server. It receives lock requests from the transaction manager, which specifies the lock type (read or write), the data item to lock, and the ID of the transaction requesting the lock. It uses this centralized model so that the resource managers themselves need know nothing about locking. This approach also simplifies the process of waiting on a lock, since the middleware will know not to accept anymore operations from the same transaction until the lock is received (or a deadlock occurs), instead of having to be told by a resource manager who is waiting that it should wait as well. \par
+
+The lock manager uses the strict 2PL locking scheme. Operations that read a data item will request a shared lock on the item. More than one transaction can receive a shared lock for the same data item. Operations that write a data item will request an exclusive lock on the item, which will only be given if there are no shared locks on that item, except for its own. If the transaction does have a shared lock and requests an exclusive lock, the lock is converted to exclusive if possible. If other transactions already have a shared lock on that item, then the requesting transaction will wait until those are released. Transactions will release all their locks only at commit or abort time. \par
+
+\subsection*{Transaction Manager}
+
+The transaction manager is also contained entirely on the middleware server. Again, this design greatly simplifies the message passing requirements. Because the lock manager is local, the only message passing required after a request is received is the data access, which was already implemented in the first part of the project. Upon server initialization, a transaction manager is created. Then, we simply pass off the \texttt{start}, \texttt{abort}, and \texttt{commit} methods from the API directly to the transaction manager. \par
+
+The \texttt{start} method initializes a transaction and provides the client with a transaction identifier to use with all other operations. This method atomically grabs the next available, unique transaction identifier integer, creates a \texttt{Transaction} object, and begins the TTL timer for the transaction. \par
+
+When an operation is sent from the client to the middleware to be performed, the middleware will ask the transaction manager for the necessary locks and then perform the requested operation, forwarding it to a resource manager if appropriate.
+
+The \texttt{abort} method is available as an API call. Additionally, aborts will automatically be performed upon deadlocks, as a form of deadlock resolution, and TTL expirations, as a form of client timeout handling. The TTL expiration is checked by a \texttt{ScheduledExecutorService}, which is simply a scheduled, concurrent operation that ensures the transaction has been used within a specified time period. In this case, ``used'' refers to any read or write operation which is called with the transaction identifier.  \par
+
+The \texttt{shutdown} method is an API call for a full-system, soft shutdown. If the client requests a shutdown, the transaction manager will deny any future start transaction requests and wait for all running transactions to complete. After this, each of the resource managers is sent a shutdown request and the middleware terminates. The resource managers will exit gracefully upon receiving the shutdown message from the middleware. \par
+
+\subsection*{2PC}
+
+When a transaction commits or aborts, the transaction manager will ask the lock manager to release all locks held by the transaction, and remove the transaction from its transaction list. \par
+
+---todo
+
+\subsection*{Recovery}
 
 \section*{Concurrency control}
+
+---
 
 \section*{Problems encountered}
 
@@ -100,5 +127,8 @@ Specific particularities of scheduling prevented by two-phase locking such as di
 
 With regards to testing of the transaction manager, sequences of commands were manually inputted into the client console with verification of results. Testing of undo operations was of particular focus, as well as concurrent modification situations (to verify correctness of locks).\par
 
+\subsection*{2PC}
+
+----
 
 \end{document}

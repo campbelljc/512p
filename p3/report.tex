@@ -84,7 +84,7 @@ The transaction manager is also contained entirely on the middleware server. Aga
 
 The \texttt{start} method initializes a transaction and provides the client with a transaction identifier to use with all other operations. This method atomically grabs the next available, unique transaction identifier integer, creates a \texttt{Transaction} object, and begins the TTL timer for the transaction. \par
 
-When an operation is sent from the client to the middleware to be performed, the middleware will ask the transaction manager for the necessary locks and then perform the requested operation, forwarding it to a resource manager if appropriate.
+When an operation is sent from the client to the middleware to be performed, the middleware will ask the transaction manager for the necessary locks and then perform the requested operation, forwarding it to a resource manager if appropriate. The transaction manager will also keep track of which data items are being locked, to be used later during the commit phase.
 
 The \texttt{abort} method is available as an API call. Additionally, aborts will automatically be performed upon deadlocks, as a form of deadlock resolution, and TTL expirations, as a form of client timeout handling. The TTL expiration is checked by a \texttt{ScheduledExecutorService}, which is simply a scheduled, concurrent operation that ensures the transaction has been used within a specified time period. In this case, ``used'' refers to any read or write operation which is called with the transaction identifier.  \par
 
@@ -92,9 +92,11 @@ The \texttt{shutdown} method is an API call for a full-system, soft shutdown. If
 
 \subsection*{2PC}
 
-When a transaction commits or aborts, the transaction manager will ask the lock manager to release all locks held by the transaction, and remove the transaction from its transaction list. \par
+The two-phase commit protocol was implemented on the transaction manager to coordinate commit and abort decisions in a distributed environment. The TM is responsible for all sending and receiving of vote requests and decisions. In brief, when a commit command is issued by the client, the transaction manager will send vote requests to all RMs (including the middleware, which handles the customer data) using a method call through Web Services. When a vote reply is received by an RM, a request is sent to the next in the list. If the RM fails to respond in a certain window of time (including if it crashes during the execution of the method call), the TM will consider the vote reply to be negative and begin aborting the transaction. The TM will also begin aborting the transaction as soon as it receives a negative response from any RM (e.g., if the first RM responds with a negative vote, then the transaction will be aborted without sending further vote requests to the remaining RMs).  \par
 
-TODO (J)
+Once all vote requests have been received, and all are positive responses, the decision will be made to commit (otherwise, to abort). At this point, the TM will return from the commit() method to notify the client of its decision. Using a Future task, after the return of the method call, the TM will begin to inform the RMs (and middleware) of the decision to either commit or abort. (Only RMs that participated in the transaction to be committed will be notified of the decision.) The sending of vote decisions to each RM will block until the decision is successfully received by the RM, at which point the decision will begin to be sent to the next implicated RM. The blocking here is done to ensure that the decision is received by all RMs, in order to avoid an inconsistent state (i.e., to make sure that the decision communicated to the client was actually effectuated).  \par
+
+Finally, once all resource managers have been informed, the TM will ask the lock manager to release all locks held by the transaction, and remove the transaction from its transaction list.  \par
 
 \subsection*{Recovery}
 
@@ -117,6 +119,8 @@ The resource managers log the following:
 Upon startup of a node, we look through the last log messages of each transaction. If we encounter a transaction that seems to be only partially completed, we will take whatever steps are necessary to finish the transaction as if the node had never been down.\par 
 
 Each resource manager has an uncommited and committed data log stored on disk, so we use these logs to retrieve information in the case where we wish to finish commits upon recovery.\par
+
+To persist information about transactions even if a crash occurs at the TM, transaction data is serialized to disk on any change of the data, and loaded back into main memory on server restart. This saving is necessary to persist the list of resource managers involved in any given transaction, so that if a crash interrupts the sending of vote requests to resource managers, the transaction manager will still know to which RMs a vote request should be sent.
 
 \section*{Problems encountered}
 
